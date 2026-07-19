@@ -6,3 +6,11 @@ dist/
 .vscode/*
 !.vscode/extensions.json
 .DS_Store
+
+# IDE
+.idea/
+
+# tsc build artifacts
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts

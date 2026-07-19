@@ -3,6 +3,24 @@
 
 ---
 
+## Progress Log
+
+**Corrected 2026-07-13** — a prior update to this log (2026-07-06) was stale; the developer had been working ahead in Claude Code without syncing back here. `psems-backend`'s own `CLAUDE.md` is being kept meticulously current after every week and is the authoritative source for backend detail — this log now defers to it and just tracks cross-repo status.
+
+**Backend: Weeks 1–6 all committed as of 2026-07-14.**
+- Week 1 (`07159cd`): Express/Prisma/TS scaffold, JWT auth (15m access + 7d rotating refresh in Redis) + bcrypt(12), forced first-login password change, RBAC middleware skeleton, CI against real Postgres+Redis.
+- Week 2 (`b732a26`): student bulk provisioning (CSV → temp password → BullMQ credential emails, provisioning log), lecturer self-registration + admin approval, audit logging (SHA-256 payload hash) on all writes.
+- Week 3 (`d13ee4c`): CPI creation + full 10-phase timeline engine, phase-gating middleware, supervisor addition with automatic Supervisor-Led/Coordinator-Managed mode determination, evaluator + Head Judge assignment.
+- Week 4 (`7f9653b`): group formation (invite/accept, one accepted group per CPI, phase-locked), idea posting with mode-specific visibility rules enforced at query time (not stored per-idea), coordinator approve/reject for student ideas.
+- Week 5 (`9e5f7b2`): Expression of Interest + Mutual Confirmation — ranked supervisor preferences, "willing to supervise," conflict resolution, both CPI modes.
+- Week 6 (`681166c`): allocation finalization + coordinator override (Step 7), fully configurable evaluation stage/rubric config with weight validation (Step 8), proposal file upload with a pluggable local-disk/Supabase storage backend (Step 9). 28 tests green across 7 suites per the backend's own record; independently re-verified `tsc --noEmit` clean.
+
+**Frontend and ML service: still untouched — 6 weeks in, this is now the single biggest risk to the plan**, not a minor process note anymore. The Week 1.5 "frontend detour" recommended earlier didn't happen; all six weeks went into backend. There is currently no way for anyone (including you, for your own testing/demo purposes) to click through any of this — every module so far is API-only, verified via automated tests, not a browser.
+
+**Correction to a prior finding:** the "git lock file" flagged on 2026-07-06 as a likely blocker turned out to be a false alarm — it was this Cowork session's own sandbox failing to touch files inside your OneDrive-synced `.git` folder, not a real problem in your actual WSL git. Proof: Weeks 1–5 are committed fine. Disregard that earlier advice.
+
+---
+
 ## 1. The honest reality check
 
 Your submitted proposal's own Gantt chart budgets **8 months** (April–November 2026) for this scope, built with an assumption of steady progress since April. You're starting the actual build today, July 5, with **~12.5 weeks** to a **real pilot launch** — not just a graded demo. That's roughly a third of the originally planned time, solo.
@@ -12,7 +30,7 @@ The full spec is not fake scope — every piece (7 roles, 12-step lifecycle, dua
 **Core strategy:**
 - Pilot launches for **one department, one CPI** (e.g., one Data Management Project cohort) — not faculty-wide. This is not a scope cut from your report, it's literally your report's own Phase 1.
 - **Security and data-handling basics are built in from Week 1**, not bolted on later — this is real student PII and real passwords from day one, non-negotiable.
-- **Every week ships a working vertical slice** (backend + minimal UI for that module) — never "backend done, frontend pending." That way at any checkpoint you have a demoable, honest picture of where things stand, not a hidden pile of frontend debt.
+- **Every week ships a working vertical slice** (backend + minimal UI for that module) — never "backend done, frontend pending." *(Note: this has drifted 6 weeks off-plan — see Progress Log. Needs a deliberate correction, not just a resolution to try harder — see Section 6.)*
 - **Scalability targets (2,000+ concurrent users, k6 load testing) are explicitly deferred** past Sept 30 — irrelevant for a single-CPI pilot and would burn weeks you don't have.
 
 ---
@@ -41,36 +59,34 @@ All 7 ML features still ship — some may launch in a simplified first version (
 
 ---
 
-## 3. Week-by-week plan (vertical slices)
+## 3. Week-by-week plan — status as of 2026-07-13
 
-Each week = a working backend module **and** the minimal UI to actually use it. If a week slips, the fallback list in Section 5 tells you what to trim first — never silently skip security or evaluator-isolation logic.
-
-| Week | Dates | Build | Demo at end of week |
+| Week | Dates | Build | Status |
 |---|---|---|---|
-| 0 (today) | Jul 5–6 | Confirm pilot department/CPI with your supervisor/coordinator contact. **Request historical faculty project data today** — this has external lag and gates all ML work in Weeks 9–11. | Data request sent; pilot scope confirmed in writing |
-| 1 | Jul 6–12 | Repo + Docker Compose (Postgres+pgvector, Redis), Prisma schema v1 (users, students, lecturers, course_instances, cpi_timelines), JWT+bcrypt auth, forced first-login password change, RBAC middleware skeleton, CI (lint+test on push) | Login works for a seeded Admin + Student; first-login flow enforced |
-| 2 | Jul 13–19 | Student bulk provisioning (CSV import → temp password gen → Bull-queued email dispatch), lecturer self-registration + admin approval, audit log middleware | Admin uploads a CSV of 20 test students → all receive credential emails |
-| 3 | Jul 20–26 | CPI creation, timeline engine (10 phases), phase-gating middleware, supervisor addition step (mode determination), evaluator/Head Judge assignment | Coordinator creates a CPI, sets phase dates, adds a supervisor → mode flips to Supervisor-Led |
-| 4 | Jul 27–Aug 2 | Group formation (invite/accept/lock), idea posting with mode-specific visibility rules, coordinator approve/reject (Coordinator-Managed) | Students form a group, post an idea, visibility rules verified for both modes |
-| 5 | Aug 3–9 | EOI + Mutual Confirmation (ranked preferences, willing-to-supervise, accept/decline, conflict resolution) | A student group and supervisor go through full EOI → mutual accept flow |
-| 6 | Aug 10–16 | Project Registration/allocation finalize + coordinator override; Evaluation Config (stages, weights, rubric criteria, evaluator assignment); proposal upload to Supabase Storage | Coordinator configures a 4-stage rubric; a group uploads a proposal PDF |
-| 7 | Aug 17–23 | Scheduling (availability submission, timetable finalize); Evaluation execution (scoring interface, evaluator isolation enforced); Head Judge review (side-by-side, approve/request correction) | Two evaluators score independently, Head Judge approves, scores lock |
-| 8 | Aug 24–30 | Mark aggregation engine, publishing, student mark view; notifications (in-app + email) for all key events from Section 10 of the spec | Full lifecycle dry run: CPI created → group → idea → selection → evaluation → published marks, with notification emails firing throughout |
-| 9 | Aug 31–Sep 6 | ML service scaffold (FastAPI), preprocessing pipeline on the (hopefully by-now-received) historical data, SBERT embeddings into pgvector, **Feature 1 (idea suggestion) + Feature 4 (plagiarism warning)** — built together since they share the embedding index | Typing an idea shows live suggestions; submitting a near-duplicate idea triggers the tiered warning |
-| 10 | Sep 7–13 | **Feature 2 (success predictor, Random Forest)** + **Feature 3 (similar projects recommender)** — reuse Week 9's pipeline and data | Idea page shows a success % and a "related past projects" panel |
-| 11 | Sep 14–20 | **Feature 5 (topic clustering)**, **Feature 6 (supervisor compatibility, Supervisor-Led only)**, **Feature 7 (grade distribution analytics — core charts)** | Coordinator dashboard shows topic trend chart, grade distribution chart, and (if Supervisor-Led CPI used) a compatibility badge |
-| 12 | Sep 21–27 | End-to-end integration testing across all 12 lifecycle steps, security hardening pass (Helmet, CORS lock to production origin, rate limiting, re-check RBAC on every route), bug fixing, real pilot data setup (real cohort, real CPI) | Full lifecycle runs clean with the real pilot department's actual data |
-| 13 | Sep 28–30 | Buffer, deploy, go-live, watch logs closely for the first real usage | Pilot is live |
+| 1 | Jul 6–12 | Auth, forced password change, RBAC skeleton, Prisma v1, CI | ✅ committed (`07159cd`) |
+| 2 | Jul 13–19 | Student provisioning, lecturer approval, audit logging | ✅ committed (`b732a26`) |
+| 3 | Jul 20–26 | CPI creation, timeline engine, phase gating, mode determination | ✅ committed (`d13ee4c`) |
+| 4 | — | Group formation, idea posting + visibility rules | ✅ committed (`7f9653b`) |
+| 5 | — | EOI + Mutual Confirmation | ✅ committed (`9e5f7b2`) |
+| 6 | — | Allocation finalize/override, evaluation config, proposal upload | ✅ committed (`681166c`) |
+| 7 | next | Scheduling, evaluation execution (evaluator isolation), Head Judge review | Not started |
+| 8 | next | Mark aggregation, publishing, notifications | Not started |
+| — | ongoing gap | **Frontend: nothing built** — no login screen, no dashboard, no way to demo any of Weeks 1–6 in a browser | Not started, 6 weeks behind |
+| 9–11 | after backend core | ML service: 7 endpoints (idea suggestion + plagiarism warning → success predictor + similar projects → topic clustering + supervisor match + grade analytics) | Not started; still needs historical faculty data requested |
+| 12 | — | Integration testing, security hardening, real pilot data setup | Not started |
+| 13 | — | Deploy, go-live | Not started |
+
+Backend pace has actually been faster than the original weekly cadence implied (5 weeks of backend scope in what reads as a tight week of actual work, based on the dates in play) — that's good news for the overall deadline, but only if the frontend gap gets closed deliberately rather than deferred again.
 
 ---
 
 ## 4. Non-negotiables (do not cut these even under time pressure)
 
-- **Evaluator score isolation before Head Judge review** — a broken version of this undermines the entire academic-integrity pitch of the project.
-- **Forced first-login password change + bcrypt + JWT short-lived tokens** — this touches real students' real credentials.
+- **Evaluator score isolation before Head Judge review** — a broken version of this undermines the entire academic-integrity pitch of the project. (Week 7, next.)
+- **Forced first-login password change + bcrypt + JWT short-lived tokens** — done (Week 1).
 - **RBAC checks at both middleware and service layer** — one missed check is a data leak between groups/students, which is the exact "fairness" problem PSEMS exists to solve.
-- **Audit logging on all write operations** — needed for both academic integrity and for your own debugging sanity once real users touch it.
-- **Anonymization of historical data before ML training** — non-negotiable regardless of timeline, per the spec's own privacy section.
+- **Audit logging on all write operations** — done (Week 2).
+- **Anonymization of historical data before ML training** — non-negotiable regardless of timeline, per the spec's own privacy section. (Weeks 9–11.)
 
 ## 5. Cut list, in priority order (use only if a week actually slips)
 
@@ -80,12 +96,9 @@ Each week = a working backend module **and** the minimal UI to actually use it. 
 4. Scheduling conflict UI polish — manual coordinator resolution is fine; don't build automated conflict-suggestion logic.
 5. Never touch: auth, RBAC, evaluator isolation, mark aggregation correctness, or data privacy — these are the actual point of the system.
 
-## 6. Immediate next steps (this week)
+## 6. Immediate next steps
 
-1. Confirm with your supervisor which specific department/CPI is the real pilot target — this determines the real student email list you'll need for provisioning testing.
-2. **Send the historical project data request to the faculty/department today.** This is the single most likely external bottleneck — everything in Weeks 9–11 depends on having usable data by ~mid-August.
-3. Set up the repo skeleton (I can scaffold this with you directly — monorepo with `/backend`, `/frontend`, `/ml-service`, `docker-compose.yml`).
-4. Decide your evaluation/testing rhythm with me: I'd suggest a short check-in at the end of each week against the table in Section 3 — tell me what actually shipped vs. planned, and we adjust the following week rather than pretending the plan survived contact with reality.
-
----
-*This roadmap assumes ordinary availability alongside other coursework. If you have exams or other module deadlines in this window, tell me the dates and we'll redistribute the weeks around them rather than discover the conflict in August.*
+1. ~~Commit Week 6~~ — done (`681166c`).
+2. **Decided 2026-07-14: pausing backend to build the frontend before Week 7.** `psems-frontend/CLAUDE.md` now has a full verified API reference (every endpoint shipped in Weeks 1–6, exact request/response shapes, enum values) plus a recommended build order — thin/ugly/functional screens first to close the demo gap fast, polish later. Not a "nice to have" detour anymore — 6 weeks of backend work is genuinely unusable/undemoable without it, and the gap only compounds if Week 7–8 get added on top uncontested. Minimum viable catch-up, in order: (a) Vite+React+TS+Tailwind scaffold, (b) login + forced-password-change screen, (c) a bare-bones Course Coordinator view to create a CPI and set the timeline (Week 3's API), (d) a student view to register/form a group and post an idea (Week 4's API). That alone would make the last month of backend work demonstrable, which matters both for your own confidence in the system and for eventually showing this to your supervisor/the pilot department.
+3. Confirm the historical faculty data request has actually gone out — if not, send it now, since it's an external dependency and every week of delay pushes Weeks 9–11 back.
+4. After the frontend catch-up, resume backend at Week 7 (schedulin
