@@ -16,6 +16,7 @@ import { StudentCpiLayout } from '@/pages/student/StudentCpiLayout';
 import { GroupPage } from '@/pages/student/GroupPage';
 import { IdeasPage } from '@/pages/student/IdeasPage';
 import { SelectionPage } from '@/pages/student/SelectionPage';
+import { SubmissionsPage } from '@/pages/student/SubmissionsPage';
 
 export default function App() {
   return (
@@ -86,6 +87,7 @@ export default function App() {
           <Route path="group" element={<GroupPage />} />
           <Route path="ideas" element={<IdeasPage />} />
           <Route path="selection" element={<SelectionPage />} />
+          <Route path="submissions" element={<SubmissionsPage />} />
         </Route>
       </Route>
 

@@ -21,6 +21,9 @@ export function StudentCpiLayout() {
         <NavLink to={`/student/cpi/${cpiId}/selection`} className={tabClass}>
           Selection
         </NavLink>
+        <NavLink to={`/student/cpi/${cpiId}/submissions`} className={tabClass}>
+          Submissions
+        </NavLink>
       </nav>
       <Outlet />
     </div>
