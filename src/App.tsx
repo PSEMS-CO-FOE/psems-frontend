@@ -10,6 +10,12 @@ import { StudentProvisioningPage } from '@/pages/admin/StudentProvisioningPage';
 import { CoordinatorLayout } from '@/pages/coordinator/CoordinatorLayout';
 import { CpiListPage } from '@/pages/coordinator/CpiListPage';
 import { CpiDetailPage } from '@/pages/coordinator/CpiDetailPage';
+import { StudentLayout } from '@/pages/student/StudentLayout';
+import { EnterCpiPage } from '@/pages/student/EnterCpiPage';
+import { StudentCpiLayout } from '@/pages/student/StudentCpiLayout';
+import { GroupPage } from '@/pages/student/GroupPage';
+import { IdeasPage } from '@/pages/student/IdeasPage';
+import { SelectionPage } from '@/pages/student/SelectionPage';
 
 export default function App() {
   return (
@@ -70,10 +76,18 @@ export default function App() {
         path="/student"
         element={
           <ProtectedRoute allowedRoles={['STUDENT']}>
-            <PlaceholderPage title="Student" />
+            <StudentLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<EnterCpiPage />} />
+        <Route path="cpi/:cpiId" element={<StudentCpiLayout />}>
+          <Route index element={<GroupPage />} />
+          <Route path="group" element={<GroupPage />} />
+          <Route path="ideas" element={<IdeasPage />} />
+          <Route path="selection" element={<SelectionPage />} />
+        </Route>
+      </Route>
 
       <Route path="*" element={<HomeRedirect />} />
     </Routes>
