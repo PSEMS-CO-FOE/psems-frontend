@@ -99,4 +99,9 @@ Steps 2–3 alone make Weeks 1–2 of backend demoable — don't wait until the 
 Students must never see other groups' ideas or marks, evaluators must never see each other's scores before Head Judge review (not relevant yet — Week 7). The backend already enforces this server-side; the frontend's job is to not defeat it by over-fetching, caching stale cross-role data in Zustand, or leaving a previous user's state visible after a role switch/logout (clear all client state on logout).
 
 ## Current phase
-Not started as of 2026-07-14. Starting now, catching up to backend Weeks 1–6 per the build order above.
+As of 2026-07-21, build-order steps 1–4 are done (2 commits: `dcdd130` scaffold+auth+System Admin screens, `6db84ad` Course Coordinator CPI screens — creation, timeline, supervisor/evaluator/head-judge assignments). Remaining to fully catch up to backend Week 6:
+- **Step 5 (next):** Student — group creation/invite/accept, idea browsing + posting, EOI/selection flow.
+- **Step 6:** Coordinator — allocation review/override/finalize screen, evaluation config builder (stages + rubric criteria, live weight-sum validation).
+- **Step 7:** Student — proposal file upload.
+
+Once Step 7 lands, frontend is caught up to backend Week 6 and the project resumes backend Week 7 (scheduling, evaluation execution w/ evaluator isolation, Head Judge review) — building its frontend alongside it this time, not after.

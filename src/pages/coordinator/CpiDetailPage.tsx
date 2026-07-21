@@ -4,6 +4,8 @@ import { useCpiDetail, useSetTimeline } from '@/features/courses/useCpiDetail';
 import { PHASE_ORDER, type CpiPhaseName } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { CpiAssignments } from './CpiAssignments';
+import { CpiIdeasModeration } from './CpiIdeasModeration';
+import { CpiSelections } from './CpiSelections';
 
 function toInputDate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -151,6 +153,10 @@ export function CpiDetailPage() {
       </div>
 
       <CpiAssignments cpiId={cpiId} mode={cpi.mode} />
+
+      <CpiIdeasModeration cpiId={cpiId} />
+
+      <CpiSelections cpiId={cpiId} />
 
       {/* Current supervisors + evaluators */}
       <div className="grid grid-cols-2 gap-4">
