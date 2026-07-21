@@ -7,6 +7,9 @@ import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { LecturerApprovalPage } from '@/pages/admin/LecturerApprovalPage';
 import { StudentProvisioningPage } from '@/pages/admin/StudentProvisioningPage';
+import { CoordinatorLayout } from '@/pages/coordinator/CoordinatorLayout';
+import { CpiListPage } from '@/pages/coordinator/CpiListPage';
+import { CpiDetailPage } from '@/pages/coordinator/CpiDetailPage';
 
 export default function App() {
   return (
@@ -48,10 +51,13 @@ export default function App() {
         path="/coordinator"
         element={
           <ProtectedRoute allowedRoles={['COURSE_COORDINATOR']}>
-            <PlaceholderPage title="Course Coordinator" />
+            <CoordinatorLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<CpiListPage />} />
+        <Route path=":cpiId" element={<CpiDetailPage />} />
+      </Route>
       <Route
         path="/lecturer"
         element={
