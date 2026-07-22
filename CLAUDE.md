@@ -76,8 +76,34 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `POST /` multipart `file` field, 20MB max — proposal upload. Soft-deadline: accepted any time after `PROPOSAL_SUBMISSION` opens, flags `isLate` if past the window end (not hard-blocked).
 - `GET /courses/:cpiId/submissions` — list.
 
+### Scheduling (`/courses/:cpiId`) — added Week 7, verified 2026-07-22
+- `POST /availability` (any evaluator/supervisor, phase = `AVAILABILITY_SUBMISSION`) `{slotStart, slotEnd}` — submit an available time slot.
+- `GET /availability` (Coordinator) — all submitted slots, for building the timetable.
+- `POST /sessions/generate` (Coordinator, same phase) — creates one `evaluation_session` per allocated group × evaluation stage. Idempotent (safe to re-call).
+- `PUT /sessions/:sessionId/schedule` (Coordinator, same phase) `{scheduledStart, scheduledEnd}` — assign a time to a generated session.
+- `GET /sessions` (any participant) — list sessions for the CPI.
+
+### Scoring (`/courses/:cpiId`) — added Week 7, phase = `EVALUATION_EXECUTION`
+- `POST /sessions/:sessionId/scores` (assigned evaluator) `{scores: [{criterionId, score, comment?}, ...]}` — submit per-criterion scores for a session. Session auto-flips to `AWAITING_HEAD_JUDGE` once every assigned evaluator has scored every criterion.
+- `GET /sessions/:sessionId/scores` — **evaluator isolation is enforced server-side here**: an evaluator sees only their own scores until the session is FINALIZED; the Head Judge sees everyone's; the coordinator only sees scores after FINALIZED. Render exactly what comes back, don't try to merge/cache scores across users client-side.
+
+### Head Judge (`/courses/:cpiId`) — added Week 7, phase = `EVALUATION_EXECUTION`
+- `GET /sessions/:sessionId/review` (Head Judge) — all evaluators' scores side-by-side, with a deviation flag when the spread exceeds 20% of a criterion's max score.
+- `POST /sessions/:sessionId/approve` — requires session status `AWAITING_HEAD_JUDGE` and all scores `FINALIZED`; locks the session.
+- `POST /sessions/:sessionId/request-correction` `{evaluatorUserId, reason}` — reopens that one evaluator's scores for correction.
+
+### Marks (`/courses/:cpiId/marks`) — added Week 8
+- `POST /aggregate` (Coordinator) — computes each group's marks from FINALIZED session scores (criterion % of maxScore → weighted by criterion weight → stage % → weighted by stage weight → overall 0–100). Requires every session FINALIZED first (409 otherwise).
+- `POST /publish` (Coordinator) — makes marks visible to students (409 if not aggregated yet).
+- `GET /` — Coordinator sees all groups' marks; a student sees **only their own group's, and only after publish** (403 before publish — don't build a UI state that assumes marks exist pre-publish).
+
+### Notifications (`/notifications`) — added Week 8
+- `GET /` (any authed user) — the caller's notifications, newest presumably first.
+- `POST /:id/read` — mark one as read.
+- Already wired server-side into: supervisor invites, allocation finalization, Head Judge approve/request-correction, marks publish. The frontend just needs to display/poll these, not trigger them.
+
 ### Not yet built (don't call these)
-Scheduling, evaluation execution/scoring, Head Judge review, mark aggregation/publishing, notifications, all 7 ML endpoints. These are backend Weeks 7–11 — build frontend for them as each lands, not before.
+Coordinator's full analytical summary (grade distribution, evaluator consistency — likely lands with the `analytics` module alongside ML), all 7 ML endpoints. These are backend Weeks 9–11 — build frontend for them as each lands, not before.
 
 ---
 
@@ -99,9 +125,19 @@ Steps 2–3 alone make Weeks 1–2 of backend demoable — don't wait until the 
 Students must never see other groups' ideas or marks, evaluators must never see each other's scores before Head Judge review (not relevant yet — Week 7). The backend already enforces this server-side; the frontend's job is to not defeat it by over-fetching, caching stale cross-role data in Zustand, or leaving a previous user's state visible after a role switch/logout (clear all client state on logout).
 
 ## Current phase
-As of 2026-07-21, build-order steps 1–4 are done (2 commits: `dcdd130` scaffold+auth+System Admin screens, `6db84ad` Course Coordinator CPI screens — creation, timeline, supervisor/evaluator/head-judge assignments). Remaining to fully catch up to backend Week 6:
-- **Step 5 (next):** Student — group creation/invite/accept, idea browsing + posting, EOI/selection flow.
-- **Step 6:** Coordinator — allocation review/override/finalize screen, evaluation config builder (stages + rubric criteria, live weight-sum validation).
-- **Step 7:** Student — proposal file upload.
+**Gap reopened, catch-up round 2 needed (2026-07-22).** Round 1 caught this repo up to backend Week 6 (2026-07-21, 5 commits — see below). But backend then shipped Weeks 7–8 (scheduling, evaluator-isolated scoring, Head Judge review, mark aggregation/publishing, notifications — see the API reference above) with **no matching frontend again**, same pattern as the first gap. That means the entire scoring/results half of the platform is currently backend-only.
 
-Once Step 7 lands, frontend is caught up to backend Week 6 and the project resumes backend Week 7 (scheduling, evaluation execution w/ evaluator isolation, Head Judge review) — building its frontend alongside it this time, not after.
+**This session's job:** build screens for Weeks 7–8, in this order:
+1. **Evaluator scoring interface** — list assigned sessions, submit per-criterion scores. Must respect the isolation rule: don't show or cache other evaluators' scores anywhere client-side, even after the session is FINALIZED for non-HJ/non-coordinator roles.
+2. **Coordinator scheduling screens** — view submitted availability, generate sessions, assign times.
+3. **Head Judge review screen** — side-by-side scores with deviation flags, approve / request-correction actions.
+4. **Coordinator marks screens** — trigger aggregate, trigger publish, view all groups' marks.
+5. **Student marks view** — own group's marks, only rendered post-publish (handle the pre-publish 403 gracefully, don't treat it as an error state).
+6. **Notifications** — a simple list/bell + mark-as-read, available globally across all roles (not tied to one dashboard).
+
+Once these six land, the entire 12-step lifecycle is clickable end to end, not just backend-tested — that's the actual milestone, not just "backend is done."
+
+**Also still outstanding from round 1 (2026-07-21), not yet done:** an independent end-to-end click-through of Weeks 1–6 to confirm it actually works, not just that the commits/files exist. Worth doing once round 2 is far enough along to test the whole thing in one pass rather than twice.
+
+### Round 1 (2026-07-21, for reference)
+Fully caught up to backend Week 6 across 5 commits: `dcdd130` (scaffold+auth+System Admin), `6db84ad` (Coordinator CPI/timeline/assignments), `ffb21d3` (Student groups, ideas, project selection), `6cdc180` (Coordinator allocation + evaluation config, Student proposal upload).
