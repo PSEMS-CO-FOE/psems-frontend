@@ -3,7 +3,6 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { HomeRedirect } from '@/routes/HomeRedirect';
 import { LoginPage } from '@/pages/LoginPage';
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
-import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { LecturerApprovalPage } from '@/pages/admin/LecturerApprovalPage';
 import { StudentProvisioningPage } from '@/pages/admin/StudentProvisioningPage';
@@ -17,6 +16,13 @@ import { GroupPage } from '@/pages/student/GroupPage';
 import { IdeasPage } from '@/pages/student/IdeasPage';
 import { SelectionPage } from '@/pages/student/SelectionPage';
 import { SubmissionsPage } from '@/pages/student/SubmissionsPage';
+import { MarksPage } from '@/pages/student/MarksPage';
+import { LecturerLayout } from '@/pages/lecturer/LecturerLayout';
+import { LecturerEnterCpiPage } from '@/pages/lecturer/LecturerEnterCpiPage';
+import { LecturerCpiLayout } from '@/pages/lecturer/LecturerCpiLayout';
+import { LecturerSessionsPage } from '@/pages/lecturer/LecturerSessionsPage';
+import { AvailabilityPage } from '@/pages/lecturer/AvailabilityPage';
+import { ReviewPage } from '@/pages/lecturer/ReviewPage';
 
 export default function App() {
   return (
@@ -69,10 +75,18 @@ export default function App() {
         path="/lecturer"
         element={
           <ProtectedRoute allowedRoles={['LECTURER']}>
-            <PlaceholderPage title="Lecturer" />
+            <LecturerLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<LecturerEnterCpiPage />} />
+        <Route path="cpi/:cpiId" element={<LecturerCpiLayout />}>
+          <Route index element={<LecturerSessionsPage />} />
+          <Route path="sessions" element={<LecturerSessionsPage />} />
+          <Route path="availability" element={<AvailabilityPage />} />
+          <Route path="review" element={<ReviewPage />} />
+        </Route>
+      </Route>
       <Route
         path="/student"
         element={
@@ -88,6 +102,7 @@ export default function App() {
           <Route path="ideas" element={<IdeasPage />} />
           <Route path="selection" element={<SelectionPage />} />
           <Route path="submissions" element={<SubmissionsPage />} />
+          <Route path="marks" element={<MarksPage />} />
         </Route>
       </Route>
 

@@ -8,6 +8,8 @@ import { CpiIdeasModeration } from './CpiIdeasModeration';
 import { CpiSelections } from './CpiSelections';
 import { CpiAllocation } from './CpiAllocation';
 import { CpiEvaluationConfig } from './CpiEvaluationConfig';
+import { CpiScheduling } from './CpiScheduling';
+import { CpiMarks } from './CpiMarks';
 
 function toInputDate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -163,6 +165,10 @@ export function CpiDetailPage() {
       <CpiAllocation cpiId={cpiId} />
 
       <CpiEvaluationConfig cpiId={cpiId} />
+
+      <CpiScheduling cpiId={cpiId} />
+
+      <CpiMarks cpiId={cpiId} />
 
       {/* Current supervisors + evaluators */}
       <div className="grid grid-cols-2 gap-4">
