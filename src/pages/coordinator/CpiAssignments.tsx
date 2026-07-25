@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   useInviteSupervisor,
   useAssignEvaluator,
   useSetHeadJudge,
   useFinalizeCoordinatorManaged,
 } from '@/features/courses/useCpiAssignments';
+import { useApprovedLecturers } from '@/features/lecturers/useLecturers';
 import type { CpiMode } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { personName } from '@/lib/name';
 import type { UseMutationResult } from '@tanstack/react-query';
 
-// Small reusable "enter a lecturer userId and submit" form. There is no
-// browse-lecturers endpoint yet, so the coordinator pastes the lecturer's userId.
-function UserIdForm({
+// Pick an approved lecturer by name/email (no more raw UUID pasting), then
+// submit their userId to the assignment action.
+function LecturerPicker({
   label,
   action,
   disabled,
@@ -22,25 +24,54 @@ function UserIdForm({
   disabled?: boolean;
   disabledReason?: string;
 }) {
+  const { data: lecturers, isLoading } = useApprovedLecturers(!disabled);
+  const [query, setQuery] = useState('');
   const [userId, setUserId] = useState('');
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const all = lecturers ?? [];
+    if (!q) return all;
+    return all.filter(
+      (l) =>
+        (l.fullName ?? '').toLowerCase().includes(q) || l.email.toLowerCase().includes(q),
+    );
+  }, [lecturers, query]);
 
   return (
     <div>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <input
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="lecturer userId (UUID)"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search lecturers by name or email"
           disabled={disabled}
           className="w-full rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
         />
-        <button
-          onClick={() => action.mutate(userId, { onSuccess: () => setUserId('') })}
-          disabled={disabled || !userId || action.isPending}
-          className="whitespace-nowrap rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
-          {action.isPending ? '…' : label}
-        </button>
+        <div className="flex gap-2">
+          <select
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            disabled={disabled || isLoading}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+          >
+            <option value="">
+              {isLoading ? 'Loading lecturers…' : `Select a lecturer (${filtered.length})`}
+            </option>
+            {filtered.map((l) => (
+              <option key={l.userId} value={l.userId}>
+                {personName(l)} — {l.email}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => action.mutate(userId, { onSuccess: () => setUserId('') })}
+            disabled={disabled || !userId || action.isPending}
+            className="whitespace-nowrap rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+          >
+            {action.isPending ? '…' : label}
+          </button>
+        </div>
       </div>
       {disabled && disabledReason && (
         <p className="mt-1 text-xs text-gray-400">{disabledReason}</p>
@@ -70,7 +101,7 @@ export function CpiAssignments({ cpiId, mode }: { cpiId: string; mode: CpiMode }
       <div className="mt-3 space-y-4">
         <div>
           <p className="mb-1 text-xs font-medium text-gray-600">Invite supervisor</p>
-          <UserIdForm
+          <LecturerPicker
             label="Invite"
             action={inviteSupervisor}
             disabled={isCoordinatorManaged}
@@ -83,12 +114,12 @@ export function CpiAssignments({ cpiId, mode }: { cpiId: string; mode: CpiMode }
 
         <div>
           <p className="mb-1 text-xs font-medium text-gray-600">Assign evaluator</p>
-          <UserIdForm label="Assign" action={assignEvaluator} />
+          <LecturerPicker label="Assign" action={assignEvaluator} />
         </div>
 
         <div>
           <p className="mb-1 text-xs font-medium text-gray-600">Set Head Judge</p>
-          <UserIdForm label="Set" action={setHeadJudge} />
+          <LecturerPicker label="Set" action={setHeadJudge} />
           <p className="mt-1 text-xs text-gray-400">Must already be an evaluator.</p>
         </div>
 

@@ -17,6 +17,15 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
   const [evaluatorUserId, setEvaluatorUserId] = useState('');
   const [reason, setReason] = useState('');
 
+  // Distinct evaluators who scored this session, for the correction picker.
+  const evaluators = review
+    ? Array.from(
+        new Map(
+          review.criteria.flatMap((c) => c.scores.map((s) => [s.evaluator.id, s.evaluator])),
+        ).values(),
+      )
+    : [];
+
   return (
     <div className="rounded-lg border bg-white p-4">
       <button
@@ -31,6 +40,15 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
 
       {open && (
         <div className="mt-3">
+          {session.presentationDurationSeconds != null && (
+            <p className="mb-2 text-xs text-gray-600">
+              Presentation time:{' '}
+              <span className="font-mono">
+                {String(Math.floor(session.presentationDurationSeconds / 60)).padStart(2, '0')}:
+                {String(session.presentationDurationSeconds % 60).padStart(2, '0')}
+              </span>
+            </p>
+          )}
           {isLoading && <p className="text-xs text-gray-500">Loading review…</p>}
           {isError && (
             <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -81,12 +99,18 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1">
-                  <input
+                  <select
                     value={evaluatorUserId}
                     onChange={(e) => setEvaluatorUserId(e.target.value)}
-                    placeholder="evaluator userId"
                     className="rounded border border-gray-300 px-2 py-1 text-xs"
-                  />
+                  >
+                    <option value="">Select evaluator…</option>
+                    {evaluators.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {personName(ev)}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}

@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Link } from 'react-router-dom';
 import { useLogin } from '@/features/auth/useLogin';
 import { getApiErrorMessage } from '@/lib/apiError';
 
@@ -69,6 +70,13 @@ export function LoginPage() {
         >
           {login.isPending ? 'Signing in…' : 'Sign in'}
         </button>
+
+        <p className="mt-4 text-center text-xs text-gray-500">
+          Are you a lecturer?{' '}
+          <Link to="/register" className="text-gray-700 underline">
+            Register here
+          </Link>
+        </p>
       </form>
     </div>
   );

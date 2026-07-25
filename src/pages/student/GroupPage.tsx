@@ -6,6 +6,7 @@ import {
   useCreateGroup,
   useInviteMember,
   useRespondGroupInvite,
+  usePendingGroupInvites,
 } from '@/features/groups/useGroups';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
@@ -151,37 +152,51 @@ function CreateGroupCard({ cpiId }: { cpiId: string }) {
 
 function RespondInviteCard({ cpiId }: { cpiId: string }) {
   const respond = useRespondGroupInvite(cpiId);
-  const [groupId, setGroupId] = useState('');
+  const { data: invites, isLoading } = usePendingGroupInvites(cpiId);
+
   return (
     <div className="rounded-lg border bg-white p-4">
-      <h2 className="text-sm font-semibold text-gray-700">Respond to a group invite</h2>
-      <p className="mt-1 text-xs text-gray-500">
-        Paste the group id you were invited to.
-      </p>
-      <div className="mt-2 flex gap-2">
-        <input
-          value={groupId}
-          onChange={(e) => setGroupId(e.target.value)}
-          placeholder="group id (UUID)"
-          className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
-        />
-        <button
-          onClick={() => respond.mutate({ groupId, decision: 'ACCEPT' })}
-          disabled={!groupId || respond.isPending}
-          className="rounded bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-        >
-          Accept
-        </button>
-        <button
-          onClick={() => respond.mutate({ groupId, decision: 'DECLINE' })}
-          disabled={!groupId || respond.isPending}
-          className="rounded bg-red-600 px-3 py-1 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-        >
-          Decline
-        </button>
-      </div>
+      <h2 className="text-sm font-semibold text-gray-700">Your group invitations</h2>
+
+      {isLoading && <p className="mt-2 text-xs text-gray-500">Loading invitations…</p>}
+      {invites && invites.length === 0 && (
+        <p className="mt-1 text-xs text-gray-500">You have no pending group invitations.</p>
+      )}
+
+      <ul className="mt-2 space-y-2">
+        {invites?.map((inv) => (
+          <li
+            key={inv.groupId}
+            className="flex flex-wrap items-center gap-2 rounded border border-gray-100 bg-gray-50 px-3 py-2 text-xs"
+          >
+            <span className="text-gray-700">
+              <span className="font-medium">{inv.group.name}</span>{' '}
+              <span className="text-gray-400">
+                (leader: {personName(inv.group.leader)})
+              </span>
+            </span>
+            <span className="ml-auto flex gap-2">
+              <button
+                onClick={() => respond.mutate({ groupId: inv.groupId, decision: 'ACCEPT' })}
+                disabled={respond.isPending}
+                className="rounded bg-green-600 px-3 py-1 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                Accept
+              </button>
+              <button
+                onClick={() => respond.mutate({ groupId: inv.groupId, decision: 'DECLINE' })}
+                disabled={respond.isPending}
+                className="rounded bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                Decline
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
+
       {respond.isError && (
-        <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(respond.error)}</p>
+        <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(respond.error)}</p>
       )}
     </div>
   );
