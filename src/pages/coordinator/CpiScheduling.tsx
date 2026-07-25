@@ -12,19 +12,27 @@ function SessionRow({ cpiId, session }: { cpiId: string; session: import('@/feat
   const schedule = useScheduleSession(cpiId);
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const [location, setLocation] = useState('');
+
+  const conflicts = schedule.data?.conflicts ?? [];
 
   return (
-    <li className="flex flex-wrap items-center gap-2 py-2 text-xs">
-      <span className="text-gray-700">
-        {session.group.name} · {session.stage.name}{' '}
-        <span className="text-gray-400">({session.status})</span>
-      </span>
-      {session.scheduledStart && (
-        <span className="text-gray-400">
-          @ {new Date(session.scheduledStart).toLocaleString()}
+    <li className="flex flex-col gap-1 py-2 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-gray-700">
+          {session.group.name} · {session.stage.name}{' '}
+          <span className="text-gray-400">({session.status})</span>
         </span>
-      )}
-      <span className="ml-auto flex items-center gap-1">
+        {session.isOverdue && (
+          <span className="rounded bg-red-100 px-1.5 py-0.5 text-red-700">overdue, not yet scored</span>
+        )}
+        {session.scheduledStart && (
+          <span className="text-gray-400">@ {new Date(session.scheduledStart).toLocaleString()}</span>
+        )}
+        {session.location && <span className="text-gray-500">· {session.location}</span>}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1">
         <input
           type="datetime-local"
           value={start}
@@ -37,12 +45,19 @@ function SessionRow({ cpiId, session }: { cpiId: string; session: import('@/feat
           onChange={(e) => setEnd(e.target.value)}
           className="rounded border border-gray-300 px-1 py-0.5 text-xs"
         />
+        <input
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="room / link (optional)"
+          className="w-40 rounded border border-gray-300 px-2 py-0.5 text-xs"
+        />
         <button
           onClick={() =>
             schedule.mutate({
               sessionId: session.id,
               scheduledStart: new Date(start).toISOString(),
               scheduledEnd: new Date(end).toISOString(),
+              location: location.trim() || undefined,
             })
           }
           disabled={!start || !end || schedule.isPending}
@@ -50,7 +65,28 @@ function SessionRow({ cpiId, session }: { cpiId: string; session: import('@/feat
         >
           set time
         </button>
-      </span>
+      </div>
+
+      {schedule.isError && (
+        <span className="text-red-600">{getApiErrorMessage(schedule.error)}</span>
+      )}
+      {schedule.isSuccess && conflicts.length === 0 && (
+        <span className="text-green-600">Scheduled. No conflicts.</span>
+      )}
+      {conflicts.length > 0 && (
+        <div className="rounded bg-yellow-50 px-2 py-1 text-yellow-800">
+          ⚠ Scheduled, but overlaps {conflicts.length} other session
+          {conflicts.length > 1 ? 's' : ''} sharing an evaluator:
+          <ul className="mt-0.5 list-disc pl-4">
+            {conflicts.map((c) => (
+              <li key={c.sessionId}>
+                {c.group} · {c.stage}
+                {c.scheduledStart && ` @ ${new Date(c.scheduledStart).toLocaleString()}`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </li>
   );
 }
