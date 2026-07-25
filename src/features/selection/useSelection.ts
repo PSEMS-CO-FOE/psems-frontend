@@ -9,7 +9,7 @@ interface IdeaRef {
   authorType: 'COORDINATOR' | 'SUPERVISOR' | 'STUDENT';
 }
 interface SupervisorRef {
-  user: { email: string; fullName: string | null };
+  user: { id: string; email: string; fullName: string | null };
 }
 
 export interface ProjectSelection {
@@ -28,14 +28,23 @@ export interface InterestExpression {
   type: 'GROUP_INTEREST' | 'SEEKING_SUPERVISOR' | 'SUPERVISOR_WILLING';
   rank: number | null;
   idea: IdeaRef;
+  group: { id: string; name: string } | null;
   supervisor: SupervisorRef | null;
+}
+
+// A student idea flagged as seeking a supervisor, that a supervisor may mark
+// willing on.
+export interface SeekingIdea {
+  ideaId: string;
+  idea: IdeaRef;
+  group: { id: string; name: string } | null;
 }
 
 // Role-tagged union returned by GET /selection.
 export type SelectionState =
   | { role: 'STUDENT'; groupInterest: InterestExpression[]; willingSupervisors: InterestExpression[]; selection: ProjectSelection | null }
   | { role: 'COORDINATOR'; selections: ProjectSelection[]; interestExpressions: InterestExpression[] }
-  | { role: 'SUPERVISOR'; willingByMe: InterestExpression[]; pendingSelections: ProjectSelection[] };
+  | { role: 'SUPERVISOR'; willingByMe: InterestExpression[]; pendingSelections: ProjectSelection[]; seekingIdeas: SeekingIdea[] };
 
 function selectionKey(cpiId: string) {
   return ['selection', cpiId] as const;
@@ -68,6 +77,11 @@ export function useExpressInterest(cpiId: string) {
 export function useSeekingSupervisor(cpiId: string) {
   return useSelectionAction(cpiId, (ideaId: string) =>
     api.post(`/courses/${cpiId}/selection/seeking-supervisor`, { ideaId }),
+  );
+}
+export function useMarkWilling(cpiId: string) {
+  return useSelectionAction(cpiId, (ideaId: string) =>
+    api.post(`/courses/${cpiId}/selection/willing`, { ideaId }),
   );
 }
 export function useSelectProject(cpiId: string) {

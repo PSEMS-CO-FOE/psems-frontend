@@ -8,6 +8,7 @@ import {
   useSeekingSupervisor,
 } from '@/features/selection/useSelection';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { personName } from '@/lib/name';
 
 export function SelectionPage() {
   const { cpiId = '' } = useParams();
@@ -71,12 +72,24 @@ export function SelectionPage() {
               </option>
             ))}
           </select>
-          <input
-            value={supervisorUserId}
-            onChange={(e) => setSupervisorUserId(e.target.value)}
-            placeholder="supervisor userId (only for own idea, Supervisor-Led)"
-            className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-xs"
-          />
+          {/* Only needed when selecting your OWN idea in Supervisor-Led mode:
+              pick from supervisors who marked willing on it. */}
+          {state.willingSupervisors.length > 0 && (
+            <select
+              value={supervisorUserId}
+              onChange={(e) => setSupervisorUserId(e.target.value)}
+              className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-xs"
+            >
+              <option value="">Choose a willing supervisor (for your own idea)…</option>
+              {state.willingSupervisors
+                .filter((w) => w.supervisor)
+                .map((w) => (
+                  <option key={w.id} value={w.supervisor!.user.id}>
+                    {personName(w.supervisor!.user)} — {w.idea.title}
+                  </option>
+                ))}
+            </select>
+          )}
           <button
             onClick={() =>
               select.mutate({ ideaId, supervisorUserId: supervisorUserId || undefined })
