@@ -1,4 +1,11 @@
-export type CpiProjectType = 'FYP' | 'DATA_MANAGEMENT' | 'HPC' | 'INNOVATION_CHALLENGE';
+// Free text — coordinators define the project type; these are only suggestions.
+export type CpiProjectType = string;
+export const PROJECT_TYPE_SUGGESTIONS = [
+  'Final Year Project',
+  'Data Management Project',
+  'HPC Project',
+  'Innovation Challenge',
+];
 export type CpiParticipationMode = 'GROUP' | 'INDIVIDUAL';
 export type CpiMode = 'SUPERVISOR_LED' | 'COORDINATOR_MANAGED' | null;
 
@@ -50,7 +57,7 @@ export interface TimelinePhase {
 type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
 
 interface LecturerRef {
-  lecturer: { user: { email: string; fullName: string | null } };
+  lecturer: { user: { id: string; email: string; fullName: string | null } };
 }
 
 export interface CpiDetail extends Cpi {

@@ -5,6 +5,7 @@ import {
   useAssignStageEvaluator,
   type ConfigInputStage,
 } from '@/features/evaluations/useEvaluationConfig';
+import { useCpiDetail } from '@/features/courses/useCpiDetail';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 
@@ -14,7 +15,22 @@ type EditStage = {
   weight: number;
   evaluatorsRequired: number;
   submissionRequired: boolean;
+  // datetime-local strings ('' = unset); each pair is sent only if both are set.
+  submissionWindowStart: string;
+  submissionWindowEnd: string;
+  executionWindowStart: string;
+  executionWindowEnd: string;
   criteria: EditCriterion[];
+};
+
+// datetime-local ('YYYY-MM-DDTHH:mm') → ISO, or undefined when blank.
+const toIso = (v: string): string | undefined => (v ? new Date(v).toISOString() : undefined);
+
+const EMPTY_WINDOWS = {
+  submissionWindowStart: '',
+  submissionWindowEnd: '',
+  executionWindowStart: '',
+  executionWindowEnd: '',
 };
 
 const DEFAULT_STAGES: EditStage[] = [
@@ -23,6 +39,7 @@ const DEFAULT_STAGES: EditStage[] = [
     weight: 40,
     evaluatorsRequired: 1,
     submissionRequired: true,
+    ...EMPTY_WINDOWS,
     criteria: [
       { name: 'Clarity', description: '', weight: 50, maxScore: 10 },
       { name: 'Feasibility', description: '', weight: 50, maxScore: 10 },
@@ -33,6 +50,7 @@ const DEFAULT_STAGES: EditStage[] = [
     weight: 60,
     evaluatorsRequired: 1,
     submissionRequired: false,
+    ...EMPTY_WINDOWS,
     criteria: [{ name: 'Implementation', description: '', weight: 100, maxScore: 100 }],
   },
 ];
@@ -41,8 +59,12 @@ const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
 
 export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
   const { data: saved } = useEvaluationConfig(cpiId);
+  const { data: cpi } = useCpiDetail(cpiId);
   const setConfig = useSetEvaluationConfig(cpiId);
   const assignEvaluator = useAssignStageEvaluator(cpiId);
+
+  // The CPI's evaluator pool — stage evaluators must come from here.
+  const evaluatorPool = cpi?.evaluators ?? [];
 
   const [stages, setStages] = useState<EditStage[]>(DEFAULT_STAGES);
   const [evaluatorInputs, setEvaluatorInputs] = useState<Record<string, string>>({});
@@ -69,6 +91,10 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
       weight: s.weight,
       evaluatorsRequired: s.evaluatorsRequired,
       submissionRequired: s.submissionRequired,
+      submissionWindowStart: toIso(s.submissionWindowStart),
+      submissionWindowEnd: toIso(s.submissionWindowEnd),
+      executionWindowStart: toIso(s.executionWindowStart),
+      executionWindowEnd: toIso(s.executionWindowEnd),
       criteria: s.criteria.map((c) => ({
         name: c.name,
         description: c.description || undefined,
@@ -139,6 +165,49 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                 )}
               </div>
 
+              {/* Optional per-stage scheduling windows */}
+              <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 pl-3 text-xs text-gray-500">
+                <label className="flex flex-col">
+                  Submission opens
+                  <input
+                    type="datetime-local"
+                    value={stage.submissionWindowStart}
+                    onChange={(e) => updateStage(si, { submissionWindowStart: e.target.value })}
+                    className="mt-0.5 rounded border border-gray-300 px-1 py-0.5"
+                  />
+                </label>
+                <label className="flex flex-col">
+                  Submission closes
+                  <input
+                    type="datetime-local"
+                    value={stage.submissionWindowEnd}
+                    onChange={(e) => updateStage(si, { submissionWindowEnd: e.target.value })}
+                    className="mt-0.5 rounded border border-gray-300 px-1 py-0.5"
+                  />
+                </label>
+                <label className="flex flex-col">
+                  Scoring opens
+                  <input
+                    type="datetime-local"
+                    value={stage.executionWindowStart}
+                    onChange={(e) => updateStage(si, { executionWindowStart: e.target.value })}
+                    className="mt-0.5 rounded border border-gray-300 px-1 py-0.5"
+                  />
+                </label>
+                <label className="flex flex-col">
+                  Scoring closes
+                  <input
+                    type="datetime-local"
+                    value={stage.executionWindowEnd}
+                    onChange={(e) => updateStage(si, { executionWindowEnd: e.target.value })}
+                    className="mt-0.5 rounded border border-gray-300 px-1 py-0.5"
+                  />
+                </label>
+                <p className="col-span-2 text-gray-400">
+                  Leave blank to use the phase window. Set both ends to give this stage its own time.
+                </p>
+              </div>
+
               {/* Criteria */}
               <div className="mt-2 space-y-1 pl-3">
                 {stage.criteria.map((c, ci) => (
@@ -205,7 +274,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
           onClick={() =>
             setStages((prev) => [
               ...prev,
-              { name: '', weight: 0, evaluatorsRequired: 1, submissionRequired: false, criteria: [{ name: '', description: '', weight: 100, maxScore: 10 }] },
+              { name: '', weight: 0, evaluatorsRequired: 1, submissionRequired: false, ...EMPTY_WINDOWS, criteria: [{ name: '', description: '', weight: 100, maxScore: 10 }] },
             ])
           }
           className="text-xs text-blue-600 hover:underline"
@@ -245,12 +314,19 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                     : 'none'}
                 </p>
                 <div className="mt-1 flex gap-1">
-                  <input
+                  <select
                     value={evaluatorInputs[stage.id] ?? ''}
                     onChange={(e) => setEvaluatorInputs((p) => ({ ...p, [stage.id]: e.target.value }))}
-                    placeholder="evaluator userId"
                     className="rounded border border-gray-300 px-2 py-0.5 text-xs"
-                  />
+                  >
+                    <option value="">Select evaluator…</option>
+                    {evaluatorPool.map((ev) => (
+                      <option key={ev.id} value={ev.lecturer.user.id}>
+                        {personName(ev.lecturer.user)}
+                        {ev.isHeadJudge ? ' (Head Judge)' : ''}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     onClick={() =>
                       assignEvaluator.mutate(

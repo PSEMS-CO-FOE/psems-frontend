@@ -15,18 +15,26 @@ export interface SavedStage {
   weight: number;
   evaluatorsRequired: number;
   submissionRequired: boolean;
+  submissionWindowStart: string | null;
+  submissionWindowEnd: string | null;
+  executionWindowStart: string | null;
+  executionWindowEnd: string | null;
   criteria: SavedCriterion[];
   evaluators: {
     cpiEvaluator: { lecturer: { user: { email: string; fullName: string | null } } };
   }[];
 }
 
-// Shape sent to PUT /config.
+// Shape sent to PUT /config. Windows are optional ISO strings (both or neither).
 export interface ConfigInputStage {
   name: string;
   weight: number;
   evaluatorsRequired: number;
   submissionRequired: boolean;
+  submissionWindowStart?: string;
+  submissionWindowEnd?: string;
+  executionWindowStart?: string;
+  executionWindowEnd?: string;
   criteria: { name: string; description?: string; weight: number; maxScore: number }[];
 }
 

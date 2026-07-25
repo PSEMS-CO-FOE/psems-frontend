@@ -3,11 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCourses, useCreateCpi } from '@/features/courses/useCourses';
+import { PROJECT_TYPE_SUGGESTIONS } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 
 const createCpiSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  projectType: z.enum(['FYP', 'DATA_MANAGEMENT', 'HPC', 'INNOVATION_CHALLENGE']),
+  projectType: z.string().min(1, 'Project type is required'),
   participationMode: z.enum(['GROUP', 'INDIVIDUAL']),
   department: z.string().min(1, 'Department is required'),
   academicYear: z.string().min(1, 'Academic year is required'),
@@ -27,7 +28,7 @@ export function CpiListPage() {
   } = useForm<CreateCpiForm>({
     resolver: zodResolver(createCpiSchema),
     defaultValues: {
-      projectType: 'FYP',
+      projectType: 'Final Year Project',
       participationMode: 'GROUP',
       academicYear: '2026/2027',
     },
@@ -61,15 +62,20 @@ export function CpiListPage() {
 
           <label className="block text-sm text-gray-700">
             Project type
-            <select
+            <input
               {...register('projectType')}
+              list="project-type-suggestions"
               className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="FYP">FYP</option>
-              <option value="DATA_MANAGEMENT">Data Management</option>
-              <option value="HPC">HPC</option>
-              <option value="INNOVATION_CHALLENGE">Innovation Challenge</option>
-            </select>
+              placeholder="e.g. Final Year Project"
+            />
+            <datalist id="project-type-suggestions">
+              {PROJECT_TYPE_SUGGESTIONS.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+            {errors.projectType && (
+              <p className="mt-1 text-xs text-red-600">{errors.projectType.message}</p>
+            )}
           </label>
 
           <label className="block text-sm text-gray-700">
