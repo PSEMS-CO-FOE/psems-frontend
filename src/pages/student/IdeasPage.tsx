@@ -1,24 +1,85 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useIdeas, usePostIdea, type Idea } from '@/features/ideas/useIdeas';
+import { useIdeas, usePostIdea, useUpdateIdea, type Idea } from '@/features/ideas/useIdeas';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 
-function IdeaCard({ idea }: { idea: Idea }) {
+function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
+  // A student only ever sees their own group's student-authored ideas, so any
+  // STUDENT idea here is editable by the group.
+  const editable = idea.authorType === 'STUDENT';
+  const update = useUpdateIdea(cpiId);
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(idea.title);
+  const [description, setDescription] = useState(idea.description);
+
+  const save = () =>
+    update.mutate(
+      { ideaId: idea.id, title, description },
+      { onSuccess: () => setEditing(false) },
+    );
+
   return (
     <li className="rounded-lg border bg-white p-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-gray-800">{idea.title}</p>
-        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-          {idea.authorType}
-        </span>
+        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{idea.authorType}</span>
       </div>
       <p className="mt-1 text-xs text-gray-600">{idea.description}</p>
       <p className="mt-2 text-xs text-gray-400">
         by {personName(idea.author)}
         {idea.group && ` · ${idea.group.name}`}
-        {idea.approvalStatus && ` · ${idea.approvalStatus}`}
+        {idea.approvalStatus && ` · ${idea.approvalStatus.replace('_', ' ')}`}
       </p>
+
+      {idea.approvalStatus === 'REVISION_REQUESTED' && idea.revisionNote && (
+        <p className="mt-2 rounded bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
+          Revision requested: {idea.revisionNote}
+        </p>
+      )}
+
+      {editable && !editing && idea.approvalStatus !== 'APPROVED' && idea.approvalStatus !== 'REJECTED' && (
+        <button
+          onClick={() => setEditing(true)}
+          className="mt-2 rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100"
+        >
+          Edit &amp; resubmit
+        </button>
+      )}
+
+      {editing && (
+        <div className="mt-2 space-y-2">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={save}
+              disabled={!title || !description || update.isPending}
+              className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+            >
+              {update.isPending ? '…' : 'Resubmit'}
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+          </div>
+          {update.isError && (
+            <p className="text-xs text-red-600">{getApiErrorMessage(update.error)}</p>
+          )}
+        </div>
+      )}
     </li>
   );
 }
@@ -83,7 +144,7 @@ export function IdeasPage() {
         {ideas && ideas.length > 0 && (
           <ul className="space-y-2">
             {ideas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} />
+              <IdeaCard key={idea.id} cpiId={cpiId} idea={idea} />
             ))}
           </ul>
         )}

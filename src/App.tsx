@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { HomeRedirect } from '@/routes/HomeRedirect';
 import { LoginPage } from '@/pages/LoginPage';
+import { RegisterPage } from '@/pages/RegisterPage';
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { LecturerApprovalPage } from '@/pages/admin/LecturerApprovalPage';
@@ -23,11 +24,13 @@ import { LecturerCpiLayout } from '@/pages/lecturer/LecturerCpiLayout';
 import { LecturerSessionsPage } from '@/pages/lecturer/LecturerSessionsPage';
 import { AvailabilityPage } from '@/pages/lecturer/AvailabilityPage';
 import { ReviewPage } from '@/pages/lecturer/ReviewPage';
+import { SupervisorSelectionPage } from '@/pages/lecturer/SupervisorSelectionPage';
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
       {/* Not role-gated: any authenticated user with the force flag lands here. */}
       <Route
@@ -83,6 +86,7 @@ export default function App() {
         <Route path="cpi/:cpiId" element={<LecturerCpiLayout />}>
           <Route index element={<LecturerSessionsPage />} />
           <Route path="sessions" element={<LecturerSessionsPage />} />
+          <Route path="selection" element={<SupervisorSelectionPage />} />
           <Route path="availability" element={<AvailabilityPage />} />
           <Route path="review" element={<ReviewPage />} />
         </Route>
