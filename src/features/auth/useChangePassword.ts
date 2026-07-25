@@ -4,7 +4,9 @@ import { api } from '@/lib/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 
 interface ChangePasswordArgs {
-  currentPassword: string;
+  // Omitted on the forced first-login change — the backend skips the check
+  // there (the login seconds ago already proved the current password).
+  currentPassword?: string;
   newPassword: string;
 }
 

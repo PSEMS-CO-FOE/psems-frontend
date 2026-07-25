@@ -13,6 +13,11 @@ export interface AllocationMap {
   finalized: boolean;
   allocations: AllocationEntry[];
   unmatchedGroups: { id: string; name: string }[];
+  // Supervisor-Led only: supervisor-posted ideas no group was allocated.
+  unmatchedSupervisorIdeas: { id: string; title: string }[];
+  // Pickers for the override form (so no UUIDs get typed).
+  ideas: { id: string; title: string; authorType: string }[];
+  supervisors: { userId: string; email: string; fullName: string | null }[];
 }
 
 function allocationKey(cpiId: string) {
@@ -52,4 +57,11 @@ export function useOverrideAllocation(cpiId: string) {
 
 export function useFinalizeAllocations(cpiId: string) {
   return useAllocationAction(cpiId, () => api.post(`/courses/${cpiId}/allocations/finalize`));
+}
+
+// Coordinator-Managed only: mark a pairing reviewed/confirmed before finalize.
+export function useConfirmAllocation(cpiId: string) {
+  return useAllocationAction(cpiId, (groupId: string) =>
+    api.post(`/courses/${cpiId}/allocations/${groupId}/confirm`),
+  );
 }

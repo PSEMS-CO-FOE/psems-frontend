@@ -3,9 +3,23 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { passwordPolicySchema } from '@/features/auth/passwordPolicy';
 import { useChangePassword } from '@/features/auth/useChangePassword';
+import { useAuthStore } from '@/stores/authStore';
 import { getApiErrorMessage } from '@/lib/apiError';
 
-const changePasswordSchema = z
+// Two shapes: the forced first-login change omits currentPassword (the backend
+// skips that check when forcePasswordChange is set); a later voluntary change
+// still requires it.
+const forcedSchema = z
+  .object({
+    newPassword: passwordPolicySchema,
+    confirmNewPassword: z.string().min(1, 'Please confirm your new password'),
+  })
+  .refine((v) => v.newPassword === v.confirmNewPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmNewPassword'],
+  });
+
+const voluntarySchema = z
   .object({
     currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: passwordPolicySchema,
@@ -16,7 +30,11 @@ const changePasswordSchema = z
     path: ['confirmNewPassword'],
   });
 
-type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
+type ChangePasswordForm = {
+  currentPassword?: string;
+  newPassword: string;
+  confirmNewPassword: string;
+};
 
 const RULES: { label: string; test: (v: string) => boolean }[] = [
   { label: 'At least 10 characters', test: (v) => v.length >= 10 },
@@ -28,18 +46,21 @@ const RULES: { label: string; test: (v: string) => boolean }[] = [
 
 export function ChangePasswordPage() {
   const changePassword = useChangePassword();
+  const forced = useAuthStore((s) => s.forcePasswordChange);
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<ChangePasswordForm>({ resolver: zodResolver(changePasswordSchema) });
+  } = useForm<ChangePasswordForm>({
+    resolver: zodResolver(forced ? forcedSchema : voluntarySchema),
+  });
 
   const newPasswordValue = watch('newPassword') ?? '';
 
   const onSubmit = (values: ChangePasswordForm) =>
     changePassword.mutate({
-      currentPassword: values.currentPassword,
+      currentPassword: forced ? undefined : values.currentPassword,
       newPassword: values.newPassword,
     });
 
@@ -52,7 +73,9 @@ export function ChangePasswordPage() {
       >
         <h1 className="text-xl font-bold text-gray-800">Change your password</h1>
         <p className="mt-1 text-sm text-gray-500">
-          You must set a new password before continuing.
+          {forced
+            ? 'Set a new password to finish signing in.'
+            : 'Enter your current password and choose a new one.'}
         </p>
 
         {changePassword.isError && (
@@ -61,17 +84,23 @@ export function ChangePasswordPage() {
           </p>
         )}
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">
-          Current password
-          <input
-            type="password"
-            autoComplete="current-password"
-            {...register('currentPassword')}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
-          />
-        </label>
-        {errors.currentPassword && (
-          <p className="mt-1 text-xs text-red-600">{errors.currentPassword.message}</p>
+        {/* Current password: only for a later voluntary change, not the forced
+            first-login reset (the login just proved the current password). */}
+        {!forced && (
+          <>
+            <label className="mt-4 block text-sm font-medium text-gray-700">
+              Current password
+              <input
+                type="password"
+                autoComplete="current-password"
+                {...register('currentPassword')}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+              />
+            </label>
+            {errors.currentPassword && (
+              <p className="mt-1 text-xs text-red-600">{errors.currentPassword.message}</p>
+            )}
+          </>
         )}
 
         <label className="mt-4 block text-sm font-medium text-gray-700">

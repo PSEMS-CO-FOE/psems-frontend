@@ -25,8 +25,29 @@ export interface MyGroupResponse {
   locked: boolean;
 }
 
+export interface PendingGroupInvite {
+  groupId: string;
+  invitedAt: string;
+  group: { id: string; name: string; leader: { email: string; fullName: string | null } };
+}
+
 function myGroupKey(cpiId: string) {
   return ['groups', 'mine', cpiId] as const;
+}
+
+function invitesKey(cpiId: string) {
+  return ['groups', 'invites', cpiId] as const;
+}
+
+export function usePendingGroupInvites(cpiId: string, enabled = true) {
+  return useQuery({
+    queryKey: invitesKey(cpiId),
+    enabled,
+    queryFn: async () => {
+      const res = await api.get<PendingGroupInvite[]>(`/courses/${cpiId}/groups/invites`);
+      return res.data;
+    },
+  });
 }
 
 export function useMyGroup(cpiId: string) {
@@ -70,6 +91,9 @@ export function useRespondGroupInvite(cpiId: string) {
       });
       return res.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: myGroupKey(cpiId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: myGroupKey(cpiId) });
+      queryClient.invalidateQueries({ queryKey: invitesKey(cpiId) });
+    },
   });
 }

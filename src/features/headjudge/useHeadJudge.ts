@@ -9,7 +9,7 @@ export interface ReviewCriterion {
   spread: number;
   flagged: boolean;
   scores: {
-    evaluator: { email: string; fullName: string | null };
+    evaluator: { id: string; email: string; fullName: string | null };
     score: number;
     comment: string | null;
     deviation: number;
