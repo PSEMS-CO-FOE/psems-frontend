@@ -7,7 +7,7 @@ import {
 } from '@/features/scheduling/useScheduling';
 import { useEvaluationConfig, type SavedCriterion } from '@/features/evaluations/useEvaluationConfig';
 import { useSessionScores, useSubmitScores } from '@/features/scoring/useScoring';
-import { getApiErrorMessage } from '@/lib/apiError';
+import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
 
 function formatDuration(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
@@ -215,6 +215,15 @@ export function LecturerSessionsPage() {
 
   if (isLoading) return <p className="text-sm text-gray-500">Loading sessions…</p>;
   if (isError) {
+    // Not an evaluator here (e.g. a supervisor who opened this tab) — inform,
+    // don't alarm.
+    if (getApiErrorStatus(error) === 403) {
+      return (
+        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+          This tab is for assigned evaluators — you have no evaluation sessions in this course.
+        </p>
+      );
+    }
     return (
       <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
         {getApiErrorMessage(error, 'Could not load sessions')}

@@ -37,6 +37,9 @@ export function AdminLayout() {
           <NavLink to="/admin/students" className={tabClass}>
             Student Provisioning
           </NavLink>
+          <NavLink to="/admin/coordinators" className={tabClass}>
+            Coordinators
+          </NavLink>
         </nav>
       </header>
 

@@ -7,6 +7,7 @@ import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { LecturerApprovalPage } from '@/pages/admin/LecturerApprovalPage';
 import { StudentProvisioningPage } from '@/pages/admin/StudentProvisioningPage';
+import { AdminCoordinatorsPage } from '@/pages/admin/AdminCoordinatorsPage';
 import { CoordinatorLayout } from '@/pages/coordinator/CoordinatorLayout';
 import { CpiListPage } from '@/pages/coordinator/CpiListPage';
 import { CpiDetailPage } from '@/pages/coordinator/CpiDetailPage';
@@ -20,11 +21,12 @@ import { SubmissionsPage } from '@/pages/student/SubmissionsPage';
 import { MarksPage } from '@/pages/student/MarksPage';
 import { LecturerLayout } from '@/pages/lecturer/LecturerLayout';
 import { LecturerEnterCpiPage } from '@/pages/lecturer/LecturerEnterCpiPage';
-import { LecturerCpiLayout } from '@/pages/lecturer/LecturerCpiLayout';
+import { LecturerCpiLayout, LecturerCpiIndex } from '@/pages/lecturer/LecturerCpiLayout';
 import { LecturerSessionsPage } from '@/pages/lecturer/LecturerSessionsPage';
 import { AvailabilityPage } from '@/pages/lecturer/AvailabilityPage';
 import { ReviewPage } from '@/pages/lecturer/ReviewPage';
 import { SupervisorSelectionPage } from '@/pages/lecturer/SupervisorSelectionPage';
+import { LecturerIdeasPage } from '@/pages/lecturer/LecturerIdeasPage';
 
 export default function App() {
   return (
@@ -62,6 +64,7 @@ export default function App() {
         <Route index element={<Navigate to="/admin/lecturers" replace />} />
         <Route path="lecturers" element={<LecturerApprovalPage />} />
         <Route path="students" element={<StudentProvisioningPage />} />
+        <Route path="coordinators" element={<AdminCoordinatorsPage />} />
       </Route>
       <Route
         path="/coordinator"
@@ -84,8 +87,9 @@ export default function App() {
       >
         <Route index element={<LecturerEnterCpiPage />} />
         <Route path="cpi/:cpiId" element={<LecturerCpiLayout />}>
-          <Route index element={<LecturerSessionsPage />} />
+          <Route index element={<LecturerCpiIndex />} />
           <Route path="sessions" element={<LecturerSessionsPage />} />
+          <Route path="ideas" element={<LecturerIdeasPage />} />
           <Route path="selection" element={<SupervisorSelectionPage />} />
           <Route path="availability" element={<AvailabilityPage />} />
           <Route path="review" element={<ReviewPage />} />
