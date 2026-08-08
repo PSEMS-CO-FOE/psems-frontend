@@ -8,6 +8,7 @@ import { CpiIdeasModeration } from './CpiIdeasModeration';
 import { CpiSelections } from './CpiSelections';
 import { CpiAllocation } from './CpiAllocation';
 import { CpiEvaluationConfig } from './CpiEvaluationConfig';
+import { CpiSubmissions } from './CpiSubmissions';
 import { CpiScheduling } from './CpiScheduling';
 import { CpiMarks } from './CpiMarks';
 
@@ -190,6 +191,8 @@ export function CpiDetailPage() {
       <CpiAllocation cpiId={cpiId} mode={cpi.mode} />
 
       <CpiEvaluationConfig cpiId={cpiId} />
+
+      <CpiSubmissions cpiId={cpiId} />
 
       <CpiScheduling cpiId={cpiId} />
 

@@ -7,6 +7,10 @@ interface ApiErrorBody {
   code?: string;
 }
 
+export function getApiErrorStatus(err: unknown): number | undefined {
+  return err instanceof AxiosError ? err.response?.status : undefined;
+}
+
 export function getApiErrorMessage(err: unknown, fallback = 'Something went wrong'): string {
   if (err instanceof AxiosError) {
     const body = err.response?.data as ApiErrorBody | undefined;

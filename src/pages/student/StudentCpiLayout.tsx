@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useParams } from 'react-router-dom';
+import { Link, NavLink, Outlet, useParams } from 'react-router-dom';
 import { useCpiSummary } from '@/features/courses/useCourses';
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
@@ -12,6 +12,9 @@ export function StudentCpiLayout() {
 
   return (
     <div className="space-y-4">
+      <Link to="/student" className="text-sm text-blue-600 hover:underline">
+        ← My courses
+      </Link>
       <p className="text-sm font-semibold text-gray-700">
         {cpi?.name ?? 'Course'}
         {cpi && (

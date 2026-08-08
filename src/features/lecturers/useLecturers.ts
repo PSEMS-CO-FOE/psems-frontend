@@ -19,7 +19,8 @@ export function useRegisterLecturer() {
   });
 }
 
-// Approved lecturer pool, for coordinator assignment pickers.
+// Approved lecturer pool — for coordinator assignment pickers and the admin's
+// promote-to-coordinator screen.
 export function useApprovedLecturers(enabled = true) {
   return useQuery({
     queryKey: ['lecturers', 'approved'],
@@ -28,6 +29,18 @@ export function useApprovedLecturers(enabled = true) {
       const res = await api.get<ApprovedLecturer[]>('/lecturers/approved');
       return res.data;
     },
+  });
+}
+
+// System Admin promotes an approved lecturer to Course Coordinator.
+export function useAssignCoordinator() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await api.post(`/users/${userId}/assign-coordinator`);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lecturers', 'approved'] }),
   });
 }
 
