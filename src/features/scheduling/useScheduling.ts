@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
 
-export type SessionStatus = 'SCHEDULED' | 'AWAITING_HEAD_JUDGE' | 'CORRECTION_REQUESTED' | 'FINALIZED';
+export type SessionStatus = 'SCHEDULED' | 'AWAITING_REVIEW' | 'CORRECTION_REQUESTED' | 'FINALIZED';
 
 export interface EvaluationSession {
   id: string;

@@ -37,6 +37,6 @@ export function useSetHeadJudge(cpiId: string) {
 
 export function useFinalizeCoordinatorManaged(cpiId: string) {
   return useCpiAction(cpiId, () =>
-    api.post(`/courses/${cpiId}/finalize-coordinator-managed`),
+    api.post(`/courses/${cpiId}/coordinator-managed-preset`),
   );
 }
