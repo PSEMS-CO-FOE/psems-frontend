@@ -5,8 +5,14 @@ import {
   useControlTimer,
   type EvaluationSession,
 } from '@/features/scheduling/useScheduling';
-import { useEvaluationConfig, type SavedCriterion } from '@/features/evaluations/useEvaluationConfig';
+import {
+  useEvaluationConfig,
+  type PanelScoreVisibility,
+  type SavedCriterion,
+} from '@/features/evaluations/useEvaluationConfig';
 import { useSessionScores, useSubmitScores } from '@/features/scoring/useScoring';
+import { useCpiPolicy } from '@/features/policy/usePolicy';
+import { useSessionPanel } from '@/features/panel/usePanel';
 import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
 
 function formatDuration(totalSeconds: number): string {
@@ -94,20 +100,27 @@ function SessionScorer({
   cpiId,
   session,
   criteria,
+  scoreVisibility,
 }: {
   cpiId: string;
   session: EvaluationSession;
   criteria: SavedCriterion[];
+  scoreVisibility: PanelScoreVisibility;
 }) {
   const { data: ownScores } = useSessionScores(cpiId, session.id);
   const submit = useSubmitScores(cpiId, session.id);
+  const { data: policy } = useCpiPolicy(cpiId);
+  const { data: panel } = useSessionPanel(cpiId, session.id);
   // Scoring is only open while SCHEDULED (still collecting) or CORRECTION_REQUESTED
-  // (reopened for this evaluator). Once AWAITING_HEAD_JUDGE or FINALIZED, the
-  // backend rejects writes — mirror that here so inputs are disabled too.
+  // (reopened for this panelist). Once AWAITING_REVIEW or FINALIZED, the backend
+  // rejects writes — mirror that here so inputs are disabled too.
   const locked = session.status !== 'SCHEDULED' && session.status !== 'CORRECTION_REQUESTED';
+  const commentRequired = policy?.requireOverallComment ?? true;
+  const openVisibility = scoreVisibility !== 'ISOLATED';
 
   // Local form state: criterionId -> { score, comment }.
   const [values, setValues] = useState<Record<string, { score: string; comment: string }>>({});
+  const [overallComment, setOverallComment] = useState('');
 
   useEffect(() => {
     if (!ownScores) return;
@@ -122,6 +135,13 @@ function SessionScorer({
     setValues(next);
   }, [ownScores, criteria]);
 
+  // Reload an overall comment already saved for this seat, so resubmitting does
+  // not force the panelist to retype it.
+  useEffect(() => {
+    const mine = panel?.panelists.find((p) => p.evaluation);
+    if (mine?.evaluation) setOverallComment(mine.evaluation.overallComment);
+  }, [panel]);
+
   const setField = (cid: string, field: 'score' | 'comment', v: string) =>
     setValues((prev) => ({ ...prev, [cid]: { ...prev[cid], [field]: v } }));
 
@@ -133,7 +153,7 @@ function SessionScorer({
         score: Number(values[c.id].score),
         comment: values[c.id].comment || undefined,
       }));
-    submit.mutate(payload);
+    submit.mutate({ scores: payload, overallComment: overallComment.trim() || undefined });
   };
 
   return (
@@ -158,6 +178,12 @@ function SessionScorer({
       )}
 
       <PresentationTimer cpiId={cpiId} session={session} />
+
+      {openVisibility && (
+        <p className="mt-2 rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          This evaluation is open: everyone on the panel can see each other&rsquo;s marks.
+        </p>
+      )}
 
       <div className="mt-3 space-y-2">
         {criteria.map((c) => (
@@ -184,9 +210,23 @@ function SessionScorer({
         ))}
       </div>
 
+      <div className="mt-3">
+        <label className="text-xs font-medium text-gray-700">
+          Overall comment{commentRequired && <span className="text-red-600"> *</span>}
+        </label>
+        <textarea
+          value={overallComment}
+          onChange={(e) => setOverallComment(e.target.value)}
+          disabled={locked}
+          rows={3}
+          placeholder="Your overall assessment of this evaluation"
+          className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+        />
+      </div>
+
       {locked && (
         <p className="mt-2 text-xs text-gray-500">
-          Scoring is closed for this session (awaiting or completed Head Judge review).
+          Scoring is closed for this session — it is awaiting or has completed review.
         </p>
       )}
       {submit.isError && (
@@ -197,7 +237,7 @@ function SessionScorer({
       {!locked && (
         <button
           onClick={onSubmit}
-          disabled={submit.isPending}
+          disabled={submit.isPending || (commentRequired && !overallComment.trim())}
           className="mt-3 rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
         >
           {submit.isPending ? '…' : 'Submit scores'}
@@ -238,8 +278,7 @@ export function LecturerSessionsPage() {
     );
   }
 
-  const criteriaFor = (stageId: string) =>
-    config?.find((s) => s.id === stageId)?.criteria ?? [];
+  const stageFor = (stageId: string) => config?.find((s) => s.id === stageId);
 
   return (
     <div className="space-y-3">
@@ -248,7 +287,8 @@ export function LecturerSessionsPage() {
           key={session.id}
           cpiId={cpiId}
           session={session}
-          criteria={criteriaFor(session.stage.id)}
+          criteria={stageFor(session.stage.id)?.criteria ?? []}
+          scoreVisibility={stageFor(session.stage.id)?.panelScoreVisibility ?? 'ISOLATED'}
         />
       ))}
     </div>

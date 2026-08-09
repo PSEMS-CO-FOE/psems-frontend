@@ -4,16 +4,28 @@ import {
   useSetEvaluationConfig,
   useAssignStageEvaluator,
   type ConfigInputStage,
+  type PanelScoreVisibility,
 } from '@/features/evaluations/useEvaluationConfig';
+import { PANEL_ROLES, roleLabel, type MarkCounting, type PanelRole } from '@/features/panel/usePanel';
 import { useCpiDetail } from '@/features/courses/useCpiDetail';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 
 type EditCriterion = { name: string; description: string; weight: number; maxScore: number };
+// A stage's expected composition. Minimum 0 on every role with openToAll set is
+// the open event: nobody assigned, whoever attends may mark.
+type EditPanelRule = {
+  role: PanelRole;
+  minRequired: number;
+  maxAllowed: string;
+  markCounting: MarkCounting;
+  openToAll: boolean;
+};
 type EditStage = {
   name: string;
   weight: number;
-  evaluatorsRequired: number;
+  panelScoreVisibility: PanelScoreVisibility;
+  panelRules: EditPanelRule[];
   submissionRequired: boolean;
   // datetime-local strings ('' = unset); each pair is sent only if both are set.
   submissionWindowStart: string;
@@ -26,6 +38,14 @@ type EditStage = {
 // datetime-local ('YYYY-MM-DDTHH:mm') → ISO, or undefined when blank.
 const toIso = (v: string): string | undefined => (v ? new Date(v).toISOString() : undefined);
 
+const defaultRule = (role: PanelRole, minRequired: number): EditPanelRule => ({
+  role,
+  minRequired,
+  maxAllowed: '',
+  markCounting: 'COUNTED',
+  openToAll: false,
+});
+
 const EMPTY_WINDOWS = {
   submissionWindowStart: '',
   submissionWindowEnd: '',
@@ -37,7 +57,8 @@ const DEFAULT_STAGES: EditStage[] = [
   {
     name: 'Proposal',
     weight: 40,
-    evaluatorsRequired: 1,
+    panelScoreVisibility: 'ISOLATED',
+    panelRules: [defaultRule('EVALUATOR', 1)],
     submissionRequired: true,
     ...EMPTY_WINDOWS,
     criteria: [
@@ -48,7 +69,8 @@ const DEFAULT_STAGES: EditStage[] = [
   {
     name: 'Final',
     weight: 60,
-    evaluatorsRequired: 1,
+    panelScoreVisibility: 'ISOLATED',
+    panelRules: [defaultRule('EVALUATOR', 1)],
     submissionRequired: false,
     ...EMPTY_WINDOWS,
     criteria: [{ name: 'Implementation', description: '', weight: 100, maxScore: 100 }],
@@ -76,6 +98,14 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
 
   const updateStage = (i: number, patch: Partial<EditStage>) =>
     setStages((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  const updateRule = (si: number, ri: number, patch: Partial<EditPanelRule>) =>
+    setStages((prev) =>
+      prev.map((s, idx) =>
+        idx === si
+          ? { ...s, panelRules: s.panelRules.map((r, rIdx) => (rIdx === ri ? { ...r, ...patch } : r)) }
+          : s,
+      ),
+    );
   const updateCriterion = (si: number, ci: number, patch: Partial<EditCriterion>) =>
     setStages((prev) =>
       prev.map((s, idx) =>
@@ -89,7 +119,14 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
     const payload: ConfigInputStage[] = stages.map((s) => ({
       name: s.name,
       weight: s.weight,
-      evaluatorsRequired: s.evaluatorsRequired,
+      panelScoreVisibility: s.panelScoreVisibility,
+      panelRules: s.panelRules.map((r) => ({
+        role: r.role,
+        minRequired: r.minRequired,
+        maxAllowed: r.maxAllowed ? Number(r.maxAllowed) : null,
+        markCounting: r.markCounting,
+        openToAll: r.openToAll,
+      })),
       submissionRequired: s.submissionRequired,
       submissionWindowStart: toIso(s.submissionWindowStart),
       submissionWindowEnd: toIso(s.submissionWindowEnd),
@@ -139,13 +176,18 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                   />
                 </label>
                 <label className="text-xs text-gray-500">
-                  evaluators
-                  <input
-                    type="number"
-                    value={stage.evaluatorsRequired}
-                    onChange={(e) => updateStage(si, { evaluatorsRequired: Number(e.target.value) })}
-                    className="ml-1 w-12 rounded border border-gray-300 px-1 py-1 text-xs"
-                  />
+                  scores visible
+                  <select
+                    value={stage.panelScoreVisibility}
+                    onChange={(e) =>
+                      updateStage(si, { panelScoreVisibility: e.target.value as PanelScoreVisibility })
+                    }
+                    className="ml-1 rounded border border-gray-300 px-1 py-1 text-xs"
+                  >
+                    <option value="ISOLATED">only to each panelist</option>
+                    <option value="OPEN_WITH_NAMES">to the whole panel, with names</option>
+                    <option value="OPEN_ANONYMOUS">to the whole panel, anonymously</option>
+                  </select>
                 </label>
                 <label className="flex items-center gap-1 text-xs text-gray-500">
                   <input
@@ -205,6 +247,84 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                 </label>
                 <p className="col-span-2 text-gray-400">
                   Leave blank to use the phase window. Set both ends to give this stage its own time.
+                </p>
+              </div>
+
+              {/* Panel composition — who this stage expects, and how their marks count. */}
+              <div className="mt-2 space-y-1 pl-3">
+                <p className="text-xs font-medium text-gray-600">Panel</p>
+                {stage.panelRules.map((rule, ri) => (
+                  <div key={ri} className="flex flex-wrap items-center gap-1">
+                    <select
+                      value={rule.role}
+                      onChange={(e) => updateRule(si, ri, { role: e.target.value as PanelRole })}
+                      className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                    >
+                      {PANEL_ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {roleLabel(r)}
+                        </option>
+                      ))}
+                    </select>
+                    <label className="text-xs text-gray-500">
+                      min
+                      <input
+                        type="number"
+                        min={0}
+                        value={rule.minRequired}
+                        onChange={(e) => updateRule(si, ri, { minRequired: Number(e.target.value) })}
+                        className="ml-1 w-12 rounded border border-gray-300 px-1 py-0.5 text-xs"
+                      />
+                    </label>
+                    <label className="text-xs text-gray-500">
+                      max
+                      <input
+                        type="number"
+                        min={1}
+                        value={rule.maxAllowed}
+                        onChange={(e) => updateRule(si, ri, { maxAllowed: e.target.value })}
+                        placeholder="any"
+                        className="ml-1 w-14 rounded border border-gray-300 px-1 py-0.5 text-xs"
+                      />
+                    </label>
+                    <select
+                      value={rule.markCounting}
+                      onChange={(e) => updateRule(si, ri, { markCounting: e.target.value as MarkCounting })}
+                      className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                    >
+                      <option value="COUNTED">marks count</option>
+                      <option value="ADVISORY">advisory only</option>
+                      <option value="COORDINATOR_DECIDES">pooled, coordinator weights</option>
+                    </select>
+                    <label className="flex items-center gap-1 text-xs text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={rule.openToAll}
+                        onChange={(e) => updateRule(si, ri, { openToAll: e.target.checked })}
+                      />
+                      anyone may join
+                    </label>
+                    <button
+                      onClick={() =>
+                        updateStage(si, { panelRules: stage.panelRules.filter((_, idx) => idx !== ri) })
+                      }
+                      className="text-xs text-red-500 hover:underline"
+                    >
+                      remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() =>
+                    updateStage(si, { panelRules: [...stage.panelRules, defaultRule('SENIOR_EVALUATOR', 0)] })
+                  }
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  + panel role
+                </button>
+                <p className="text-xs text-gray-400">
+                  With no role required, the session stays open until you close it at review — which is what an open
+                  demonstration day needs, since people arrive and leave.
                 </p>
               </div>
 
@@ -274,7 +394,15 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
           onClick={() =>
             setStages((prev) => [
               ...prev,
-              { name: '', weight: 0, evaluatorsRequired: 1, submissionRequired: false, ...EMPTY_WINDOWS, criteria: [{ name: '', description: '', weight: 100, maxScore: 10 }] },
+              {
+                name: '',
+                weight: 0,
+                panelScoreVisibility: 'ISOLATED',
+                panelRules: [defaultRule('EVALUATOR', 1)],
+                submissionRequired: false,
+                ...EMPTY_WINDOWS,
+                criteria: [{ name: '', description: '', weight: 100, maxScore: 10 }],
+              },
             ])
           }
           className="text-xs text-blue-600 hover:underline"

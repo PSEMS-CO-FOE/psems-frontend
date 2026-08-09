@@ -3,6 +3,7 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { HomeRedirect } from '@/routes/HomeRedirect';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
+import { GuestScoringPage } from '@/pages/guest/GuestScoringPage';
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { LecturerApprovalPage } from '@/pages/admin/LecturerApprovalPage';
@@ -33,6 +34,9 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      {/* Guests authenticate with the scoring link itself, so this sits outside
+          ProtectedRoute and outside every role layout. */}
+      <Route path="/guest" element={<GuestScoringPage />} />
 
       {/* Not role-gated: any authenticated user with the force flag lands here. */}
       <Route

@@ -26,16 +26,24 @@ export function useSessionScores(cpiId: string, sessionId: string, enabled = tru
   });
 }
 
+export interface SubmitScoresInput {
+  scores: { criterionId: string; studentId?: string; score: number; comment?: string }[];
+  // Mandatory unless the course's policy turns it off. The server keeps any
+  // comment already saved, so a resubmission need not repeat it.
+  overallComment?: string;
+}
+
 export function useSubmitScores(cpiId: string, sessionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (scores: { criterionId: string; score: number; comment?: string }[]) => {
-      const res = await api.post(`/courses/${cpiId}/sessions/${sessionId}/scores`, { scores });
+    mutationFn: async (input: SubmitScoresInput) => {
+      const res = await api.post(`/courses/${cpiId}/sessions/${sessionId}/scores`, input);
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scoresKey(cpiId, sessionId) });
       queryClient.invalidateQueries({ queryKey: ['sessions', cpiId] });
+      queryClient.invalidateQueries({ queryKey: ['panel', cpiId, sessionId] });
     },
   });
 }
