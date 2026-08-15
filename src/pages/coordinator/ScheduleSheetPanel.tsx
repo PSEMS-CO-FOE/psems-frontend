@@ -1,0 +1,82 @@
+import { useState } from 'react';
+import { useScheduleSheet } from '@/features/scheduling/useScheduling';
+import { getApiErrorMessage } from '@/lib/apiError';
+
+function formatSlot(start: string | null, end: string | null) {
+  if (!start || !end) return 'Not scheduled';
+  const from = new Date(start);
+  const to = new Date(end);
+  const date = from.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const time = (d: Date) => d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return `${date}, ${time(from)} – ${time(to)}`;
+}
+
+export function ScheduleSheetPanel({ cpiId }: { cpiId: string }) {
+  const [open, setOpen] = useState(false);
+  const { data, isLoading, isError, error } = useScheduleSheet(cpiId, open);
+
+  return (
+    <div className="border-t pt-3">
+      <div className="flex items-center gap-2">
+        <button onClick={() => setOpen((v) => !v)} className="text-xs text-blue-600 hover:underline">
+          {open ? 'Hide printable schedule' : 'Printable schedule'}
+        </button>
+        {open && data && (
+          <button
+            onClick={() => window.print()}
+            className="rounded bg-gray-700 px-2 py-0.5 text-xs text-white hover:bg-gray-600"
+          >
+            Print
+          </button>
+        )}
+      </div>
+
+      {open && isLoading && <p className="mt-2 text-xs text-gray-500">Loading…</p>}
+      {open && isError && <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(error)}</p>}
+
+      {open && data && (
+        <div className="mt-2 space-y-3 rounded border p-3">
+          <div>
+            <p className="text-sm font-semibold text-gray-800">
+              {data.courseName} <span className="font-normal text-gray-500">· {data.academicYear}</span>
+            </p>
+            {data.venue && <p className="text-xs text-gray-600">Venue: {data.venue}</p>}
+            {data.unscheduled > 0 && (
+              <p className="text-xs text-amber-700">{data.unscheduled} session(s) still have no time set.</p>
+            )}
+          </div>
+
+          {data.rows.map((row, i) => (
+            <div key={i} className="break-inside-avoid">
+              <p className="text-xs font-semibold text-gray-700">
+                {row.groupName} · {row.stageName}
+              </p>
+              <p className="text-xs text-gray-600">
+                {formatSlot(row.scheduledStart, row.scheduledEnd)}
+                {row.location && ` · ${row.location}`}
+              </p>
+              <table className="mt-1 text-xs">
+                <thead>
+                  <tr className="text-left text-gray-500">
+                    <th className="pr-4 font-medium">No</th>
+                    <th className="pr-4 font-medium">Index Number</th>
+                    <th className="font-medium">Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {row.members.map((m) => (
+                    <tr key={m.indexNumber} className="text-gray-700">
+                      <td className="pr-4">{m.no}</td>
+                      <td className="pr-4">{m.indexNumber}</td>
+                      <td>{m.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
