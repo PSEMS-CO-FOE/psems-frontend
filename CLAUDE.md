@@ -126,6 +126,16 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 
 ## Current phase
 
+**Collaboration screens COMPLETE as of 2026-08-10 (uncommitted).** `tsc -b` + `vite build` clean. Matching backend notes in `psems-backend/CLAUDE.md`.
+
+- New: `features/profiles/useProfiles.ts`, `features/courses/useSupervisorRequests.ts`; `pages/profile/ProfilePage.tsx` (About / Research / Projects-supervised tabs) and `EditProfilePage.tsx`; `pages/lecturer/DiscoverCoursesPage.tsx`; `pages/coordinator/CpiSupervisorRequests.tsx`.
+- **Profiles are not role-gated** — `/profile/:userId` and `/profile/edit` sit outside every role layout, since a student reading a supervisor's profile and a lecturer reading a student's are the same page. "My profile" is linked from all three layout headers.
+- `SelectionPage` **drops the rank picker** (interest is flat now) and gains a withdraw button per interest. `SupervisorSelectionPage` gains withdraw, "I'm interested" and "Offer to co-supervise".
+- `LecturerIdeasPage` shows each idea's supervisor list with its invitation state (accepted / not yet accepted / declined) and lets the idea's own supervisor invite a co-supervisor.
+- `CpiSessionPanels` gains a **per-stage "Apply to all groups"** block — the usual starting point, with per-session edits below it. It surfaces what the server kept and why, since anyone who already submitted marks is never removed.
+- `GroupPage` gains "Continue without a group"; `LecturerApprovalPage` gains the lecturer CSV upload.
+- **Course settings**: the toggles for co-supervisors, interest withdrawal, self-requests and individual participation are now live. Grading and availability remain disabled with a label saying what they wait on — a coordinator should never flip something that does nothing.
+
 **Restructure Wave 1 COMPLETE as of 2026-08-09 (uncommitted).** `tsc -b` + `vite build` clean. Matching backend notes in `psems-backend/CLAUDE.md`; full plan in `PSEMS_Restructure_Plan.md`.
 
 - New `features/policy/usePolicy.ts` (course settings), `features/panel/usePanel.ts` (session panels, guests, roles), `features/panel/useGuest.ts` (link-authenticated guest calls), `features/review/useReview.ts`. **`features/headjudge/` deleted** — review is no longer head-judge-specific.
