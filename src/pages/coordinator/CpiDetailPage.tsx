@@ -5,6 +5,7 @@ import { PHASE_ORDER, type CpiPhaseName } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { CpiAssignments } from './CpiAssignments';
 import { CpiPolicyPanel } from './CpiPolicyPanel';
+import { CpiSupervisorRequests } from './CpiSupervisorRequests';
 import { CpiSessionPanels } from './CpiSessionPanels';
 import { CpiIdeasModeration } from './CpiIdeasModeration';
 import { CpiSelections } from './CpiSelections';
@@ -187,6 +188,8 @@ export function CpiDetailPage() {
       <CpiPolicyPanel cpiId={cpiId} />
 
       <CpiAssignments cpiId={cpiId} mode={cpi.mode} />
+
+      <CpiSupervisorRequests cpiId={cpiId} />
 
       <CpiIdeasModeration cpiId={cpiId} />
 
