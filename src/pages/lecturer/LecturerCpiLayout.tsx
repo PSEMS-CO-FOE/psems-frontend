@@ -41,7 +41,8 @@ export function LecturerCpiLayout() {
     sessions: !known || isEvaluator,
     ideas: !known || isSupervisor,
     selection: !known || isSupervisor,
-    availability: !known || isEvaluator,
+    // Supervisors fill in availability too, not just evaluators.
+    availability: !known || isEvaluator || isSupervisor,
     review: !known || isHeadJudge,
   };
 
