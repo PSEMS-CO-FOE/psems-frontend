@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   useSelectionState,
+  useCoSupervisionInterest,
+  useLecturerInterest,
   useMarkWilling,
+  useWithdrawInterest,
   useRespondSelection,
 } from '@/features/selection/useSelection';
 import { useRequestIdeaRevision } from '@/features/ideas/useIdeas';
@@ -58,6 +61,10 @@ export function SupervisorSelectionPage() {
   const { cpiId = '' } = useParams();
   const { data, isLoading, isError, error } = useSelectionState(cpiId);
   const respond = useRespondSelection(cpiId);
+  const withdraw = useWithdrawInterest(cpiId);
+  const lecturerInterest = useLecturerInterest(cpiId);
+  const coSupervision = useCoSupervisionInterest(cpiId);
+  const [interestIdeaId, setInterestIdeaId] = useState('');
 
   if (isLoading) return <p className="text-sm text-gray-500">Loading selection…</p>;
   if (isError) {
@@ -132,19 +139,68 @@ export function SupervisorSelectionPage() {
             <SeekingIdeaRow key={s.ideaId} cpiId={cpiId} seeking={s} />
           ))}
         </ul>
+
+        {/* The mirror image of a group expressing interest: a lecturer says they
+            would like to take on a group's idea, or to co-supervise it. */}
+        <div className="mt-3 border-t pt-3">
+          <p className="text-xs font-medium text-gray-700">Express your own interest</p>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <select
+              value={interestIdeaId}
+              onChange={(e) => setInterestIdeaId(e.target.value)}
+              className="rounded border border-gray-300 px-2 py-1 text-xs"
+            >
+              <option value="">Choose an idea…</option>
+              {data.seekingIdeas.map((s) => (
+                <option key={s.ideaId} value={s.ideaId}>
+                  {s.idea.title}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => lecturerInterest.mutate(interestIdeaId)}
+              disabled={!interestIdeaId || lecturerInterest.isPending}
+              className="rounded bg-gray-700 px-2 py-1 text-xs text-white hover:bg-gray-600 disabled:opacity-50"
+            >
+              I'm interested
+            </button>
+            <button
+              onClick={() => coSupervision.mutate(interestIdeaId)}
+              disabled={!interestIdeaId || coSupervision.isPending}
+              className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Offer to co-supervise
+            </button>
+          </div>
+          {(lecturerInterest.isError || coSupervision.isError) && (
+            <p className="mt-1 text-xs text-red-600">
+              {getApiErrorMessage(lecturerInterest.error || coSupervision.error)}
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* Ideas already marked willing */}
-      {data.willingByMe.length > 0 && (
+      {/* Ideas already marked willing, now withdrawable while the phase is open */}
+      {data.willingByMe.filter((w) => !w.withdrawnAt).length > 0 && (
         <div className="rounded-lg border bg-white p-4">
           <h2 className="text-sm font-semibold text-gray-700">You marked willing on</h2>
           <ul className="mt-2 space-y-1">
-            {data.willingByMe.map((w) => (
-              <li key={w.id} className="text-xs text-gray-600">
-                {w.idea.title}
-              </li>
-            ))}
+            {data.willingByMe
+              .filter((w) => !w.withdrawnAt)
+              .map((w) => (
+                <li key={w.id} className="flex items-center gap-2 text-xs text-gray-600">
+                  <span>{w.idea.title}</span>
+                  <button
+                    onClick={() => withdraw.mutate({ ideaId: w.idea.id, type: w.type })}
+                    disabled={withdraw.isPending}
+                    className="text-red-500 hover:underline disabled:opacity-50"
+                  >
+                    withdraw
+                  </button>
+                </li>
+              ))}
           </ul>
+          {withdraw.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(withdraw.error)}</p>}
         </div>
       )}
     </div>
