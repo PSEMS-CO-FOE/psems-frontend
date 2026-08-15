@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useSessions, type EvaluationSession } from '@/features/scheduling/useScheduling';
 import { useApprovedLecturers } from '@/features/lecturers/useLecturers';
+import { useEvaluationConfig } from '@/features/evaluations/useEvaluationConfig';
 import {
   useAddPanelist,
+  useApplyStagePanel,
   useGuests,
   useInviteGuest,
   useRemovePanelist,
@@ -275,10 +277,109 @@ function GuestInviter({ cpiId, sessions }: { cpiId: string; sessions: Evaluation
   );
 }
 
+// One panel applied to every group in a stage. This is where a coordinator
+// normally starts — the same people evaluate everybody — and per-session edits
+// below then handle the exceptions.
+function StagePanelSetter({ cpiId, stageId, stageName }: { cpiId: string; stageId: string; stageName: string }) {
+  const { data: lecturers } = useApprovedLecturers();
+  const apply = useApplyStagePanel(cpiId);
+  const [rows, setRows] = useState<{ userId: string; role: PanelRole }[]>([]);
+  const [replaceExisting, setReplaceExisting] = useState(false);
+
+  const setRow = (i: number, patch: Partial<{ userId: string; role: PanelRole }>) =>
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+
+  return (
+    <div className="rounded border border-gray-200 p-2">
+      <p className="text-xs font-medium text-gray-700">Set one panel for every group — {stageName}</p>
+
+      <div className="mt-1 space-y-1">
+        {rows.map((row, i) => (
+          <div key={i} className="flex flex-wrap items-center gap-1">
+            <select
+              value={row.userId}
+              onChange={(e) => setRow(i, { userId: e.target.value })}
+              className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+            >
+              <option value="">Choose a lecturer…</option>
+              {lecturers?.map((l) => (
+                <option key={l.userId} value={l.userId}>
+                  {personName(l)}
+                </option>
+              ))}
+            </select>
+            <select
+              value={row.role}
+              onChange={(e) => setRow(i, { role: e.target.value as PanelRole })}
+              className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+            >
+              {PANEL_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {roleLabel(r)}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setRows((prev) => prev.filter((_, idx) => idx !== i))}
+              className="text-xs text-red-500 hover:underline"
+            >
+              remove
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setRows((prev) => [...prev, { userId: '', role: 'EVALUATOR' }])}
+          className="text-xs text-blue-600 hover:underline"
+        >
+          + person
+        </button>
+        <label className="flex items-center gap-1 text-xs text-gray-500">
+          <input
+            type="checkbox"
+            checked={replaceExisting}
+            onChange={(e) => setReplaceExisting(e.target.checked)}
+          />
+          remove anyone not listed
+        </label>
+        <button
+          onClick={() => apply.mutate({ stageId, panelists: rows.filter((r) => r.userId), replaceExisting })}
+          disabled={rows.filter((r) => r.userId).length === 0 || apply.isPending}
+          className="rounded bg-gray-800 px-2 py-0.5 text-xs text-white hover:bg-gray-700 disabled:opacity-50"
+        >
+          {apply.isPending ? '…' : 'Apply to all groups'}
+        </button>
+      </div>
+
+      {apply.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(apply.error)}</p>}
+      {apply.isSuccess && (
+        <div className="mt-1 text-xs">
+          <p className="text-green-700">Applied to {apply.data.appliedTo} group(s).</p>
+          {/* Someone who already marked is never removed — that would discard
+              their scoring silently. */}
+          {apply.data.kept.map((k, i) => (
+            <p key={i} className="text-amber-700">
+              Kept on {k.group}: {k.reason}
+            </p>
+          ))}
+          {apply.data.skipped.map((k, i) => (
+            <p key={i} className="text-gray-500">
+              Skipped {k.group}: {k.reason}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Panels are per session, so each group can have a different one — different
 // supervisor, different evaluators, its own guests — at the same event.
 export function CpiSessionPanels({ cpiId }: { cpiId: string }) {
   const { data: sessions, isLoading } = useSessions(cpiId);
+  const { data: config } = useEvaluationConfig(cpiId);
 
   return (
     <div className="rounded-lg border bg-white p-4">
@@ -291,6 +392,14 @@ export function CpiSessionPanels({ cpiId }: { cpiId: string }) {
       {isLoading && <p className="mt-2 text-xs text-gray-500">Loading sessions…</p>}
       {sessions && sessions.length === 0 && (
         <p className="mt-2 text-xs text-gray-500">No sessions yet — generate them in Scheduling first.</p>
+      )}
+
+      {config && config.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {config.map((stage) => (
+            <StagePanelSetter key={stage.id} cpiId={cpiId} stageId={stage.id} stageName={stage.name} />
+          ))}
+        </div>
       )}
 
       <div className="mt-3 space-y-2">

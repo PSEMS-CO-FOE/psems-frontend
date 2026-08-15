@@ -187,3 +187,35 @@ export function useRevokeGuest(cpiId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: guestsKey(cpiId) }),
   });
 }
+
+export interface StagePanelMember {
+  userId: string;
+  role: PanelRole;
+  weightPercent?: number;
+  markCounting?: MarkCounting;
+}
+
+// Set one panel for every group in a stage — the usual starting point, since the
+// same people normally evaluate everybody. Per-session edits layer on top.
+// Anyone who has already submitted marks is kept even when replacing, and the
+// response says who and why.
+export function useApplyStagePanel(cpiId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { stageId: string; panelists: StagePanelMember[]; replaceExisting?: boolean }) => {
+      const res = await api.put<{
+        appliedTo: number;
+        skipped: { group: string; reason: string }[];
+        kept: { group: string; reason: string }[];
+      }>(`/courses/${cpiId}/evaluations/stages/${args.stageId}/panel`, {
+        panelists: args.panelists,
+        replaceExisting: args.replaceExisting ?? false,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['panel'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions', cpiId] });
+    },
+  });
+}
