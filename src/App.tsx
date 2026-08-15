@@ -31,15 +31,17 @@ import { AvailabilityPage } from '@/pages/lecturer/AvailabilityPage';
 import { ReviewPage } from '@/pages/lecturer/ReviewPage';
 import { SupervisorSelectionPage } from '@/pages/lecturer/SupervisorSelectionPage';
 import { LecturerIdeasPage } from '@/pages/lecturer/LecturerIdeasPage';
+import { TimerWindowPage } from '@/pages/lecturer/TimerWindowPage';
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      {/* Guests authenticate with the scoring link itself, so this sits outside
-          ProtectedRoute and outside every role layout. */}
       <Route path="/guest" element={<GuestScoringPage />} />
+      {/* Outside ProtectedRoute: this opens in a new window with no token, so it
+          gets its own using the refresh cookie. */}
+      <Route path="/timer/:cpiId/:sessionId" element={<TimerWindowPage />} />
 
       {/* Not role-gated: any authenticated user with the force flag lands here. */}
       <Route

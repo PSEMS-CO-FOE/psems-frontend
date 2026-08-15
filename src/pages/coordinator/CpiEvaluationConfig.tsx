@@ -21,11 +21,13 @@ type EditPanelRule = {
   markCounting: MarkCounting;
   openToAll: boolean;
 };
+type EditSegment = { name: string; targetSeconds: number };
 type EditStage = {
   name: string;
   weight: number;
   panelScoreVisibility: PanelScoreVisibility;
   panelRules: EditPanelRule[];
+  timerSegments: EditSegment[];
   submissionRequired: boolean;
   // datetime-local strings ('' = unset); each pair is sent only if both are set.
   submissionWindowStart: string;
@@ -59,6 +61,7 @@ const DEFAULT_STAGES: EditStage[] = [
     weight: 40,
     panelScoreVisibility: 'ISOLATED',
     panelRules: [defaultRule('EVALUATOR', 1)],
+    timerSegments: [],
     submissionRequired: true,
     ...EMPTY_WINDOWS,
     criteria: [
@@ -71,6 +74,7 @@ const DEFAULT_STAGES: EditStage[] = [
     weight: 60,
     panelScoreVisibility: 'ISOLATED',
     panelRules: [defaultRule('EVALUATOR', 1)],
+    timerSegments: [],
     submissionRequired: false,
     ...EMPTY_WINDOWS,
     criteria: [{ name: 'Implementation', description: '', weight: 100, maxScore: 100 }],
@@ -106,6 +110,14 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
           : s,
       ),
     );
+  const updateSegment = (si: number, gi: number, patch: Partial<EditSegment>) =>
+    setStages((prev) =>
+      prev.map((s, idx) =>
+        idx === si
+          ? { ...s, timerSegments: s.timerSegments.map((g, gIdx) => (gIdx === gi ? { ...g, ...patch } : g)) }
+          : s,
+      ),
+    );
   const updateCriterion = (si: number, ci: number, patch: Partial<EditCriterion>) =>
     setStages((prev) =>
       prev.map((s, idx) =>
@@ -127,6 +139,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
         markCounting: r.markCounting,
         openToAll: r.openToAll,
       })),
+      timerSegments: s.timerSegments,
       submissionRequired: s.submissionRequired,
       submissionWindowStart: toIso(s.submissionWindowStart),
       submissionWindowEnd: toIso(s.submissionWindowEnd),
@@ -328,6 +341,51 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                 </p>
               </div>
 
+              {/* Running order: the parts the presentation clock steps through */}
+              <div className="mt-2 space-y-1 pl-3">
+                <p className="text-xs font-medium text-gray-600">Presentation running order</p>
+                {stage.timerSegments.map((segment, gi) => (
+                  <div key={gi} className="flex flex-wrap items-center gap-1">
+                    <input
+                      value={segment.name}
+                      onChange={(e) => updateSegment(si, gi, { name: e.target.value })}
+                      placeholder="Presentation"
+                      className="w-40 rounded border border-gray-300 px-2 py-0.5 text-xs"
+                    />
+                    <input
+                      type="number"
+                      min={1}
+                      value={Math.round(segment.targetSeconds / 60)}
+                      onChange={(e) => updateSegment(si, gi, { targetSeconds: Number(e.target.value) * 60 })}
+                      className="w-16 rounded border border-gray-300 px-2 py-0.5 text-xs"
+                    />
+                    <span className="text-xs text-gray-400">minutes</span>
+                    <button
+                      onClick={() =>
+                        updateStage(si, { timerSegments: stage.timerSegments.filter((_, idx) => idx !== gi) })
+                      }
+                      className="text-xs text-red-500 hover:underline"
+                    >
+                      remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() =>
+                    updateStage(si, {
+                      timerSegments: [...stage.timerSegments, { name: '', targetSeconds: 600 }],
+                    })
+                  }
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  + segment
+                </button>
+                <p className="text-xs text-gray-400">
+                  Leave empty to run one clock for the whole session. Segments never advance on their own — passing a
+                  target starts counting the overrun, and whoever runs the room presses Next.
+                </p>
+              </div>
+
               {/* Criteria */}
               <div className="mt-2 space-y-1 pl-3">
                 {stage.criteria.map((c, ci) => (
@@ -399,6 +457,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                 weight: 0,
                 panelScoreVisibility: 'ISOLATED',
                 panelRules: [defaultRule('EVALUATOR', 1)],
+                timerSegments: [],
                 submissionRequired: false,
                 ...EMPTY_WINDOWS,
                 criteria: [{ name: '', description: '', weight: 100, maxScore: 10 }],

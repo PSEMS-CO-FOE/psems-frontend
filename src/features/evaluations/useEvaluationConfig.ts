@@ -5,6 +5,13 @@ import type { MarkCounting, PanelRole, StagePanelRule } from '@/features/panel/u
 export type PanelScoreVisibility = 'ISOLATED' | 'OPEN_WITH_NAMES' | 'OPEN_ANONYMOUS';
 export type CriterionLevel = 'GROUP' | 'INDIVIDUAL';
 
+export interface TimerSegmentTemplate {
+  id: string;
+  name: string;
+  targetSeconds: number;
+  orderIndex: number;
+}
+
 export interface SavedCriterion {
   id: string;
   name: string;
@@ -27,6 +34,7 @@ export interface SavedStage {
   pooledSharePercent: number | null;
   pooledScorerLimit: number | null;
   panelRules: StagePanelRule[];
+  timerSegments: TimerSegmentTemplate[];
   criteria: SavedCriterion[];
   evaluators: {
     cpiEvaluator: { lecturer: { user: { email: string; fullName: string | null } } };
@@ -53,6 +61,8 @@ export interface ConfigInputStage {
   executionWindowEnd?: string;
   panelScoreVisibility?: PanelScoreVisibility;
   panelRules?: ConfigInputPanelRule[];
+  // Optional. A stage with no parts just runs one clock.
+  timerSegments?: { name: string; targetSeconds: number }[];
   criteria: { name: string; description?: string; weight: number; maxScore: number; level?: CriterionLevel }[];
 }
 
@@ -114,6 +124,21 @@ export function useSetPanelRules(cpiId: string) {
       const res = await api.put<StagePanelRule[]>(
         `/courses/${cpiId}/evaluations/stages/${args.stageId}/panel-rules`,
         { rules: args.rules },
+      );
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: configKey(cpiId) }),
+  });
+}
+
+// Can still be changed after submissions exist, like the panel rules.
+export function useSetTimerSegments(cpiId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { stageId: string; segments: { name: string; targetSeconds: number }[] }) => {
+      const res = await api.put<TimerSegmentTemplate[]>(
+        `/courses/${cpiId}/evaluations/stages/${args.stageId}/timer-segments`,
+        { segments: args.segments },
       );
       return res.data;
     },
