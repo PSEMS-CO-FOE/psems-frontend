@@ -23,7 +23,7 @@ const SECTIONS: { title: string; hint: string; toggles: Toggle[] }[] = [
       { key: 'allowSupervisorIdeas', label: 'Supervisors may post ideas' },
       { key: 'allowCoordinatorIdeas', label: 'The coordinator may post ideas' },
       { key: 'requireStudentIdeaApproval', label: 'Student ideas need approval' },
-      { key: 'allowCoSupervisorOnIdea', label: 'An idea may name a co-supervisor', pending: 'co-supervisors' },
+      { key: 'allowCoSupervisorOnIdea', label: 'An idea may name a co-supervisor' },
     ],
   },
   {
@@ -32,24 +32,16 @@ const SECTIONS: { title: string; hint: string; toggles: Toggle[] }[] = [
     toggles: [
       { key: 'interestEnabled', label: 'Groups and lecturers may express interest' },
       { key: 'studentsSeeOtherGroupIdeas', label: 'Students can see other groups’ ideas' },
-      {
-        key: 'allowInterestWithdrawal',
-        label: 'Interest may be withdrawn while the phase is open',
-        pending: 'interest withdrawal',
-      },
-      { key: 'allowSupervisorSelfRequest', label: 'Lecturers may ask to supervise', pending: 'supervisor requests' },
+      { key: 'allowInterestWithdrawal', label: 'Interest may be withdrawn while the phase is open' },
+      { key: 'allowSupervisorSelfRequest', label: 'Lecturers may ask to supervise' },
     ],
   },
   {
     title: 'Participation',
-    hint: 'Whether a student may take part without a group.',
+    hint: 'Whether a student may take part without a group — including on a group course.',
     toggles: [
-      {
-        key: 'allowIndividualParticipation',
-        label: 'Students may take part individually',
-        pending: 'individual participation',
-      },
-      { key: 'autoCreateSoloGroup', label: 'Create a solo group automatically', pending: 'individual participation' },
+      { key: 'allowIndividualParticipation', label: 'Students may take part individually' },
+      { key: 'autoCreateSoloGroup', label: 'Create a solo group automatically' },
     ],
   },
   {
