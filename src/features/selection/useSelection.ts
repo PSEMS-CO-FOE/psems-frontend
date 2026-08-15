@@ -6,7 +6,7 @@ type SelectionStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
 interface IdeaRef {
   id: string;
   title: string;
-  authorType: 'COORDINATOR' | 'SUPERVISOR' | 'STUDENT';
+  authorType: 'COORDINATOR' | 'SUPERVISOR' | 'STUDENT' | 'LECTURER';
 }
 interface SupervisorRef {
   user: { id: string; email: string; fullName: string | null };
@@ -23,13 +23,22 @@ export interface ProjectSelection {
   respondedAt: string | null;
 }
 
+export type EoiType =
+  | 'GROUP_INTEREST'
+  | 'SEEKING_SUPERVISOR'
+  | 'SUPERVISOR_WILLING'
+  | 'LECTURER_INTEREST'
+  | 'CO_SUPERVISION_INTEREST';
+
 export interface InterestExpression {
   id: string;
-  type: 'GROUP_INTEREST' | 'SEEKING_SUPERVISOR' | 'SUPERVISOR_WILLING';
-  rank: number | null;
+  type: EoiType;
   idea: IdeaRef;
   group: { id: string; name: string } | null;
   supervisor: SupervisorRef | null;
+  // Soft withdrawal: the row stays so re-expressing revives it rather than
+  // colliding with the unique pair.
+  withdrawnAt: string | null;
 }
 
 // A student idea flagged as seeking a supervisor, that a supervisor may mark
@@ -69,9 +78,32 @@ function useSelectionAction<TArgs>(cpiId: string, request: (args: TArgs) => Prom
   });
 }
 
+// Interest is flat — no ranking. A group simply says "we would like this one".
 export function useExpressInterest(cpiId: string) {
-  return useSelectionAction(cpiId, (args: { ideaId: string; rank: number }) =>
-    api.post(`/courses/${cpiId}/selection/interest`, args),
+  return useSelectionAction(cpiId, (ideaId: string) =>
+    api.post(`/courses/${cpiId}/selection/interest`, { ideaId }),
+  );
+}
+
+// The mirror image: a lecturer says they would like to take on a group's idea.
+export function useLecturerInterest(cpiId: string) {
+  return useSelectionAction(cpiId, (ideaId: string) =>
+    api.post(`/courses/${cpiId}/selection/lecturer-interest`, { ideaId }),
+  );
+}
+
+// A lecturer offering to co-supervise somebody else's idea.
+export function useCoSupervisionInterest(cpiId: string) {
+  return useSelectionAction(cpiId, (ideaId: string) =>
+    api.post(`/courses/${cpiId}/selection/co-supervision-interest`, { ideaId }),
+  );
+}
+
+// Withdrawal only works while the selection phase is open, and frees a slot
+// against the course's interest cap.
+export function useWithdrawInterest(cpiId: string) {
+  return useSelectionAction(cpiId, (args: { ideaId: string; type: EoiType }) =>
+    api.delete(`/courses/${cpiId}/selection/interest/${args.ideaId}`, { params: { type: args.type } }),
   );
 }
 export function useSeekingSupervisor(cpiId: string) {

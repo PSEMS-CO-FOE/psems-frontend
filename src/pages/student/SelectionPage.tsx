@@ -6,6 +6,7 @@ import {
   useSelectProject,
   useExpressInterest,
   useSeekingSupervisor,
+  useWithdrawInterest,
 } from '@/features/selection/useSelection';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
@@ -18,10 +19,10 @@ export function SelectionPage() {
   const select = useSelectProject(cpiId);
   const interest = useExpressInterest(cpiId);
   const seeking = useSeekingSupervisor(cpiId);
+  const withdraw = useWithdrawInterest(cpiId);
 
   const [ideaId, setIdeaId] = useState('');
   const [supervisorUserId, setSupervisorUserId] = useState('');
-  const [rank, setRank] = useState(1);
 
   if (isLoading) return <p className="text-sm text-gray-500">Loading selection…</p>;
   if (isError || !state) {
@@ -106,7 +107,7 @@ export function SelectionPage() {
       <div className="rounded-lg border bg-white p-4">
         <h3 className="text-sm font-semibold text-gray-700">
           Interest (Supervisor-Led){' '}
-          <span className="font-normal text-gray-400">— ranked interest / seek a supervisor</span>
+          <span className="font-normal text-gray-400">— express interest / seek a supervisor</span>
         </h3>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <select
@@ -121,17 +122,8 @@ export function SelectionPage() {
               </option>
             ))}
           </select>
-          <select
-            value={rank}
-            onChange={(e) => setRank(Number(e.target.value))}
-            className="rounded border border-gray-300 px-2 py-1 text-xs"
-          >
-            <option value={1}>rank 1</option>
-            <option value={2}>rank 2</option>
-            <option value={3}>rank 3</option>
-          </select>
           <button
-            onClick={() => interest.mutate({ ideaId, rank })}
+            onClick={() => interest.mutate(ideaId)}
             disabled={!ideaId || interest.isPending}
             className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
           >
@@ -153,14 +145,24 @@ export function SelectionPage() {
 
         {state.groupInterest.length > 0 && (
           <ul className="mt-3 space-y-1">
-            {state.groupInterest.map((e) => (
-              <li key={e.id} className="text-xs text-gray-600">
-                {e.type} — {e.idea.title}
-                {e.rank ? ` (rank ${e.rank})` : ''}
+            {state.groupInterest.filter((e) => !e.withdrawnAt).map((e) => (
+              <li key={e.id} className="flex items-center gap-2 text-xs text-gray-600">
+                <span>
+                  {e.type === 'SEEKING_SUPERVISOR' ? 'Seeking a supervisor for' : 'Interested in'} — {e.idea.title}
+                </span>
+                {/* Withdrawing frees a slot against the course's interest cap. */}
+                <button
+                  onClick={() => withdraw.mutate({ ideaId: e.idea.id, type: e.type })}
+                  disabled={withdraw.isPending}
+                  className="text-red-500 hover:underline disabled:opacity-50"
+                >
+                  withdraw
+                </button>
               </li>
             ))}
           </ul>
         )}
+        {withdraw.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(withdraw.error)}</p>}
       </div>
     </div>
   );
