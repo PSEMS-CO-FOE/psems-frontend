@@ -4,6 +4,9 @@ import { HomeRedirect } from '@/routes/HomeRedirect';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { GuestScoringPage } from '@/pages/guest/GuestScoringPage';
+import { ProfilePage } from '@/pages/profile/ProfilePage';
+import { EditProfilePage } from '@/pages/profile/EditProfilePage';
+import { DiscoverCoursesPage } from '@/pages/lecturer/DiscoverCoursesPage';
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { LecturerApprovalPage } from '@/pages/admin/LecturerApprovalPage';
@@ -57,6 +60,26 @@ export default function App() {
         }
       />
 
+      {/* An institution-wide directory: not role-gated, since a student reading
+          a supervisor's profile and a lecturer reading a student's are the same
+          page. Guests hold no account and never reach it. */}
+      <Route
+        path="/profile/edit"
+        element={
+          <ProtectedRoute>
+            <EditProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/:userId"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/admin"
         element={
@@ -90,6 +113,7 @@ export default function App() {
         }
       >
         <Route index element={<LecturerEnterCpiPage />} />
+        <Route path="discover" element={<DiscoverCoursesPage />} />
         <Route path="cpi/:cpiId" element={<LecturerCpiLayout />}>
           <Route index element={<LecturerCpiIndex />} />
           <Route path="sessions" element={<LecturerSessionsPage />} />

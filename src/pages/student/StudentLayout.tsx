@@ -16,6 +16,9 @@ export function StudentLayout() {
             <p className="text-xs text-gray-500">{user?.email}</p>
           </Link>
           <div className="flex items-center gap-2">
+            <Link to="/profile/edit" className="rounded px-2 py-1 text-sm text-gray-600 hover:bg-gray-100">
+              My profile
+            </Link>
             <NotificationsBell />
             <button
               onClick={logout}
