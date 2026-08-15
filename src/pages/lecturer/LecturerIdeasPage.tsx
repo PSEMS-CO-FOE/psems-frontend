@@ -1,12 +1,76 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useIdeas, usePostIdea } from '@/features/ideas/useIdeas';
+import {
+  useAddCoSupervisor,
+  useIdeas,
+  usePostIdea,
+  useRespondCoSupervisor,
+  type Idea,
+} from '@/features/ideas/useIdeas';
+import { useApprovedLecturers } from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 
 // Supervisor idea announcement (Supervisor-Led mode): an accepted supervisor
 // posts project ideas for groups to express interest in, and sees the CPI's
 // ideas. The backend authorizes posting by supervisor capacity.
+
+// Naming a co-supervisor invites them — they have to accept before a group sees
+// them as attached. Only the idea's own supervisor may edit the list, so the
+// server rejects this for anyone else and the error is surfaced inline.
+function CoSupervisorControls({ cpiId, idea }: { cpiId: string; idea: Idea }) {
+  const { data: lecturers } = useApprovedLecturers();
+  const add = useAddCoSupervisor(cpiId);
+  const respond = useRespondCoSupervisor(cpiId);
+  const [lecturerUserId, setLecturerUserId] = useState('');
+
+  const myInvite = idea.supervisors?.find((s) => !s.isPrimary && s.invitationStatus === 'PENDING');
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1">
+      <select
+        value={lecturerUserId}
+        onChange={(e) => setLecturerUserId(e.target.value)}
+        className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+      >
+        <option value="">Add a co-supervisor…</option>
+        {lecturers?.map((l) => (
+          <option key={l.userId} value={l.userId}>
+            {personName(l)}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={() => add.mutate({ ideaId: idea.id, lecturerUserId })}
+        disabled={!lecturerUserId || add.isPending}
+        className="rounded bg-gray-700 px-2 py-0.5 text-xs text-white hover:bg-gray-600 disabled:opacity-50"
+      >
+        invite
+      </button>
+
+      {myInvite && (
+        <>
+          <button
+            onClick={() => respond.mutate({ ideaId: idea.id, decision: 'ACCEPT' })}
+            className="rounded bg-green-600 px-2 py-0.5 text-xs text-white hover:bg-green-700"
+          >
+            accept co-supervision
+          </button>
+          <button
+            onClick={() => respond.mutate({ ideaId: idea.id, decision: 'DECLINE' })}
+            className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-50"
+          >
+            decline
+          </button>
+        </>
+      )}
+
+      {add.isError && <span className="text-xs text-red-600">{getApiErrorMessage(add.error)}</span>}
+      {respond.isError && <span className="text-xs text-red-600">{getApiErrorMessage(respond.error)}</span>}
+    </div>
+  );
+}
+
 export function LecturerIdeasPage() {
   const { cpiId = '' } = useParams();
   const { data: ideas, isLoading, isError, error } = useIdeas(cpiId);
@@ -86,6 +150,31 @@ export function LecturerIdeasPage() {
                   by {personName(idea.author)}
                   {idea.group && ` · ${idea.group.name}`}
                 </p>
+
+                {/* Who would actually supervise this, and who is still deciding. */}
+                {idea.supervisors && idea.supervisors.length > 0 && (
+                  <ul className="mt-1 flex flex-wrap gap-1">
+                    {idea.supervisors.map((sup) => (
+                      <li
+                        key={sup.id}
+                        className={`rounded px-2 py-0.5 text-xs ${
+                          sup.invitationStatus === 'ACCEPTED'
+                            ? 'bg-green-50 text-green-800'
+                            : sup.invitationStatus === 'PENDING'
+                              ? 'bg-amber-50 text-amber-800'
+                              : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {personName(sup.lecturer.user)}
+                        {sup.isPrimary ? ' · supervisor' : ' · co-supervisor'}
+                        {sup.invitationStatus === 'PENDING' && ' (not yet accepted)'}
+                        {sup.invitationStatus === 'DECLINED' && ' (declined)'}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <CoSupervisorControls cpiId={cpiId} idea={idea} />
               </li>
             ))}
           </ul>
