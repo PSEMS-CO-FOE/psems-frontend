@@ -36,6 +36,9 @@ export function StudentCpiLayout() {
         <NavLink to={`/student/cpi/${cpiId}/submissions`} className={tabClass}>
           Submissions
         </NavLink>
+        <NavLink to={`/student/cpi/${cpiId}/schedule`} className={tabClass}>
+          Schedule
+        </NavLink>
         <NavLink to={`/student/cpi/${cpiId}/marks`} className={tabClass}>
           Marks
         </NavLink>

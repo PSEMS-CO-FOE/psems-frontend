@@ -32,6 +32,7 @@ import { ReviewPage } from '@/pages/lecturer/ReviewPage';
 import { SupervisorSelectionPage } from '@/pages/lecturer/SupervisorSelectionPage';
 import { LecturerIdeasPage } from '@/pages/lecturer/LecturerIdeasPage';
 import { TimerWindowPage } from '@/pages/lecturer/TimerWindowPage';
+import { SchedulePage } from '@/pages/student/SchedulePage';
 
 export default function App() {
   return (
@@ -140,6 +141,7 @@ export default function App() {
           <Route path="ideas" element={<IdeasPage />} />
           <Route path="selection" element={<SelectionPage />} />
           <Route path="submissions" element={<SubmissionsPage />} />
+          <Route path="schedule" element={<SchedulePage />} />
           <Route path="marks" element={<MarksPage />} />
         </Route>
       </Route>
