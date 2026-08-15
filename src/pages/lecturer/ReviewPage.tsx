@@ -9,10 +9,39 @@ import {
   useRequestCorrection,
 } from '@/features/review/useReview';
 import { roleLabel } from '@/features/panel/usePanel';
+import { formatClock, useTimer } from '@/features/scheduling/useTimer';
 import { getApiErrorMessage } from '@/lib/apiError';
 
-function mmss(seconds: number) {
-  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+// How long each part of the presentation actually took, so time management can be
+// marked on real numbers. Loaded once when the card opens; nothing is running.
+function SegmentLog({ cpiId, sessionId, open }: { cpiId: string; sessionId: string; open: boolean }) {
+  const { data } = useTimer(cpiId, sessionId, { enabled: open, refetchInterval: 0 });
+  if (!data || data.segments.length === 0) return null;
+
+  return (
+    <div className="mb-2 rounded border border-gray-200 bg-gray-50 p-2">
+      <p className="text-xs font-medium text-gray-600">Presentation timing</p>
+      <ul className="mt-1 space-y-0.5">
+        {data.segments.map((segment) => (
+          <li key={segment.id} className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+            <span>{segment.name}</span>
+            <span className="font-mono">
+              {formatClock(segment.elapsedSeconds)} / {formatClock(segment.targetSeconds)}
+            </span>
+            {segment.overranSeconds > 0 && (
+              <span className="text-red-600">over by {formatClock(segment.overranSeconds)}</span>
+            )}
+            {segment.timeliness && (
+              <span className="text-gray-400">
+                {segment.timeliness.toLowerCase().replace('_', ' ')}
+                {segment.timelinessManual && ' (set by hand)'}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function SessionReviewCard({ cpiId, session }: { cpiId: string; session: EvaluationSession }) {
@@ -50,9 +79,11 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
         <div className="mt-3">
           {session.presentationDurationSeconds != null && (
             <p className="mb-2 text-xs text-gray-600">
-              Presentation time: <span className="font-mono">{mmss(session.presentationDurationSeconds)}</span>
+              Presentation time:{' '}
+              <span className="font-mono">{formatClock(session.presentationDurationSeconds)}</span>
             </p>
           )}
+          <SegmentLog cpiId={cpiId} sessionId={session.id} open={open} />
           {isLoading && <p className="text-xs text-gray-500">Loading review…</p>}
           {isError && (
             <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">

@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-  useSessions,
-  useControlTimer,
-  type EvaluationSession,
-} from '@/features/scheduling/useScheduling';
+import { useSessions, type EvaluationSession } from '@/features/scheduling/useScheduling';
+import { formatClock, useControlTimer, useSetSegmentTimeliness, useTimer } from '@/features/scheduling/useTimer';
 import {
   useEvaluationConfig,
   type PanelScoreVisibility,
@@ -15,48 +12,57 @@ import { useCpiPolicy } from '@/features/policy/usePolicy';
 import { useSessionPanel } from '@/features/panel/usePanel';
 import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
 
-function formatDuration(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-// Shared presentation timer. State lives on the server; this page polls, so
-// when one evaluator starts/pauses/stops, every evaluator's clock reflects it.
-// Between polls we tick locally for smoothness and resync on each server value.
+// The presentation clock. It is kept on the server so every evaluator sees the
+// same time. Parts never move on by themselves: going past a target turns the
+// clock red and counts the extra time until someone presses Next.
 function PresentationTimer({ cpiId, session }: { cpiId: string; session: EvaluationSession }) {
-  const control = useControlTimer(cpiId);
-  const [display, setDisplay] = useState(session.timerElapsedSeconds);
+  const { data } = useTimer(cpiId, session.id, { refetchInterval: 2000 });
+  const control = useControlTimer(cpiId, session.id);
+  const setTimeliness = useSetSegmentTimeliness(cpiId, session.id);
+  const [display, setDisplay] = useState(0);
 
-  // Resync to the authoritative server value whenever it changes (each poll).
-  useEffect(() => {
-    setDisplay(session.timerElapsedSeconds);
-  }, [session.timerElapsedSeconds]);
+  const current = data?.segments.find((seg) => seg.orderIndex === data.currentSegmentIndex) ?? null;
+  const serverElapsed = current?.elapsedSeconds ?? data?.elapsedSeconds ?? 0;
+  const running = data?.running ?? false;
 
-  // Tick locally only while the shared timer is running.
+  // Reset to the server value on each check, and count up in between so the clock
+  // does not jump.
+  useEffect(() => setDisplay(serverElapsed), [serverElapsed]);
   useEffect(() => {
-    if (!session.timerRunning) return;
+    if (!running) return;
     const id = setInterval(() => setDisplay((d) => d + 1), 1000);
     return () => clearInterval(id);
-  }, [session.timerRunning]);
+  }, [running]);
 
-  const act = (action: 'start' | 'pause' | 'stop' | 'reset') =>
-    control.mutate({ sessionId: session.id, action });
-
-  const saved = session.presentationDurationSeconds;
+  const overrunning = !!current && display > current.targetSeconds;
 
   return (
     <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="font-mono text-lg tabular-nums text-gray-800">{formatDuration(display)}</span>
-        {session.timerRunning ? (
-          <span className="rounded bg-green-100 px-2 py-0.5 text-xs text-green-700">running</span>
-        ) : (
-          <span className="rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">stopped</span>
+        <span
+          className={`font-mono text-lg tabular-nums ${overrunning ? 'text-red-600' : 'text-gray-800'}`}
+        >
+          {formatClock(current ? current.targetSeconds - display : display)}
+        </span>
+        {current && <span className="text-xs text-gray-600">{current.name}</span>}
+        <span
+          className={`rounded px-2 py-0.5 text-xs ${
+            running ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+          }`}
+        >
+          {running ? 'running' : 'stopped'}
+        </span>
+        {overrunning && (
+          <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">
+            over by {formatClock(display - (current?.targetSeconds ?? 0))}
+          </span>
         )}
-        {!session.timerRunning ? (
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {!running ? (
           <button
-            onClick={() => act('start')}
+            onClick={() => control.mutate('start')}
             disabled={control.isPending}
             className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
           >
@@ -64,7 +70,7 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
           </button>
         ) : (
           <button
-            onClick={() => act('pause')}
+            onClick={() => control.mutate('pause')}
             disabled={control.isPending}
             className="rounded bg-yellow-600 px-3 py-1 text-xs font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
           >
@@ -72,24 +78,86 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
           </button>
         )}
         <button
-          onClick={() => act('stop')}
+          onClick={() => control.mutate('previous')}
+          disabled={control.isPending || !data?.segments.length}
+          className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <button
+          onClick={() => control.mutate('next')}
+          disabled={control.isPending || !data?.segments.length}
+          className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
+        >
+          Next segment
+        </button>
+        <button
+          onClick={() => control.mutate('stop')}
           disabled={control.isPending}
           className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
         >
           Stop &amp; save
         </button>
         <button
-          onClick={() => act('reset')}
+          onClick={() => control.mutate('reset')}
           disabled={control.isPending}
           className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-50"
         >
           Reset
         </button>
+        <button
+          onClick={() => window.open(`/timer/${cpiId}/${session.id}`, '_blank', 'noopener,width=1280,height=800')}
+          className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100"
+        >
+          Open timer window
+        </button>
       </div>
+
+      {data && data.segments.length > 0 && (
+        <ul className="mt-2 space-y-0.5">
+          {data.segments.map((segment) => (
+            <li key={segment.id} className="flex flex-wrap items-center gap-2 text-xs">
+              <span
+                className={
+                  segment.orderIndex === data.currentSegmentIndex ? 'font-medium text-gray-800' : 'text-gray-500'
+                }
+              >
+                {segment.name}
+              </span>
+              <span className="font-mono text-gray-500">
+                {formatClock(segment.elapsedSeconds)} / {formatClock(segment.targetSeconds)}
+              </span>
+              {segment.overranSeconds > 0 && (
+                <span className="text-red-600">+{formatClock(segment.overranSeconds)}</span>
+              )}
+              {segment.completedAt && (
+                <select
+                  value={segment.timeliness ?? ''}
+                  onChange={(e) =>
+                    setTimeliness.mutate({
+                      segmentId: segment.id,
+                      timeliness: e.target.value as 'ON_TIME' | 'OVERTIME' | 'UNDER',
+                    })
+                  }
+                  className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                >
+                  <option value="ON_TIME">on time</option>
+                  <option value="OVERTIME">overtime</option>
+                  <option value="UNDER">under</option>
+                </select>
+              )}
+              {segment.timelinessManual && <span className="text-gray-400">(set by hand)</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+
       <p className="mt-2 text-xs text-gray-500">
-        {saved != null
-          ? `Saved presentation time: ${formatDuration(saved)}`
-          : 'Shared across all evaluators in the room.'}
+        {data?.presentationDurationSeconds != null
+          ? `Saved presentation time: ${formatClock(data.presentationDurationSeconds)}`
+          : data?.segments.length
+            ? 'Segments never advance on their own — press Next when the group finishes.'
+            : 'This stage has no segments configured; the clock runs as one.'}
       </p>
       {control.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(control.error)}</p>}
     </div>

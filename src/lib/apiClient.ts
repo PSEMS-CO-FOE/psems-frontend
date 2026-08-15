@@ -53,6 +53,13 @@ async function refreshAccessToken(): Promise<string> {
   return refreshPromise;
 }
 
+
+// Get a new access token using only the refresh cookie. The timer window opens in
+// a new tab with no token, and the cookie is shared between tabs.
+export async function bootstrapSession(): Promise<string> {
+  return refreshAccessToken();
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
