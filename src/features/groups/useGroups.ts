@@ -97,3 +97,17 @@ export function useRespondGroupInvite(cpiId: string) {
     },
   });
 }
+
+// A student taking part on their own. Idempotent, so the button can simply be
+// pressed — every downstream step still keys off a group, so a solo participant
+// gets a group of one rather than a parallel code path.
+export function useCreateSoloGroup(cpiId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/courses/${cpiId}/groups/solo`);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['group', cpiId] }),
+  });
+}

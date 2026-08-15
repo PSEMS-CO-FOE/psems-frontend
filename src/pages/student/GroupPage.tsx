@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   useMyGroup,
   useCreateGroup,
+  useCreateSoloGroup,
   useInviteMember,
   useRespondGroupInvite,
   usePendingGroupInvites,
@@ -124,6 +125,7 @@ function MyGroupCard({
 
 function CreateGroupCard({ cpiId }: { cpiId: string }) {
   const create = useCreateGroup(cpiId);
+  const solo = useCreateSoloGroup(cpiId);
   const [name, setName] = useState('');
   return (
     <div className="rounded-lg border bg-white p-4">
@@ -146,6 +148,20 @@ function CreateGroupCard({ cpiId }: { cpiId: string }) {
       {create.isError && (
         <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(create.error)}</p>
       )}
+
+      {/* Some courses let a student carry on alone — including group courses,
+          where a student who never found a group would otherwise be stuck. */}
+      <div className="mt-3 border-t pt-3">
+        <p className="text-xs text-gray-500">Taking part on your own?</p>
+        <button
+          onClick={() => solo.mutate()}
+          disabled={solo.isPending}
+          className="mt-1 rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          {solo.isPending ? '…' : 'Continue without a group'}
+        </button>
+        {solo.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(solo.error)}</p>}
+      </div>
     </div>
   );
 }
