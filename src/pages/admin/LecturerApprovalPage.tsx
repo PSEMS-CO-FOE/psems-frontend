@@ -1,7 +1,74 @@
-import { usePendingLecturers, useLecturerDecision } from '@/features/lecturers/useLecturers';
+import { useState } from 'react';
+import {
+  useBulkProvisionLecturers,
+  useLecturerDecision,
+  usePendingLecturers,
+} from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage } from '@/lib/apiError';
 
+// Bulk-provision lecturers the way students are provisioned. These accounts are
+// auto-approved (an admin uploaded them) and carry a forced first-login password
+// change, which self-registered lecturers never had.
+function LecturerCsvUpload() {
+  const provision = useBulkProvisionLecturers();
+  const [file, setFile] = useState<File | null>(null);
+
+  return (
+    <div className="rounded-lg border bg-white p-4">
+      <h2 className="text-sm font-semibold text-gray-700">Upload lecturers</h2>
+      <p className="mt-1 text-xs text-gray-500">
+        CSV with header <code>email,fullName,department,designation</code>. Designation is optional. Each lecturer gets
+        a temporary password by email and must change it on first sign-in.
+      </p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          className="text-xs"
+        />
+        <button
+          onClick={() => file && provision.mutate(file)}
+          disabled={!file || provision.isPending}
+          className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+        >
+          {provision.isPending ? '…' : 'Upload'}
+        </button>
+      </div>
+
+      {provision.isError && <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(provision.error)}</p>}
+      {provision.isSuccess && (
+        <div className="mt-2 text-xs">
+          <p className="text-green-700">Created {provision.data.created} lecturer(s).</p>
+          {/* Rows that were skipped or malformed are reported per row, so a
+              partly-bad file still provisions everyone it can. */}
+          {provision.data.skipped.map((sk) => (
+            <p key={sk.row} className="text-amber-700">
+              Row {sk.row} ({sk.email}): {sk.reason}
+            </p>
+          ))}
+          {provision.data.invalid.map((iv) => (
+            <p key={iv.row} className="text-red-600">
+              Row {iv.row}: {iv.issues.join('; ')}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function LecturerApprovalPage() {
+  return (
+    <div className="space-y-4">
+      <LecturerCsvUpload />
+      <PendingLecturerQueue />
+    </div>
+  );
+}
+
+function PendingLecturerQueue() {
   const { data: lecturers, isLoading, isError, error } = usePendingLecturers();
   const decision = useLecturerDecision();
 
