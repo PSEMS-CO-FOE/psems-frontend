@@ -43,7 +43,7 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 ### Courses / CPIs (`/courses`) — Course Coordinator only, except invite-response
 - `POST /courses` `{name, projectType, participationMode, department, academicYear}` → creates CPI. `projectType` ∈ `FYP | DATA_MANAGEMENT | HPC | INNOVATION_CHALLENGE`. `participationMode` ∈ `GROUP | INDIVIDUAL`.
 - `GET /courses` — coordinator's own CPIs. `GET /courses/:cpiId` — detail.
-- `PUT /courses/:cpiId/timeline` `{phases: [{phase, startDate, endDate}, ...]}` — **all 10 phases must be sent together, in order**: `STUDENT_REGISTRATION, SUPERVISOR_ADDITION, IDEA_ANNOUNCEMENT, PROJECT_SELECTION, PROJECT_REGISTRATION, EVALUATION_CONFIG, PROPOSAL_SUBMISSION, AVAILABILITY_SUBMISSION, EVALUATION_EXECUTION, FINAL_SUBMISSION`.
+- `PUT /courses/:cpiId/timeline` `{phases: [{phase, startDate, endDate}, ...]}` — replace-all over **any subset** of the 10 phases (minimum 1); order is validated among whichever are sent, and an omitted phase simply leaves its gated actions closed. Full order: `STUDENT_REGISTRATION, SUPERVISOR_ADDITION, IDEA_ANNOUNCEMENT, PROJECT_SELECTION, PROJECT_REGISTRATION, EVALUATION_CONFIG, PROPOSAL_SUBMISSION, AVAILABILITY_SUBMISSION, EVALUATION_EXECUTION, FINAL_SUBMISSION`. (This section is the 2026-07-14 reference; entries below it were corrected for Waves 1–3 where they had gone stale, but treat the source as authoritative over anything here.)
 - `POST /courses/:cpiId/supervisors` `{lecturerUserId}` — invite (only valid during `SUPERVISOR_ADDITION` phase window; **first invite sent flips the CPI into SUPERVISOR_LED mode**).
 - `POST /courses/:cpiId/supervisors/respond` (the invited lecturer) `{decision: "ACCEPT"|"DECLINE"}`.
 - `POST /courses/:cpiId/finalize-coordinator-managed` — no supervisors invited → locks CPI into COORDINATOR_MANAGED mode.
@@ -77,11 +77,20 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `GET /courses/:cpiId/submissions` — list.
 
 ### Scheduling (`/courses/:cpiId`) — added Week 7, verified 2026-07-22
-- `POST /availability` (any evaluator/supervisor, phase = `AVAILABILITY_SUBMISSION`) `{slotStart, slotEnd}` — submit an available time slot.
-- `GET /availability` (Coordinator) — all submitted slots, for building the timetable.
-- `POST /sessions/generate` (Coordinator, same phase) — creates one `evaluation_session` per allocated group × evaluation stage. Idempotent (safe to re-call).
-- `PUT /sessions/:sessionId/schedule` (Coordinator, same phase) `{scheduledStart, scheduledEnd}` — assign a time to a generated session.
-- `GET /sessions` (any participant) — list sessions for the CPI.
+- `PUT /availability/template` (Coordinator, **not** phase-gated — the form must exist before anyone can fill it in) `{windowStart, windowEnd, slots: [{name, startTime, endTime}]}` — replace-all definition of the grid: dates are the columns, named day-parts the rows. Republishing drops removed slots and the answers given against them.
+- `GET /availability/template` (any authenticated user) — the grid's shape plus its `dates[]`. Answers are not included.
+- `PUT /availability` (any evaluator / accepted supervisor / seated panelist, phase = `AVAILABILITY_SUBMISSION`) `{entries: [{templateSlotId, slotDate, status, note?}]}` where `status ∈ AVAILABLE | TENTATIVE | UNAVAILABLE`. **Bulk replace-all** — an omitted cell is cleared, which is how a slot is withdrawn.
+- `GET /availability/mine` — this lecturer's own answers plus a `required` flag from `CpiPolicy.availabilityRequiredFrom`.
+- `GET /availability` (Coordinator) — every answer, plus `outstanding[]`: people the policy expected who have not replied.
+- `POST /sessions/generate` (Coordinator, phase = `AVAILABILITY_SUBMISSION`) — one `evaluation_session` per allocated group × stage, seeding each session's panel. Idempotent.
+- `PUT /sessions/:sessionId/schedule` (Coordinator) `{scheduledStart, scheduledEnd, location?, allocatedMinutes?}` → `{session, conflicts[]}`. **Not phase-gated at the route** — scheduling opens with `AVAILABILITY_SUBMISSION` and stays open, so a session can still be moved afterwards. Conflicts are typed (`PANELIST_DOUBLE_BOOKED`, `GROUP_DOUBLE_BOOKED`, `ROOM_DOUBLE_BOOKED`, `OUTSIDE_AVAILABILITY`, `REQUIRED_PANELIST_MISSING`) and always advisory — render them as warnings, never as a failure.
+- `PUT /sessions/schedule` (Coordinator) `{entries: [{sessionId, ...schedule fields}]}` — lay out a block of sessions in one call.
+- `GET /sessions/:sessionId/alternative-slots` (Coordinator) — slots where every panelist the stage *requires* is free, ranked by least disturbance. Fetch on demand, after a conflict has been seen.
+- `GET /schedule-sheet?stageId=` (Coordinator only) — the printable handout: per group, `No | Index Number | Name`, date, time range, venue. Coordinator-only because it names every student on every group.
+- `GET /sessions` — the coordinator sees all; **a student sees their own group's**; a supervisor sees every group they supervise; a panelist sees their seated sessions.
+- `GET /sessions/:sessionId/timer` — light payload for ~1s polling: `{running, elapsedSeconds, currentSegmentIndex, segments[]}`. Use this for the clock, never the session list.
+- `POST /sessions/:sessionId/timer` `{action}` where `action ∈ start | pause | next | previous | stop | reset`. **Nothing advances on reaching a target** — the segment keeps counting and reports `overranSeconds`; `next` is the manual advance.
+- `POST /sessions/:sessionId/segments/:segmentId/timeliness` `{timeliness}` — override the computed `ON_TIME | OVERTIME | UNDER` verdict.
 
 ### Scoring (`/courses/:cpiId`) — added Week 7, phase = `EVALUATION_EXECUTION`
 - `POST /sessions/:sessionId/scores` (assigned evaluator) `{scores: [{criterionId, score, comment?}, ...]}` — submit per-criterion scores for a session. Session auto-flips to `AWAITING_HEAD_JUDGE` once every assigned evaluator has scored every criterion.
@@ -153,6 +162,19 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 - **`ReviewPage`** request-correction: dropdown of the session's evaluators (review scores now include evaluator `id`).
 - **`SelectionPage`** own-idea supervisor pick: dropdown of willing supervisors (selection supervisor refs now include `user.id`).
 Verified: frontend `tsc -b` + `vite build` clean; backend `tsc`+lint clean, 38 tests/10 suites green.
+
+**Restructure Wave 3 frontend COMPLETE as of 2026-08-16 (uncommitted).** `tsc -b` + `vite build` clean. What shipped:
+
+- **`components/AvailabilityGrid.tsx`** - one component, two modes. Read-write for a lecturer (click a cell to cycle blank -> free -> maybe -> busy; a dropdown per cell would be unusable across a fortnight of slots), and a read-only heat grid for the coordinator showing a count per cell. **Blank is its own state**, distinct from busy: "has not answered" and "cannot make it" mean different things to someone deciding whether to wait.
+- **`AvailabilityPage.tsx` rewritten** from two datetime boxes to the grid, with local edits saved in one replace-all call rather than a request per cell. The **Availability tab is no longer evaluator-only** - supervisors submit too now.
+- **`CpiScheduling.tsx`** - grid builder (window + named day-parts), the coordinator heat grid with a "still to answer" list, per-session move controls prefilled from the current time, typed conflict warnings, and **"Find a slot everyone can make"**, which appears once a conflict has been seen and moves the group in one click.
+- **`ScheduleSheetPanel.tsx`** - the printable handout (`No | Index Number | Name` per group, date, time range, venue header), printed from the app rather than published in it.
+- **`pages/student/SchedulePage.tsx`** + Schedule tab + route - students could not see the schedule at all before.
+- **`pages/lecturer/TimerWindowPage.tsx`** at `/timer/:cpiId/:sessionId` - chrome-free, for a second monitor: huge current-segment label, huge clock counting down and then up in red, segment list, controls. **It sits outside `ProtectedRoute` and every role layout on purpose**: `window.open` gives it a tab with no in-memory access token, so it mints its own via `bootstrapSession()` (`POST /auth/refresh`) from the shared httpOnly cookie. No cross-window token plumbing.
+- **`features/scheduling/useTimer.ts`** - its own light polling hook, separate from `useSessions`. `LecturerSessionsPage` gained Previous / Next segment / Open timer window and a per-segment log with a hand-override for the verdict; `ReviewPage` shows the segment log read-only so time management is marked against real data.
+- **`CpiEvaluationConfig.tsx`** gained a per-stage running-order editor (name + minutes). Leaving it empty runs one clock, which is the old behaviour.
+
+**Note: `npm run lint` does not work in this repo** - the script exists but there is no `eslint.config.js`, so it has never run. Verification here is `tsc -b` + `vite build` only. Worth its own decision alongside adding Vitest (restructure plan risk #4).
 
 **Full gap-closure pass COMPLETE as of 2026-07-25 (uncommitted).** Built the frontend for every actionable item in `docs/E2E_TEST_GUIDE.md` 4.2 (items 1–16; 17–18 accepted; no ML). `tsc -b` typecheck + `vite build` both clean. What shipped: `RegisterPage.tsx` (public `/register` lecturer self-registration, linked from login) [#1]; pending supervisor-invites list + Accept/Decline on `LecturerEnterCpiPage` [#2]; `SupervisorSelectionPage.tsx` at `/lecturer/cpi/:id/selection` — mark willing + accept/decline selections, with a new "Selection (supervisor)" tab [#3]; lecturer name/email **picker** (`useApprovedLecturers`) replacing raw-UUID inputs in `CpiAssignments` [#4]; real pending group-invites list on `GroupPage` replacing the UUID paste [#5]; score inputs now lock at `AWAITING_HEAD_JUDGE`/`FINALIZED` in `LecturerSessionsPage` [#6]; session **location** input + read-only display, **overdue** tag, and scheduling **conflict** warnings in `CpiScheduling` + `LecturerSessionsPage` [#14–16]; unmatched supervisor ideas + Coordinator-Managed "Confirm pairing" workflow in `CpiAllocation` [#9, #11]; **presentation-day timer** (start/pause/resume/stop, save-once) on `LecturerSessionsPage` with read-only duration in `ReviewPage` [#12]; forced first-login change hides the current-password field [#13]. New hooks: `useSupervisorInvites`, `useApprovedLecturers`/`useRegisterLecturer`, `usePendingGroupInvites`, `useMarkWilling`, `useSetPresentationDuration`, `useConfirmAllocation`. Next: Week 9 ML UI alongside the ML service.
 
