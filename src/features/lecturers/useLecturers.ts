@@ -79,3 +79,25 @@ export function useLecturerDecision() {
     },
   });
 }
+
+export interface BulkProvisionResult {
+  batchId: string;
+  created: number;
+  skipped: { row: number; email: string; reason: string }[];
+  invalid: { row: number; issues: string[] }[];
+}
+
+// CSV header: email,fullName,department,designation. These accounts are
+// auto-approved and carry a forced first-login password change.
+export function useBulkProvisionLecturers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await api.post<BulkProvisionResult>('/lecturers/bulk-provision', form);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lecturers'] }),
+  });
+}
