@@ -4,6 +4,7 @@ import {
   useSetEvaluationConfig,
   useAssignStageEvaluator,
   type ConfigInputStage,
+  type CriterionLevel,
   type PanelScoreVisibility,
 } from '@/features/evaluations/useEvaluationConfig';
 import { PANEL_ROLES, roleLabel, type MarkCounting, type PanelRole } from '@/features/panel/usePanel';
@@ -11,7 +12,7 @@ import { useCpiDetail } from '@/features/courses/useCpiDetail';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 
-type EditCriterion = { name: string; description: string; weight: number; maxScore: number };
+type EditCriterion = { name: string; description: string; weight: number; maxScore: number; level: CriterionLevel };
 // A stage's expected composition. Minimum 0 on every role with openToAll set is
 // the open event: nobody assigned, whoever attends may mark.
 type EditPanelRule = {
@@ -65,8 +66,8 @@ const DEFAULT_STAGES: EditStage[] = [
     submissionRequired: true,
     ...EMPTY_WINDOWS,
     criteria: [
-      { name: 'Clarity', description: '', weight: 50, maxScore: 10 },
-      { name: 'Feasibility', description: '', weight: 50, maxScore: 10 },
+      { name: 'Clarity', description: '', weight: 50, maxScore: 10, level: 'GROUP' },
+      { name: 'Feasibility', description: '', weight: 50, maxScore: 10, level: 'GROUP' },
     ],
   },
   {
@@ -77,7 +78,7 @@ const DEFAULT_STAGES: EditStage[] = [
     timerSegments: [],
     submissionRequired: false,
     ...EMPTY_WINDOWS,
-    criteria: [{ name: 'Implementation', description: '', weight: 100, maxScore: 100 }],
+    criteria: [{ name: 'Implementation', description: '', weight: 100, maxScore: 100, level: 'GROUP' }],
   },
 ];
 
@@ -150,6 +151,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
         description: c.description || undefined,
         weight: c.weight,
         maxScore: c.maxScore,
+        level: c.level,
       })),
     }));
     setConfig.mutate(payload);
@@ -414,6 +416,16 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                         className="ml-1 w-14 rounded border border-gray-300 px-1 py-0.5 text-xs"
                       />
                     </label>
+                    {/* Per student is what lets two people in one group get
+                        different marks. */}
+                    <select
+                      value={c.level}
+                      onChange={(e) => updateCriterion(si, ci, { level: e.target.value as CriterionLevel })}
+                      className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                    >
+                      <option value="GROUP">whole group</option>
+                      <option value="INDIVIDUAL">per student</option>
+                    </select>
                     {stage.criteria.length > 1 && (
                       <button
                         onClick={() =>
@@ -430,7 +442,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                   <button
                     onClick={() =>
                       updateStage(si, {
-                        criteria: [...stage.criteria, { name: '', description: '', weight: 0, maxScore: 10 }],
+                        criteria: [...stage.criteria, { name: '', description: '', weight: 0, maxScore: 10, level: 'GROUP' }],
                       })
                     }
                     className="text-xs text-blue-600 hover:underline"
@@ -460,7 +472,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                 timerSegments: [],
                 submissionRequired: false,
                 ...EMPTY_WINDOWS,
-                criteria: [{ name: '', description: '', weight: 100, maxScore: 10 }],
+                criteria: [{ name: '', description: '', weight: 100, maxScore: 10, level: 'GROUP' }],
               },
             ])
           }
@@ -492,7 +504,10 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                   {stage.submissionRequired && ', submission required'})
                 </p>
                 <p className="text-gray-400">
-                  criteria: {stage.criteria.map((c) => `${c.name} ${c.weight}%/${c.maxScore}`).join(', ')}
+                  criteria:{' '}
+                  {stage.criteria
+                    .map((c) => `${c.name} ${c.weight}%/${c.maxScore}${c.level === 'INDIVIDUAL' ? ' per student' : ''}`)
+                    .join(', ')}
                 </p>
                 <p className="text-gray-400">
                   evaluators:{' '}

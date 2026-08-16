@@ -186,22 +186,37 @@ function SessionScorer({
   const commentRequired = policy?.requireOverallComment ?? true;
   const openVisibility = scoreVisibility !== 'ISOLATED';
 
-  // Local form state: criterionId -> { score, comment }.
+  const members = session.group.members.map((m) => m.student);
+
+  // One input per criterion, or per criterion and student when the criterion is
+  // scored individually. The key carries both.
+  const fieldKey = (criterionId: string, studentId?: string) => `${criterionId}|${studentId ?? ''}`;
+
+  // Every box this panelist has to fill in.
+  const fields = criteria.flatMap((c) =>
+    c.level === 'INDIVIDUAL'
+      ? members.map((student) => ({ criterion: c, student }))
+      : [{ criterion: c, student: undefined as (typeof members)[number] | undefined }],
+  );
+
   const [values, setValues] = useState<Record<string, { score: string; comment: string }>>({});
   const [overallComment, setOverallComment] = useState('');
 
   useEffect(() => {
     if (!ownScores) return;
     const next: Record<string, { score: string; comment: string }> = {};
-    for (const c of criteria) {
-      const existing = ownScores.find((s) => s.rubricCriterionId === c.id);
-      next[c.id] = {
-        score: existing ? String(existing.score) : '',
-        comment: existing?.comment ?? '',
-      };
+    for (const field of fields) {
+      const key = fieldKey(field.criterion.id, field.student?.id);
+      const existing = ownScores.find(
+        (s) => s.rubricCriterionId === field.criterion.id && (s.studentId ?? undefined) === field.student?.id,
+      );
+      next[key] = { score: existing ? String(existing.score) : '', comment: existing?.comment ?? '' };
     }
     setValues(next);
-  }, [ownScores, criteria]);
+    // fields is rebuilt each render; the scores and criteria it derives from are
+    // what actually change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownScores, criteria, session.group.members]);
 
   // Reload an overall comment already saved for this seat, so resubmitting does
   // not force the panelist to retype it.
@@ -210,17 +225,21 @@ function SessionScorer({
     if (mine?.evaluation) setOverallComment(mine.evaluation.overallComment);
   }, [panel]);
 
-  const setField = (cid: string, field: 'score' | 'comment', v: string) =>
-    setValues((prev) => ({ ...prev, [cid]: { ...prev[cid], [field]: v } }));
+  const setField = (key: string, field: 'score' | 'comment', v: string) =>
+    setValues((prev) => ({ ...prev, [key]: { ...prev[key], [field]: v } }));
 
   const onSubmit = () => {
-    const payload = criteria
-      .filter((c) => values[c.id]?.score !== '')
-      .map((c) => ({
-        criterionId: c.id,
-        score: Number(values[c.id].score),
-        comment: values[c.id].comment || undefined,
-      }));
+    const payload = fields
+      .filter((f) => values[fieldKey(f.criterion.id, f.student?.id)]?.score !== '')
+      .map((f) => {
+        const value = values[fieldKey(f.criterion.id, f.student?.id)];
+        return {
+          criterionId: f.criterion.id,
+          studentId: f.student?.id,
+          score: Number(value.score),
+          comment: value.comment || undefined,
+        };
+      });
     submit.mutate({ scores: payload, overallComment: overallComment.trim() || undefined });
   };
 
@@ -254,28 +273,43 @@ function SessionScorer({
       )}
 
       <div className="mt-3 space-y-2">
-        {criteria.map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-2">
-            <span className="w-32 text-xs text-gray-700">{c.name}</span>
-            <input
-              type="number"
-              min={0}
-              max={c.maxScore}
-              value={values[c.id]?.score ?? ''}
-              onChange={(e) => setField(c.id, 'score', e.target.value)}
-              disabled={locked}
-              placeholder={`0–${c.maxScore}`}
-              className="w-20 rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
-            />
-            <input
-              value={values[c.id]?.comment ?? ''}
-              onChange={(e) => setField(c.id, 'comment', e.target.value)}
-              disabled={locked}
-              placeholder="comment (optional)"
-              className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
-            />
-          </div>
-        ))}
+        {fields.map((field) => {
+          const key = fieldKey(field.criterion.id, field.student?.id);
+          return (
+            <div key={key} className="flex flex-wrap items-center gap-2">
+              <span className="w-32 text-xs text-gray-700">
+                {field.criterion.name}
+                {field.student && (
+                  <span className="block text-gray-400">
+                    {field.student.user.fullName || field.student.studentId}
+                  </span>
+                )}
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={field.criterion.maxScore}
+                value={values[key]?.score ?? ''}
+                onChange={(e) => setField(key, 'score', e.target.value)}
+                disabled={locked}
+                placeholder={`0–${field.criterion.maxScore}`}
+                className="w-20 rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+              />
+              <input
+                value={values[key]?.comment ?? ''}
+                onChange={(e) => setField(key, 'comment', e.target.value)}
+                disabled={locked}
+                placeholder="comment (optional)"
+                className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+              />
+            </div>
+          );
+        })}
+        {criteria.some((c) => c.level === 'INDIVIDUAL') && members.length === 0 && (
+          <p className="text-xs text-amber-700">
+            This stage is scored per student, but the group has no accepted members.
+          </p>
+        )}
       </div>
 
       <div className="mt-3">
