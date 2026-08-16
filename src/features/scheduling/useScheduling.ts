@@ -17,7 +17,13 @@ export interface EvaluationSession {
   currentSegmentIndex: number;
   // Derived server-side: scheduled time passed but still SCHEDULED (no scores).
   isOverdue: boolean;
-  group: { id: string; name: string };
+  // Members ride along so a panelist can score per-student criteria without a
+  // second request per session.
+  group: {
+    id: string;
+    name: string;
+    members: { student: { id: string; studentId: string; user: { fullName: string; email: string } } }[];
+  };
   stage: { id: string; name: string };
 }
 
@@ -52,6 +58,12 @@ export interface AvailabilityTemplate {
   windowEnd: string;
   slots: AvailabilityTemplateSlot[];
   dates: string[];
+}
+
+// Identifies one cell of the grid. Dates come back as plain YYYY-MM-DD text, so
+// this key is the same everywhere.
+export function cellKey(slotDate: string, templateSlotId: string) {
+  return `${slotDate}|${templateSlotId}`;
 }
 
 export interface AvailabilityEntry {
