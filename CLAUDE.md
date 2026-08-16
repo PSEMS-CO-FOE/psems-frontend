@@ -32,7 +32,7 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `POST /users/:id/assign-coordinator` (SYSTEM_ADMIN) — promotes an approved lecturer to Course Coordinator.
 
 ### Students (`/students`) — System Admin only
-- `POST /students/bulk-provision` multipart `file` = CSV with header `email,fullName,studentId,department,year` → `{batchId, created, skipped[], invalid[]}`.
+- `POST /students/bulk-provision` multipart `file` = CSV with header `email,fullName,studentId,registrationNumber,department,year` (registration number optional) → `{batchId, created, skipped[], invalid[]}`.
 - `GET /students/provisioning/:batchId` → `{batchId, total, sent, failed, queued, students[]}` — poll this for email delivery status after a bulk upload.
 
 ### Lecturers (`/lecturers`)
@@ -101,10 +101,13 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `POST /sessions/:sessionId/approve` — requires session status `AWAITING_HEAD_JUDGE` and all scores `FINALIZED`; locks the session.
 - `POST /sessions/:sessionId/request-correction` `{evaluatorUserId, reason}` — reopens that one evaluator's scores for correction.
 
-### Marks (`/courses/:cpiId/marks`) — added Week 8
-- `POST /aggregate` (Coordinator) — computes each group's marks from FINALIZED session scores (criterion % of maxScore → weighted by criterion weight → stage % → weighted by stage weight → overall 0–100). Requires every session FINALIZED first (409 otherwise).
-- `POST /publish` (Coordinator) — makes marks visible to students (409 if not aggregated yet).
-- `GET /` — Coordinator sees all groups' marks; a student sees **only their own group's, and only after publish** (403 before publish — don't build a UI state that assumes marks exist pre-publish).
+### Marks (`/courses/:cpiId/marks`) — reshaped for per-student marks and per-stage publishing
+- `POST /aggregate` (Coordinator) — works out every group's and every student's marks from FINALIZED session scores. Per criterion: combine the panel's scores, turn that into a percentage of the maximum, weight by the criterion's weight; GROUP criteria give every member the same share, INDIVIDUAL criteria give each their own. The stage total is weighted by the stage's weight. The group's figure is the average of its members'. Requires every session FINALIZED first (409 otherwise).
+- `POST /publish` (Coordinator) `{stageId, publishMarks, publishComments}` — `stageId: null` sets the whole course, a stage id sets that stage. Marks and comments are separate switches and **either can be set back to false**. A stage's own row wins; otherwise the course-wide row applies. 409 if marks have not been aggregated.
+- `GET /publications` (Coordinator) — the current switches, per stage and course-wide.
+- `PUT /grade-bands` (Coordinator) `{bands: [{label, minPercent}]}` — replace-all; only applied when the course policy has `gradingEnabled`. `GET /grade-bands` for any participant.
+- `GET /sheet` (Coordinator only) — the CA sheet: one row per student with surname and initials split out, one column per stage, a `weights` map summing to 1.00, a total, and `zeroTotal` flags. Coordinator only because it lists every student in the course.
+- `GET /` → `{gradingEnabled, caContributionPercent, pendingStages[], groups[]}`. The coordinator sees every group and every student. **A student gets 200 even before anything is published** — `groups` is empty and `pendingStages` names what is still to come. Do not build a UI that treats 403 as "not published"; that was the Week 8 behaviour and it is gone. A student sees only their own breakdown, never a group-mate's.
 
 ### Notifications (`/notifications`) — added Week 8
 - `GET /` (any authed user) — the caller's notifications, newest presumably first.
@@ -152,7 +155,7 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 - **`/guest?token=…` sits outside `ProtectedRoute` and every role layout** — the link is the credential. The issued link is shown once, on invite, with a warning: only its hash is stored server-side.
 - `CpiEvaluationConfig` builds **panel rules** (role, min, max, mark-counting, open-to-all) instead of a single `evaluatorsRequired` number, plus per-stage score visibility. `LecturerSessionsPage` gained the **mandatory overall-comment box** (submit is disabled without it) and an amber banner when a stage's scores are open to the whole panel. `ReviewPage` shows overall comments, targets corrections by **panelist seat** rather than user id (so a guest with no account can be asked to revise), and carries the three manual actions: **Close scoring**, **Approve & finalize**, **Reopen**. It also shows per-role readiness (`3/2 evaluators`) as information — nothing advances by itself, so the reviewer decides when marking ends.
 - `SessionStatus` union: `AWAITING_HEAD_JUDGE` → `AWAITING_REVIEW`.
-- **Known pre-existing gap, not introduced here:** the frontend has no ESLint config at all, so `npm run lint` has never worked (the backend has one). Everything here is verified by `tsc -b` + `vite build` only.
+- **Known gap at the time, fixed in Wave 4:** the frontend had no ESLint config, so `npm run lint` had never worked. Everything in this pass was verified by `tsc -b` + `vite build` only.
 **Customizability pass COMPLETE as of 2026-07-25 (uncommitted).** Frontend for four new features (`tsc -b` + `vite build` clean): **(A)** create-CPI project type is a free-text input with a datalist of suggestions (`PROJECT_TYPE_SUGGESTIONS`), no longer a fixed dropdown; **(B)** idea revise/resubmit — student `IdeasPage` shows the revision note and an inline edit/resubmit form on their own idea; coordinator `CpiIdeasModeration` and supervisor `SupervisorSelectionPage` have a "Request revision" note+button (`useUpdateIdea`, `useRequestIdeaRevision`); **(C)** `LecturerSessionsPage` timer is now server-driven and polled (`useControlTimer`, `useSessions(cpiId, { refetchInterval: 3000 })`) so all evaluators share one live clock; **(D)** `CpiEvaluationConfig` has optional per-stage submission + scoring (execution) datetime windows, and `CpiDetailPage`'s timeline editor has per-phase enable checkboxes so a CPI can use any subset of phases. New hook exports: `useStudentCpis`/`useLecturerCpis`/`useCpiSummary`, `useUpdateIdea`/`useRequestIdeaRevision`, `useControlTimer`.
 
 **No-UUID pass COMPLETE as of 2026-07-25 (uncommitted).** Removed every raw-UUID/id text input in the app — nothing requires typing an id anymore:
@@ -162,6 +165,19 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 - **`ReviewPage`** request-correction: dropdown of the session's evaluators (review scores now include evaluator `id`).
 - **`SelectionPage`** own-idea supervisor pick: dropdown of willing supervisors (selection supervisor refs now include `user.id`).
 Verified: frontend `tsc -b` + `vite build` clean; backend `tsc`+lint clean, 38 tests/10 suites green.
+
+**Restructure Wave 4 frontend COMPLETE as of 2026-08-16 (uncommitted).** What shipped:
+
+- **`CpiMarks.tsx` rebuilt** from two buttons into the real screen: aggregate, a publish matrix (marks and comments, per stage and for the whole course, each switchable off), a grade-band editor, and the CA sheet with a **Download CSV** button and a print view. Zero-total rows are highlighted.
+- **`features/marks/export.ts`** builds the CSV — a pure function, so it is unit-tested rather than click-tested. Uses a blob URL, not a data URL, since a full cohort exceeds what a URL may hold, and writes a BOM so Excel reads UTF-8 rather than guessing.
+- **`MarksPage.tsx`** shows the student's own mark, the group's, and for a stage with per-student criteria the split between group work and their own. Stages not yet released are **named as pending** rather than hidden, and the CA contribution line says what share of the module this is worth. The old 403 handling is gone — the API returns 200 with an empty list now.
+- **`CpiEvaluationConfig.tsx`** gained a whole group / per student selector on each criterion.
+- **`LecturerSessionsPage.tsx`** scoring grid is keyed by criterion **and** student, so a per-student criterion renders one row per member. It warns when a stage is scored per student but the group has no accepted members.
+- **Course settings**: the grading toggle is live. The "not active until X ships" marker is gone entirely — every setting on that screen now does something.
+
+**Tooling added this pass (plan risk #4 is closed):**
+- **ESLint now works.** There was no config at all, so `npm run lint` had never run. `eslint.config.js` is flat config with typescript-eslint and the React hooks rules; it is ESM because this package is `"type": "module"` (the backend's is CommonJS). The one warning it found was real — `cellKey` exported from a component file breaks fast refresh — and was fixed by moving it to `features/scheduling/useScheduling.ts` rather than silenced.
+- **Vitest + Testing Library + jsdom.** `npm test` runs; `vitest.config.ts` is separate from `vite.config.ts` so build config stays free of test settings. 16 tests: the availability grid's click-cycling, read-only and summary modes, and the CSV export's escaping, weight row, blank handling and grade column.
 
 **Restructure Wave 3 frontend COMPLETE as of 2026-08-16 (uncommitted).** `tsc -b` + `vite build` clean. What shipped:
 
@@ -174,7 +190,7 @@ Verified: frontend `tsc -b` + `vite build` clean; backend `tsc`+lint clean, 38 t
 - **`features/scheduling/useTimer.ts`** - its own light polling hook, separate from `useSessions`. `LecturerSessionsPage` gained Previous / Next segment / Open timer window and a per-segment log with a hand-override for the verdict; `ReviewPage` shows the segment log read-only so time management is marked against real data.
 - **`CpiEvaluationConfig.tsx`** gained a per-stage running-order editor (name + minutes). Leaving it empty runs one clock, which is the old behaviour.
 
-**Note: `npm run lint` does not work in this repo** - the script exists but there is no `eslint.config.js`, so it has never run. Verification here is `tsc -b` + `vite build` only. Worth its own decision alongside adding Vitest (restructure plan risk #4).
+**Verification here is now `tsc -b` + `vite build` + `npm run lint` + `npm test`.** ESLint and Vitest were added in Wave 4; before that neither existed.
 
 **Full gap-closure pass COMPLETE as of 2026-07-25 (uncommitted).** Built the frontend for every actionable item in `docs/E2E_TEST_GUIDE.md` 4.2 (items 1–16; 17–18 accepted; no ML). `tsc -b` typecheck + `vite build` both clean. What shipped: `RegisterPage.tsx` (public `/register` lecturer self-registration, linked from login) [#1]; pending supervisor-invites list + Accept/Decline on `LecturerEnterCpiPage` [#2]; `SupervisorSelectionPage.tsx` at `/lecturer/cpi/:id/selection` — mark willing + accept/decline selections, with a new "Selection (supervisor)" tab [#3]; lecturer name/email **picker** (`useApprovedLecturers`) replacing raw-UUID inputs in `CpiAssignments` [#4]; real pending group-invites list on `GroupPage` replacing the UUID paste [#5]; score inputs now lock at `AWAITING_HEAD_JUDGE`/`FINALIZED` in `LecturerSessionsPage` [#6]; session **location** input + read-only display, **overdue** tag, and scheduling **conflict** warnings in `CpiScheduling` + `LecturerSessionsPage` [#14–16]; unmatched supervisor ideas + Coordinator-Managed "Confirm pairing" workflow in `CpiAllocation` [#9, #11]; **presentation-day timer** (start/pause/resume/stop, save-once) on `LecturerSessionsPage` with read-only duration in `ReviewPage` [#12]; forced first-login change hides the current-password field [#13]. New hooks: `useSupervisorInvites`, `useApprovedLecturers`/`useRegisterLecturer`, `usePendingGroupInvites`, `useMarkWilling`, `useSetPresentationDuration`, `useConfirmAllocation`. Next: Week 9 ML UI alongside the ML service.
 
