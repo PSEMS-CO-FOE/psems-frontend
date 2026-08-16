@@ -8,9 +8,6 @@ type BoolKey = {
 interface Toggle {
   key: BoolKey;
   label: string;
-  // Settings whose machinery has not been built yet are shown but disabled,
-  // rather than silently doing nothing when a coordinator flips them.
-  pending?: string;
 }
 
 const SECTIONS: { title: string; hint: string; toggles: Toggle[] }[] = [
@@ -54,8 +51,8 @@ const SECTIONS: { title: string; hint: string; toggles: Toggle[] }[] = [
   },
   {
     title: 'Results',
-    hint: 'What students eventually receive.',
-    toggles: [{ key: 'gradingEnabled', label: 'Award grades as well as marks', pending: 'grading' }],
+    hint: 'What students eventually receive. Grade bands are set on the Marks screen.',
+    toggles: [{ key: 'gradingEnabled', label: 'Award grades as well as marks' }],
   },
 ];
 
@@ -82,23 +79,15 @@ export function CpiPolicyPanel({ cpiId }: { cpiId: string }) {
             <p className="text-xs font-medium text-gray-700">{section.title}</p>
             <p className="text-xs text-gray-400">{section.hint}</p>
             <div className="mt-1 space-y-1 pl-2">
-              {section.toggles.map(({ key, label, pending }) => (
-                <label
-                  key={key}
-                  className={`flex items-center gap-2 text-xs ${pending ? 'text-gray-400' : 'text-gray-600'}`}
-                >
+              {section.toggles.map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-2 text-xs text-gray-600">
                   <input
                     type="checkbox"
                     checked={policy[key]}
-                    disabled={update.isPending || Boolean(pending)}
+                    disabled={update.isPending}
                     onChange={(e) => update.mutate({ [key]: e.target.checked } as Partial<CpiPolicy>)}
                   />
                   {label}
-                  {pending && (
-                    <span className="rounded bg-gray-100 px-1 text-[10px] text-gray-500">
-                      not active until {pending} ships
-                    </span>
-                  )}
                 </label>
               ))}
             </div>
@@ -122,16 +111,14 @@ export function CpiPolicyPanel({ cpiId }: { cpiId: string }) {
         </div>
 
         <div>
-          <p className="text-xs font-medium text-gray-700">
-            Who submits availability
-            <span className="ml-1 rounded bg-gray-100 px-1 text-[10px] font-normal text-gray-500">
-              not active until scheduling ships
-            </span>
-          </p>
+          <p className="text-xs font-medium text-gray-700">Who submits availability</p>
           <select
             value={policy.availabilityRequiredFrom}
-            disabled
-            className="mt-1 rounded border border-gray-300 px-2 py-1 text-xs text-gray-400"
+            disabled={update.isPending}
+            onChange={(e) =>
+              update.mutate({ availabilityRequiredFrom: e.target.value as CpiPolicy['availabilityRequiredFrom'] })
+            }
+            className="mt-1 rounded border border-gray-300 px-2 py-1 text-xs"
           >
             <option value="EVALUATORS_ONLY">evaluators only</option>
             <option value="EVALUATORS_AND_SUPERVISORS">evaluators and supervisors</option>
