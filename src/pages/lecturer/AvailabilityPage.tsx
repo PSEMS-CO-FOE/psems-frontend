@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { AvailabilityGrid, AvailabilityLegend, cellKey } from '@/components/AvailabilityGrid';
+import { AvailabilityGrid, AvailabilityLegend } from '@/components/AvailabilityGrid';
 import {
+  cellKey,
   useMyAvailability,
   useSubmitAvailability,
   type AvailabilityStatus,

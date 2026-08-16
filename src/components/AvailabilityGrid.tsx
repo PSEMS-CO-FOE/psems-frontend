@@ -1,13 +1,9 @@
-import type {
-  AvailabilityStatus,
-  AvailabilityTemplate,
-  AvailabilityTemplateSlot,
+import {
+  cellKey,
+  type AvailabilityStatus,
+  type AvailabilityTemplate,
+  type AvailabilityTemplateSlot,
 } from '@/features/scheduling/useScheduling';
-
-// Dates come back as plain YYYY-MM-DD text, so this key is the same everywhere.
-export function cellKey(slotDate: string, templateSlotId: string) {
-  return `${slotDate}|${templateSlotId}`;
-}
 
 const STATUS_STYLES: Record<AvailabilityStatus | 'BLANK', string> = {
   AVAILABLE: 'bg-green-100 text-green-800 border-green-300',
