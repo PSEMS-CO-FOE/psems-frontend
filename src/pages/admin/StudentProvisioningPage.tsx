@@ -5,9 +5,11 @@ import {
 } from '@/features/students/useProvisioning';
 import { getApiErrorMessage } from '@/lib/apiError';
 
-const SAMPLE_CSV = `email,fullName,studentId,department,year
-alice.demo@psems.dev,Alice Demo,STU9001,Computer Engineering,4
-bob.demo@psems.dev,Bob Demo,STU9002,Computer Engineering,3
+// registrationNumber may be left blank; mark sheets print it beside the index
+// number and show a dash without it.
+const SAMPLE_CSV = `email,fullName,studentId,registrationNumber,department,year
+alice.demo@psems.dev,Alice Demo,STU9001,2022/E/001,Computer Engineering,4
+bob.demo@psems.dev,Bob Demo,STU9002,,Computer Engineering,3
 `;
 
 function StatusPill({ status }: { status: string }) {
@@ -53,8 +55,11 @@ export function StudentProvisioningPage() {
         <h2 className="text-sm font-semibold text-gray-700">Bulk provision students</h2>
         <p className="mt-1 text-xs text-gray-500">
           Upload a CSV with header{' '}
-          <code className="rounded bg-gray-100 px-1">email,fullName,studentId,department,year</code>.
-          Each student gets a temp password emailed to them.{' '}
+          <code className="rounded bg-gray-100 px-1">
+            email,fullName,studentId,registrationNumber,department,year
+          </code>
+          . The registration number may be blank, but mark sheets carry it beside the index number. Each
+          student gets a temp password emailed to them.{' '}
           <button onClick={downloadSample} className="text-blue-600 underline">
             Download sample
           </button>
