@@ -8,7 +8,9 @@ export interface OwnScore {
   score: number;
   comment: string | null;
   rubricCriterionId: string;
-  criterion: { id: string; name: string; maxScore: number };
+  // Set for a per-student criterion, null for one scored once for the group.
+  studentId: string | null;
+  criterion: { id: string; name: string; maxScore: number; level: 'GROUP' | 'INDIVIDUAL' };
 }
 
 function scoresKey(cpiId: string, sessionId: string) {
