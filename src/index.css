@@ -1,3 +1,93 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Raw RGB channels, not hex, so Tailwind's `/<alpha-value>` still works. */
+  :root {
+    --canvas: 245 248 246;
+    --surface: 255 255 255;
+    --line: 227 232 229;
+    --line-strong: 203 211 206;
+    --ink: 24 32 28;
+    --ink-muted: 90 100 94;
+    --ink-subtle: 139 148 142;
+
+    --brand-soft: 240 250 243;
+    --brand-ring: 187 231 203;
+    --brand-strong: 39 116 67;
+
+    --positive-soft: 240 250 243;
+    --positive-strong: 39 116 67;
+    --caution-soft: 254 247 236;
+    --caution-strong: 143 95 12;
+    --critical-soft: 254 242 242;
+    --critical-strong: 155 47 41;
+    --info-soft: 241 246 253;
+    --info-strong: 42 84 143;
+  }
+
+  /* Green-tinted near-black rather than pure black: a true #000 ground makes
+     the surfaces above it read as grey boxes instead of raised cards. */
+  .dark {
+    --canvas: 14 21 18;
+    --surface: 21 30 26;
+    --line: 37 48 41;
+    --line-strong: 53 68 59;
+    --ink: 232 237 234;
+    --ink-muted: 156 168 161;
+    --ink-subtle: 110 122 116;
+
+    --brand-soft: 22 40 29;
+    --brand-ring: 46 92 62;
+    --brand-strong: 127 211 160;
+
+    --positive-soft: 20 40 28;
+    --positive-strong: 111 203 146;
+    --caution-soft: 42 33 19;
+    --caution-strong: 228 180 95;
+    --critical-soft: 44 23 23;
+    --critical-strong: 240 144 138;
+    --info-soft: 22 32 46;
+    --info-strong: 143 182 236;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-[15px] leading-relaxed text-ink;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold tracking-tight text-ink;
+  }
+
+  /* Focus was invisible across the app. One ring, applied once, so keyboard
+     users can see where they are without every control opting in. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-canvas;
+  }
+
+  ::selection {
+    @apply bg-brand-100 text-brand-900;
+  }
+
+  /* Native controls and scrollbars follow the theme without extra markup. */
+  .dark {
+    color-scheme: dark;
+  }
+}
+
+@layer utilities {
+  /* The projector/timer view is read from across a room: no chrome, huge type. */
+  .text-projector {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+}
