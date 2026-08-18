@@ -6,6 +6,8 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { GuestScoringPage } from '@/pages/guest/GuestScoringPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { EditProfilePage } from '@/pages/profile/EditProfilePage';
+import { DirectoryPage } from '@/pages/profile/DirectoryPage';
+import { RoleShell } from '@/components/layout/RoleShell';
 import { DiscoverCoursesPage } from '@/pages/lecturer/DiscoverCoursesPage';
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
@@ -14,7 +16,15 @@ import { StudentProvisioningPage } from '@/pages/admin/StudentProvisioningPage';
 import { AdminCoordinatorsPage } from '@/pages/admin/AdminCoordinatorsPage';
 import { CoordinatorLayout } from '@/pages/coordinator/CoordinatorLayout';
 import { CpiListPage } from '@/pages/coordinator/CpiListPage';
-import { CpiDetailPage } from '@/pages/coordinator/CpiDetailPage';
+import { CpiLayout } from '@/pages/coordinator/CpiLayout';
+import { CpiSetupPage } from '@/pages/coordinator/CpiSetupPage';
+import { CpiIdeasPage } from '@/pages/coordinator/CpiIdeasPage';
+import { CpiSelectionPage } from '@/pages/coordinator/CpiSelectionPage';
+import { CpiAllocationPage } from '@/pages/coordinator/CpiAllocationPage';
+import { CpiEvaluationPage } from '@/pages/coordinator/CpiEvaluationPage';
+import { CpiSubmissionsPage } from '@/pages/coordinator/CpiSubmissionsPage';
+import { CpiSchedulePage } from '@/pages/coordinator/CpiSchedulePage';
+import { CpiMarksPage } from '@/pages/coordinator/CpiMarksPage';
 import { StudentLayout } from '@/pages/student/StudentLayout';
 import { EnterCpiPage } from '@/pages/student/EnterCpiPage';
 import { StudentCpiLayout } from '@/pages/student/StudentCpiLayout';
@@ -63,25 +73,22 @@ export default function App() {
         }
       />
 
-      {/* An institution-wide directory: not role-gated, since a student reading
-          a supervisor's profile and a lecturer reading a student's are the same
-          page. Guests hold no account and never reach it. */}
+      {/* Institution-wide routes: not role-gated, since a student reading a
+          supervisor's profile and a lecturer reading a student's are the same
+          page. They share `RoleShell` so they keep the signed-in reader's own
+          navigation — rendered bare, they had no way back into the app.
+          Guests hold no account and never reach them. */}
       <Route
-        path="/profile/edit"
         element={
           <ProtectedRoute>
-            <EditProfilePage />
+            <RoleShell />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/profile/:userId"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path="/directory" element={<DirectoryPage />} />
+        <Route path="/profile/edit" element={<EditProfilePage />} />
+        <Route path="/profile/:userId" element={<ProfilePage />} />
+      </Route>
 
       <Route
         path="/admin"
@@ -105,7 +112,19 @@ export default function App() {
         }
       >
         <Route index element={<CpiListPage />} />
-        <Route path=":cpiId" element={<CpiDetailPage />} />
+        <Route path=":cpiId" element={<CpiLayout />}>
+          {/* The course page used to be one scroll of eleven panels. Each area
+              is now its own route, so it can be linked to and bookmarked. */}
+          <Route index element={<Navigate to="setup" replace />} />
+          <Route path="setup" element={<CpiSetupPage />} />
+          <Route path="ideas" element={<CpiIdeasPage />} />
+          <Route path="selection" element={<CpiSelectionPage />} />
+          <Route path="allocation" element={<CpiAllocationPage />} />
+          <Route path="evaluation" element={<CpiEvaluationPage />} />
+          <Route path="submissions" element={<CpiSubmissionsPage />} />
+          <Route path="schedule" element={<CpiSchedulePage />} />
+          <Route path="marks" element={<CpiMarksPage />} />
+        </Route>
       </Route>
       <Route
         path="/lecturer"
