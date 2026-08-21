@@ -1,6 +1,7 @@
 import { useApprovedLecturers, useAssignCoordinator } from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
+import { Button, Card, EmptyState, Notice, PageHeader, SkeletonCard } from '@/components/ui';
 
 // System Admin promotes an approved lecturer to Course Coordinator.
 export function AdminCoordinatorsPage() {
@@ -8,44 +9,54 @@ export function AdminCoordinatorsPage() {
   const assign = useAssignCoordinator();
 
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <h2 className="text-sm font-semibold text-gray-700">Promote a lecturer to Course Coordinator</h2>
-      <p className="mt-1 text-xs text-gray-500">
-        Approved lecturers who can be given the Course Coordinator role.
-      </p>
+    <div className="space-y-6">
+      <PageHeader
+        title="Coordinators"
+        description="Promote an approved lecturer so they can create and run courses."
+      />
 
-      {isLoading && <p className="mt-3 text-xs text-gray-500">Loading lecturers…</p>}
+      {isLoading && <SkeletonCard rows={3} />}
+
       {isError && (
-        <p className="mt-3 rounded bg-red-50 px-3 py-2 text-xs text-red-700">
-          {getApiErrorMessage(error, 'Could not load lecturers')}
-        </p>
+        <Notice tone="critical">{getApiErrorMessage(error, 'Could not load lecturers')}</Notice>
       )}
+
       {lecturers && lecturers.length === 0 && (
-        <p className="mt-3 text-xs text-gray-500">No approved lecturers yet.</p>
+        <EmptyState
+          title="No approved lecturers yet"
+          hint="Approve a lecturer on the Lecturer approvals page before assigning one as coordinator."
+        />
       )}
 
-      <ul className="mt-3 divide-y">
-        {lecturers?.map((l) => (
-          <li key={l.userId} className="flex items-center justify-between py-2 text-xs">
-            <span className="text-gray-700">
-              {personName(l)} <span className="text-gray-400">({l.email})</span>
-            </span>
-            <button
-              onClick={() => assign.mutate(l.userId)}
-              disabled={assign.isPending}
-              className="rounded bg-gray-800 px-3 py-1 font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-            >
-              Make coordinator
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {assign.isError && (
-        <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(assign.error)}</p>
-      )}
+      {assign.isError && <Notice tone="critical">{getApiErrorMessage(assign.error)}</Notice>}
       {assign.isSuccess && (
-        <p className="mt-2 text-xs text-green-600">Lecturer promoted to Course Coordinator.</p>
+        <Notice tone="positive">Lecturer promoted to Course Coordinator.</Notice>
+      )}
+
+      {lecturers && lecturers.length > 0 && (
+        <Card
+          title="Approved lecturers"
+          description="Anyone here can be given the Course Coordinator role."
+        >
+          <ul className="divide-y divide-line">
+            {lecturers.map((l) => (
+              <li key={l.userId} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <span className="min-w-0 text-sm">
+                  <span className="block truncate font-medium text-ink">{personName(l)}</span>
+                  <span className="block truncate text-xs text-ink-subtle">{l.email}</span>
+                </span>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => assign.mutate(l.userId)}
+                  disabled={assign.isPending}
+                >
+                  Make coordinator
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
     </div>
   );
