@@ -5,6 +5,7 @@ import {
   usePendingLecturers,
 } from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Button, Card, EmptyState, Notice, PageHeader, SkeletonCard } from '@/components/ui';
 
 // Bulk-provision lecturers the way students are provisioned. These accounts are
 // auto-approved (an admin uploaded them) and carry a forced first-login password
@@ -14,9 +15,9 @@ function LecturerCsvUpload() {
   const [file, setFile] = useState<File | null>(null);
 
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <h2 className="text-sm font-semibold text-gray-700">Upload lecturers</h2>
-      <p className="mt-1 text-xs text-gray-500">
+    <Card>
+      <h2 className="text-sm font-semibold text-ink">Upload lecturers</h2>
+      <p className="mt-1 text-xs text-ink-muted">
         CSV with header <code>email,fullName,department,designation</code>. Designation is optional. Each lecturer gets
         a temporary password by email and must change it on first sign-in.
       </p>
@@ -28,19 +29,17 @@ function LecturerCsvUpload() {
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="text-xs"
         />
-        <button
+        <Button variant="primary" size="sm"
           onClick={() => file && provision.mutate(file)}
-          disabled={!file || provision.isPending}
-          className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={!file || provision.isPending}>
           {provision.isPending ? '…' : 'Upload'}
-        </button>
+        </Button>
       </div>
 
-      {provision.isError && <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(provision.error)}</p>}
+      {provision.isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(provision.error)}</p>}
       {provision.isSuccess && (
         <div className="mt-2 text-xs">
-          <p className="text-green-700">Created {provision.data.created} lecturer(s).</p>
+          <p className="text-positive-700">Created {provision.data.created} lecturer(s).</p>
           {/* Rows that were skipped or malformed are reported per row, so a
               partly-bad file still provisions everyone it can. */}
           {provision.data.skipped.map((sk) => (
@@ -49,19 +48,23 @@ function LecturerCsvUpload() {
             </p>
           ))}
           {provision.data.invalid.map((iv) => (
-            <p key={iv.row} className="text-red-600">
+            <p key={iv.row} className="text-critical-700">
               Row {iv.row}: {iv.issues.join('; ')}
             </p>
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
 export function LecturerApprovalPage() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <PageHeader
+        title="Lecturer approvals"
+        description="Approve the accounts lecturers create before they can be given a role on a course."
+      />
       <LecturerCsvUpload />
       <PendingLecturerQueue />
     </div>
@@ -73,68 +76,65 @@ function PendingLecturerQueue() {
   const decision = useLecturerDecision();
 
   if (isLoading) {
-    return <p className="text-sm text-gray-500">Loading pending lecturers…</p>;
+    return <SkeletonCard rows={3} />;
   }
 
   if (isError) {
     return (
-      <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+      <Notice tone="critical">
         {getApiErrorMessage(error, 'Could not load pending lecturers')}
-      </p>
+      </Notice>
     );
   }
 
   if (!lecturers || lecturers.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center">
-        <p className="text-sm text-gray-500">No lecturers awaiting approval.</p>
-      </div>
+      <EmptyState
+        title="Nothing awaiting approval"
+        hint="Lecturers appear here after they register and before they can be given a course role."
+      />
     );
   }
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-gray-700">
+      <h2 className="text-sm font-semibold text-ink">
         {lecturers.length} lecturer{lecturers.length === 1 ? '' : 's'} awaiting approval
       </h2>
 
       {decision.isError && (
-        <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+        <Notice tone="critical">
           {getApiErrorMessage(decision.error, 'Action failed')}
-        </p>
+        </Notice>
       )}
 
-      <ul className="divide-y rounded-lg border bg-white">
+      <ul className="divide-y rounded-card border border-line bg-surface">
         {lecturers.map((lecturer) => {
           const isThisRowPending =
             decision.isPending && decision.variables?.lecturerId === lecturer.id;
           return (
             <li key={lecturer.id} className="flex items-center justify-between px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-gray-800">
+                <p className="text-sm font-medium text-ink">
                   {lecturer.user.fullName ?? '(no name)'}
                 </p>
-                <p className="text-xs text-gray-500">{lecturer.user.email}</p>
+                <p className="text-xs text-ink-muted">{lecturer.user.email}</p>
               </div>
               <div className="flex gap-2">
-                <button
+                <Button variant="success"
                   disabled={isThisRowPending}
                   onClick={() =>
                     decision.mutate({ lecturerId: lecturer.id, decision: 'approve' })
-                  }
-                  className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                >
+                  }>
                   Approve
-                </button>
-                <button
+                </Button>
+                <Button variant="danger"
                   disabled={isThisRowPending}
                   onClick={() =>
                     decision.mutate({ lecturerId: lecturer.id, decision: 'reject' })
-                  }
-                  className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                >
+                  }>
                   Reject
-                </button>
+                </Button>
               </div>
             </li>
           );

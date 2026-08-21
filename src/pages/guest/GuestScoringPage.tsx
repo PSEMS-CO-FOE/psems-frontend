@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useGuestWorkspace, useSubmitGuestScores, type GuestSession } from '@/features/panel/useGuest';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Button, Card, Notice, SkeletonCard } from '@/components/ui';
 
 function GuestSessionCard({ token, session }: { token: string; session: GuestSession }) {
   const submit = useSubmitGuestScores(token);
@@ -37,15 +38,15 @@ function GuestSessionCard({ token, session }: { token: string; session: GuestSes
     });
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-gray-800">
+        <p className="text-sm font-medium text-ink">
           {session.group.name} · {session.stage.name}
         </p>
-        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{session.status}</span>
+        <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
       </div>
       {session.scheduledStart && (
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-ink-muted">
           {new Date(session.scheduledStart).toLocaleString()}
           {session.location && ` · ${session.location}`}
         </p>
@@ -54,7 +55,7 @@ function GuestSessionCard({ token, session }: { token: string; session: GuestSes
       <div className="mt-3 space-y-2">
         {session.criteria.map((c) => (
           <div key={c.id} className="flex flex-wrap items-center gap-2">
-            <span className="w-40 text-xs text-gray-700" title={c.description ?? undefined}>
+            <span className="w-40 text-xs text-ink" title={c.description ?? undefined}>
               {c.name}
             </span>
             <input
@@ -65,45 +66,43 @@ function GuestSessionCard({ token, session }: { token: string; session: GuestSes
               onChange={(e) => setField(c.id, 'score', e.target.value)}
               disabled={locked}
               placeholder={`0–${c.maxScore}`}
-              className="w-20 rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+              className="w-20 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
             />
             <input
               value={values[c.id]?.comment ?? ''}
               onChange={(e) => setField(c.id, 'comment', e.target.value)}
               disabled={locked}
               placeholder="comment (optional)"
-              className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+              className="flex-1 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
             />
           </div>
         ))}
       </div>
 
       <div className="mt-3">
-        <label className="text-xs font-medium text-gray-700">
-          Overall comment <span className="text-red-600">*</span>
+        <label className="text-xs font-medium text-ink">
+          Overall comment <span className="text-critical-700">*</span>
         </label>
         <textarea
           value={overallComment}
           onChange={(e) => setOverallComment(e.target.value)}
           disabled={locked}
           rows={3}
-          className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+          className="mt-1 w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
         />
       </div>
 
-      {submit.isError && <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(submit.error)}</p>}
-      {submit.isSuccess && <p className="mt-2 text-xs text-green-600">Marks submitted. Thank you.</p>}
+      {submit.isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(submit.error)}</p>}
+      {submit.isSuccess && <p className="mt-2 text-xs text-positive-700">Marks submitted. Thank you.</p>}
 
       {!locked && (
-        <button
+        <Button variant="primary" size="sm" className="mt-3"
           onClick={onSubmit}
-          disabled={submit.isPending}
-          className="mt-3 rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={submit.isPending}>
           {submit.isPending ? '…' : 'Submit marks'}
-        </button>
+        </Button>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -115,32 +114,32 @@ export function GuestScoringPage() {
   const { data, isLoading, isError, error } = useGuestWorkspace(token);
 
   if (!token) {
-    return <p className="p-6 text-sm text-gray-600">This page needs the scoring link you were sent.</p>;
+    return <p className="p-6 text-sm text-ink-muted">This page needs the scoring link you were sent.</p>;
   }
-  if (isLoading) return <p className="p-6 text-sm text-gray-500">Loading…</p>;
+  if (isLoading) return <SkeletonCard rows={3} className="p-6" />;
   if (isError) {
     return (
-      <p className="m-6 rounded bg-red-50 px-4 py-3 text-sm text-red-700">
+      <Notice tone="critical" className="m-6">
         {getApiErrorMessage(error, 'This scoring link is not valid')}
-      </p>
+      </Notice>
     );
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-6">
       <div>
-        <h1 className="text-lg font-semibold text-gray-800">{data!.courseInstance.name}</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-lg font-semibold text-ink">{data!.courseInstance.name}</h1>
+        <p className="text-sm text-ink-muted">
           Welcome, {data!.guest.fullName}
           {data!.guest.organization && ` · ${data!.guest.organization}`}
         </p>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-ink-subtle">
           This link works until {new Date(data!.expiresAt).toLocaleDateString()} and covers only the evaluations below.
         </p>
       </div>
 
       {data!.sessions.length === 0 && (
-        <p className="text-sm text-gray-500">You have not been added to any evaluations yet.</p>
+        <p className="text-sm text-ink-muted">You have not been added to any evaluations yet.</p>
       )}
       {data!.sessions.map((s) => (
         <GuestSessionCard key={s.sessionId} token={token} session={s} />
