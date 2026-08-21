@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useScheduleSheet } from '@/features/scheduling/useScheduling';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Button, SkeletonText } from '@/components/ui';
 
 function formatSlot(start: string | null, end: string | null) {
   if (!start || !end) return 'Not scheduled';
@@ -18,29 +19,27 @@ export function ScheduleSheetPanel({ cpiId }: { cpiId: string }) {
   return (
     <div className="border-t pt-3">
       <div className="flex items-center gap-2">
-        <button onClick={() => setOpen((v) => !v)} className="text-xs text-blue-600 hover:underline">
+        <button onClick={() => setOpen((v) => !v)} className="text-xs text-brand-700 hover:underline">
           {open ? 'Hide printable schedule' : 'Printable schedule'}
         </button>
         {open && data && (
-          <button
-            onClick={() => window.print()}
-            className="rounded bg-gray-700 px-2 py-0.5 text-xs text-white hover:bg-gray-600"
-          >
+          <Button variant="neutral" size="sm"
+            onClick={() => window.print()}>
             Print
-          </button>
+          </Button>
         )}
       </div>
 
-      {open && isLoading && <p className="mt-2 text-xs text-gray-500">Loading…</p>}
-      {open && isError && <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(error)}</p>}
+      {open && isLoading && <SkeletonText className="mt-2" />}
+      {open && isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(error)}</p>}
 
       {open && data && (
-        <div className="mt-2 space-y-3 rounded border p-3">
+        <div className="mt-2 space-y-3 rounded-control border p-3">
           <div>
-            <p className="text-sm font-semibold text-gray-800">
-              {data.courseName} <span className="font-normal text-gray-500">· {data.academicYear}</span>
+            <p className="text-sm font-semibold text-ink">
+              {data.courseName} <span className="font-normal text-ink-muted">· {data.academicYear}</span>
             </p>
-            {data.venue && <p className="text-xs text-gray-600">Venue: {data.venue}</p>}
+            {data.venue && <p className="text-xs text-ink-muted">Venue: {data.venue}</p>}
             {data.unscheduled > 0 && (
               <p className="text-xs text-amber-700">{data.unscheduled} session(s) still have no time set.</p>
             )}
@@ -48,16 +47,16 @@ export function ScheduleSheetPanel({ cpiId }: { cpiId: string }) {
 
           {data.rows.map((row, i) => (
             <div key={i} className="break-inside-avoid">
-              <p className="text-xs font-semibold text-gray-700">
+              <p className="text-xs font-semibold text-ink">
                 {row.groupName} · {row.stageName}
               </p>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-ink-muted">
                 {formatSlot(row.scheduledStart, row.scheduledEnd)}
                 {row.location && ` · ${row.location}`}
               </p>
               <table className="mt-1 text-xs">
                 <thead>
-                  <tr className="text-left text-gray-500">
+                  <tr className="text-left text-ink-muted">
                     <th className="pr-4 font-medium">No</th>
                     <th className="pr-4 font-medium">Index Number</th>
                     <th className="font-medium">Name</th>
@@ -65,7 +64,7 @@ export function ScheduleSheetPanel({ cpiId }: { cpiId: string }) {
                 </thead>
                 <tbody>
                   {row.members.map((m) => (
-                    <tr key={m.indexNumber} className="text-gray-700">
+                    <tr key={m.indexNumber} className="text-ink">
                       <td className="pr-4">{m.no}</td>
                       <td className="pr-4">{m.indexNumber}</td>
                       <td>{m.name}</td>

@@ -5,6 +5,7 @@ import {
   useAvailability,
   useGenerateSessions,
   useScheduleSession,
+  useScheduleSessions,
   useSessions,
   useSetAvailabilityTemplate,
   type EvaluationSession,
@@ -13,6 +14,7 @@ import {
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 import { ScheduleSheetPanel } from './ScheduleSheetPanel';
+import { Badge, Button, Card, EmptyState, StatRow, StatTile } from '@/components/ui';
 
 const CONFLICT_LABELS: Record<ScheduleConflict['kind'], string> = {
   PANELIST_DOUBLE_BOOKED: 'Panelist double-booked',
@@ -55,10 +57,10 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
   }, [data]);
 
   return (
-    <div className="rounded border p-3">
+    <div className="rounded-control border p-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-gray-600">Availability grid</p>
-        <button onClick={() => setOpen((v) => !v)} className="text-xs text-blue-600 hover:underline">
+        <p className="text-xs font-medium text-ink-muted">Availability grid</p>
+        <button onClick={() => setOpen((v) => !v)} className="text-xs text-brand-700 hover:underline">
           {open ? 'Cancel' : template ? 'Redefine grid' : 'Set up grid'}
         </button>
       </div>
@@ -69,22 +71,22 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
             Republishing replaces the slots, and answers given against a removed slot go with it.
           </p>
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <label className="text-gray-500">
+            <label className="text-ink-muted">
               from
               <input
                 type="date"
                 value={windowStart}
                 onChange={(e) => setWindowStart(e.target.value)}
-                className="ml-1 rounded border border-gray-300 px-2 py-1"
+                className="ml-1 rounded-control border border-line-strong px-2 py-1"
               />
             </label>
-            <label className="text-gray-500">
+            <label className="text-ink-muted">
               to
               <input
                 type="date"
                 value={windowEnd}
                 onChange={(e) => setWindowEnd(e.target.value)}
-                className="ml-1 rounded border border-gray-300 px-2 py-1"
+                className="ml-1 rounded-control border border-line-strong px-2 py-1"
               />
             </label>
           </div>
@@ -95,24 +97,24 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
                 value={slot.name}
                 onChange={(e) => setSlots(slots.map((s, j) => (i === j ? { ...s, name: e.target.value } : s)))}
                 placeholder="Morning"
-                className="w-32 rounded border border-gray-300 px-2 py-1"
+                className="w-32 rounded-control border border-line-strong px-2 py-1"
               />
               <input
                 type="time"
                 value={slot.startTime}
                 onChange={(e) => setSlots(slots.map((s, j) => (i === j ? { ...s, startTime: e.target.value } : s)))}
-                className="rounded border border-gray-300 px-2 py-1"
+                className="rounded-control border border-line-strong px-2 py-1"
               />
               <input
                 type="time"
                 value={slot.endTime}
                 onChange={(e) => setSlots(slots.map((s, j) => (i === j ? { ...s, endTime: e.target.value } : s)))}
-                className="rounded border border-gray-300 px-2 py-1"
+                className="rounded-control border border-line-strong px-2 py-1"
               />
               {slots.length > 1 && (
                 <button
                   onClick={() => setSlots(slots.filter((_, j) => j !== i))}
-                  className="text-red-600 hover:underline"
+                  className="text-critical-700 hover:underline"
                 >
                   remove
                 </button>
@@ -123,30 +125,28 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSlots([...slots, { name: '', startTime: '13:00', endTime: '17:00' }])}
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs text-brand-700 hover:underline"
             >
               + add slot
             </button>
-            <button
+            <Button variant="primary" size="sm"
               onClick={() =>
                 setTemplate.mutate(
                   { windowStart, windowEnd, slots },
                   { onSuccess: () => setOpen(false) },
                 )
               }
-              disabled={!windowStart || !windowEnd || slots.some((s) => !s.name.trim()) || setTemplate.isPending}
-              className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-            >
+              disabled={!windowStart || !windowEnd || slots.some((s) => !s.name.trim()) || setTemplate.isPending}>
               {setTemplate.isPending ? '…' : 'Publish grid'}
-            </button>
+            </Button>
           </div>
           {setTemplate.isError && (
-            <p className="text-xs text-red-600">{getApiErrorMessage(setTemplate.error)}</p>
+            <p className="text-xs text-critical-700">{getApiErrorMessage(setTemplate.error)}</p>
           )}
         </div>
       )}
 
-      {!template && !open && <p className="mt-1 text-xs text-gray-500">No grid published yet.</p>}
+      {!template && !open && <EmptyState density="compact" title="No availability grid yet" hint="Publish a grid so evaluators can mark which slots they are free." />}
 
       {template && (
         <div className="mt-2 space-y-2">
@@ -171,33 +171,33 @@ function AlternativeSlots({ cpiId, session }: { cpiId: string; session: Evaluati
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="self-start text-xs text-blue-600 hover:underline">
+      <button onClick={() => setOpen(true)} className="self-start text-xs text-brand-700 hover:underline">
         Find a slot everyone can make
       </button>
     );
   }
 
   return (
-    <div className="rounded bg-gray-50 px-2 py-1">
-      {isLoading && <span className="text-xs text-gray-500">Checking availability…</span>}
+    <div className="rounded-control bg-canvas px-2 py-1">
+      {isLoading && <span className="text-xs text-ink-muted">Checking availability…</span>}
       {data && data.length === 0 && (
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-ink-muted">
           No slot works for every required panelist — widen the grid or change the panel.
         </span>
       )}
       <ul className="space-y-0.5">
         {data?.map((slot) => (
           <li key={`${slot.slotDate}-${slot.templateSlotId}`} className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-gray-700">
+            <span className="text-ink">
               {new Date(slot.start).toLocaleString()} · {slot.slotName}
             </span>
             {!slot.allAvailable && (
-              <span className="text-yellow-700">tentative: {slot.tentative.join(', ')}</span>
+              <span className="text-caution-700">tentative: {slot.tentative.join(', ')}</span>
             )}
             {slot.sessionsAlreadyInSlot > 0 && (
-              <span className="text-gray-400">{slot.sessionsAlreadyInSlot} other session(s) in this slot</span>
+              <span className="text-ink-subtle">{slot.sessionsAlreadyInSlot} other session(s) in this slot</span>
             )}
-            <button
+            <Button variant="neutral" size="sm"
               onClick={() =>
                 schedule.mutate(
                   {
@@ -208,11 +208,9 @@ function AlternativeSlots({ cpiId, session }: { cpiId: string; session: Evaluati
                   },
                   { onSuccess: () => setOpen(false) },
                 )
-              }
-              className="rounded bg-gray-700 px-2 py-0.5 text-white hover:bg-gray-600"
-            >
+              }>
               move here
-            </button>
+            </Button>
           </li>
         ))}
       </ul>
@@ -231,16 +229,16 @@ function SessionRow({ cpiId, session }: { cpiId: string; session: EvaluationSess
   return (
     <li className="flex flex-col gap-1 py-2 text-xs">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-gray-700">
-          {session.group.name} · {session.stage.name} <span className="text-gray-400">({session.status})</span>
+        <span className="text-ink">
+          {session.group.name} · {session.stage.name} <span className="text-ink-subtle">({session.status})</span>
         </span>
         {session.isOverdue && (
-          <span className="rounded bg-red-100 px-1.5 py-0.5 text-red-700">overdue, not yet scored</span>
+          <Badge tone="critical">overdue, not yet scored</Badge>
         )}
         {session.scheduledStart && (
-          <span className="text-gray-400">@ {new Date(session.scheduledStart).toLocaleString()}</span>
+          <span className="text-ink-subtle">@ {new Date(session.scheduledStart).toLocaleString()}</span>
         )}
-        {session.location && <span className="text-gray-500">· {session.location}</span>}
+        {session.location && <span className="text-ink-muted">· {session.location}</span>}
       </div>
 
       <div className="flex flex-wrap items-center gap-1">
@@ -248,21 +246,21 @@ function SessionRow({ cpiId, session }: { cpiId: string; session: EvaluationSess
           type="datetime-local"
           value={start}
           onChange={(e) => setStart(e.target.value)}
-          className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+          className="rounded-control border border-line-strong px-1 py-0.5 text-xs"
         />
         <input
           type="datetime-local"
           value={end}
           onChange={(e) => setEnd(e.target.value)}
-          className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+          className="rounded-control border border-line-strong px-1 py-0.5 text-xs"
         />
         <input
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="room / link (optional)"
-          className="w-40 rounded border border-gray-300 px-2 py-0.5 text-xs"
+          className="w-40 rounded-control border border-line-strong px-2 py-0.5 text-xs"
         />
-        <button
+        <Button variant="neutral" size="sm"
           onClick={() =>
             schedule.mutate({
               sessionId: session.id,
@@ -271,18 +269,16 @@ function SessionRow({ cpiId, session }: { cpiId: string; session: EvaluationSess
               location: location.trim() || undefined,
             })
           }
-          disabled={!start || !end || schedule.isPending}
-          className="rounded bg-gray-700 px-2 py-0.5 text-white hover:bg-gray-600 disabled:opacity-50"
-        >
+          disabled={!start || !end || schedule.isPending}>
           {session.scheduledStart ? 'move' : 'set time'}
-        </button>
+        </Button>
       </div>
 
-      {schedule.isError && <span className="text-red-600">{getApiErrorMessage(schedule.error)}</span>}
-      {schedule.isSuccess && conflicts.length === 0 && <span className="text-green-600">Scheduled. No conflicts.</span>}
+      {schedule.isError && <span className="text-critical-700">{getApiErrorMessage(schedule.error)}</span>}
+      {schedule.isSuccess && conflicts.length === 0 && <span className="text-positive-700">Scheduled. No conflicts.</span>}
 
       {conflicts.length > 0 && (
-        <div className="rounded bg-yellow-50 px-2 py-1 text-yellow-800">
+        <div className="rounded-control bg-caution-50 px-2 py-1 text-caution-700">
           ⚠ Scheduled anyway — {conflicts.length} conflict{conflicts.length > 1 ? 's' : ''}:
           <ul className="mt-0.5 list-disc pl-4">
             {conflicts.map((c, i) => (
@@ -299,37 +295,170 @@ function SessionRow({ cpiId, session }: { cpiId: string; session: EvaluationSess
   );
 }
 
+// Placing twenty groups one at a time is the work a coordinator actually
+// complains about. This lays every unplaced session out back to back from a
+// start time, which is how a demo day is run in practice; individual rows can
+// still be nudged afterwards.
+function BlockLayout({ cpiId, sessions }: { cpiId: string; sessions: EvaluationSession[] }) {
+  const schedule = useScheduleSessions(cpiId);
+  const [start, setStart] = useState('');
+  const [minutes, setMinutes] = useState('20');
+  const [gap, setGap] = useState('0');
+  const [location, setLocation] = useState('');
+  const [onlyUnplaced, setOnlyUnplaced] = useState(true);
+
+  const targets = onlyUnplaced ? sessions.filter((s) => s.scheduledStart === null) : sessions;
+
+  const apply = () => {
+    const slot = Number(minutes) || 0;
+    const between = Number(gap) || 0;
+    if (!start || slot <= 0 || targets.length === 0) return;
+
+    const first = new Date(start).getTime();
+    schedule.mutate(
+      targets.map((session, i) => {
+        const from = first + i * (slot + between) * 60_000;
+        return {
+          sessionId: session.id,
+          scheduledStart: new Date(from).toISOString(),
+          scheduledEnd: new Date(from + slot * 60_000).toISOString(),
+          location: location.trim() || undefined,
+          allocatedMinutes: slot,
+        };
+      }),
+    );
+  };
+
+  const clashes = schedule.data?.results.filter((r) => r.conflicts.length > 0).length ?? 0;
+
+  return (
+    <div className="border-t pt-3">
+      <p className="text-xs font-medium text-ink">Lay out a block</p>
+      <p className="mt-0.5 text-xs text-ink-subtle">
+        Places {targets.length} session{targets.length === 1 ? '' : 's'} one after another. Clashes are reported, never
+        blocked — you can still fix them row by row.
+      </p>
+
+      <div className="mt-2 flex flex-wrap items-end gap-2">
+        <label className="text-xs text-ink-muted">
+          First session
+          <input
+            type="datetime-local"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            className="mt-0.5 block rounded-control border border-line-strong px-2 py-1 text-sm"
+          />
+        </label>
+        <label className="text-xs text-ink-muted">
+          Each takes
+          <span className="mt-0.5 flex items-center gap-1">
+            <input
+              type="number"
+              min={1}
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              className="w-20 rounded-control border border-line-strong px-2 py-1 text-sm"
+            />
+            <span className="text-sm text-ink-muted">min</span>
+          </span>
+        </label>
+        <label className="text-xs text-ink-muted">
+          Gap between
+          <span className="mt-0.5 flex items-center gap-1">
+            <input
+              type="number"
+              min={0}
+              value={gap}
+              onChange={(e) => setGap(e.target.value)}
+              className="w-20 rounded-control border border-line-strong px-2 py-1 text-sm"
+            />
+            <span className="text-sm text-ink-muted">min</span>
+          </span>
+        </label>
+        <label className="text-xs text-ink-muted">
+          Venue
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="optional"
+            className="mt-0.5 block w-40 rounded-control border border-line-strong px-2 py-1 text-sm"
+          />
+        </label>
+        <label className="flex items-center gap-1 text-xs text-ink-muted">
+          <input type="checkbox" checked={onlyUnplaced} onChange={(e) => setOnlyUnplaced(e.target.checked)} />
+          only ones with no time yet
+        </label>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={apply}
+          disabled={!start || targets.length === 0 || schedule.isPending}
+        >
+          {schedule.isPending ? '\u2026' : `Place ${targets.length}`}
+        </Button>
+      </div>
+
+      {schedule.isError && (
+        <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(schedule.error)}</p>
+      )}
+      {schedule.isSuccess && (
+        <p className="mt-1 text-xs text-ink-muted">
+          Placed {schedule.data.scheduled}.{' '}
+          {clashes > 0 ? `${clashes} have a clash worth checking below.` : 'No clashes.'}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function CpiScheduling({ cpiId }: { cpiId: string }) {
   const { data: sessions } = useSessions(cpiId);
   const generate = useGenerateSessions(cpiId);
 
+  const total = sessions?.length ?? 0;
+  const scheduled = sessions?.filter((s) => s.scheduledStart !== null).length ?? 0;
+  const overdue = sessions?.filter((s) => s.isOverdue).length ?? 0;
+
   return (
-    <div className="space-y-3 rounded-lg border bg-white p-4">
-      <h3 className="text-sm font-semibold text-gray-700">Scheduling</h3>
+    <Card title="Scheduling" className="space-y-3">
+      <StatRow>
+        <StatTile label="Sessions" value={total} caption={total === 0 ? 'None generated yet' : 'One per group and stage'} />
+        <StatTile
+          label="Given a time"
+          value={`${scheduled} / ${total}`}
+          caption={total - scheduled === 0 ? 'The timetable is complete' : `${total - scheduled} still to place`}
+        />
+        <StatTile
+          label="Overdue"
+          value={overdue}
+          caption={overdue === 0 ? 'Nothing has slipped' : 'Time passed, not yet scored'}
+        />
+        <StatTile label="Finalized" value={sessions?.filter((s) => s.status === 'FINALIZED').length ?? 0} caption="Scoring closed and approved" />
+      </StatRow>
 
       <AvailabilityTemplatePanel cpiId={cpiId} />
 
       <div className="border-t pt-3">
         <div className="flex items-center gap-2">
-          <button
+          <Button variant="primary" size="sm"
             onClick={() => generate.mutate()}
-            disabled={generate.isPending}
-            className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-          >
+            disabled={generate.isPending}>
             {generate.isPending ? '…' : 'Generate sessions'}
-          </button>
-          {generate.isError && <span className="text-xs text-red-600">{getApiErrorMessage(generate.error)}</span>}
+          </Button>
+          {generate.isError && <span className="text-xs text-critical-700">{getApiErrorMessage(generate.error)}</span>}
         </div>
 
         <ul className="mt-2 divide-y">
           {sessions?.map((s) => (
             <SessionRow key={s.id} cpiId={cpiId} session={s} />
           ))}
-          {sessions && sessions.length === 0 && <li className="py-2 text-xs text-gray-500">No sessions yet.</li>}
+          {sessions && sessions.length === 0 && <li><EmptyState density="compact" title="No sessions yet" hint="Generate sessions to create one shell per group and stage, then give each a time." /></li>}
         </ul>
       </div>
 
+      {sessions && sessions.length > 0 && <BlockLayout cpiId={cpiId} sessions={sessions} />}
+
       <ScheduleSheetPanel cpiId={cpiId} />
-    </div>
+    </Card>
   );
 }
