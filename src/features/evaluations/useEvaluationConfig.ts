@@ -146,6 +146,31 @@ export function useSetTimerSegments(cpiId: string) {
   });
 }
 
+export interface PooledShareDecision {
+  id: string;
+  sharePercent: number;
+  scorerLimit: number | null;
+  reason: string;
+  decidedAt: string;
+  decidedBy: { id: string; fullName: string | null; email: string };
+}
+
+/** The trail of who set the pooled share, to what, and why. The weighting is
+ *  chosen with the marks already visible, so showing the record beside the
+ *  control is the guardrail that makes that defensible. */
+export function usePooledShareDecisions(cpiId: string, stageId: string, enabled = true) {
+  return useQuery({
+    queryKey: [...configKey(cpiId), 'pooled-share', stageId] as const,
+    enabled: enabled && !!stageId,
+    queryFn: async () => {
+      const res = await api.get<PooledShareDecision[]>(
+        `/courses/${cpiId}/evaluations/stages/${stageId}/pooled-share`,
+      );
+      return res.data;
+    },
+  });
+}
+
 // Weighting pooled marks is decided with the scores visible, so the reason is
 // mandatory and kept as an audit record.
 export function useSetPooledShare(cpiId: string) {

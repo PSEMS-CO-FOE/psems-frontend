@@ -11,6 +11,7 @@ import { PANEL_ROLES, roleLabel, type MarkCounting, type PanelRole } from '@/fea
 import { useCpiDetail } from '@/features/courses/useCpiDetail';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
+import { Button, Card } from '@/components/ui';
 
 type EditCriterion = { name: string; description: string; weight: number; maxScore: number; level: CriterionLevel };
 // A stage's expected composition. Minimum 0 on every role with openToAll set is
@@ -158,14 +159,13 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
   };
 
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <h3 className="text-sm font-semibold text-gray-700">Evaluation config</h3>
+    <Card title="Evaluation config">
 
       {setConfig.isError && (
-        <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(setConfig.error)}</p>
+        <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(setConfig.error)}</p>
       )}
       {setConfig.isSuccess && (
-        <p className="mt-2 rounded bg-green-50 px-2 py-1 text-xs text-green-700">Config saved.</p>
+        <p className="mt-2 rounded-control bg-positive-50 px-2 py-1 text-xs text-positive-700">Config saved.</p>
       )}
 
       {/* Builder */}
@@ -173,38 +173,38 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
         {stages.map((stage, si) => {
           const critSum = sum(stage.criteria.map((c) => c.weight));
           return (
-            <div key={si} className="rounded border border-gray-200 p-2">
+            <div key={si} className="rounded-control border border-line p-2">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   value={stage.name}
                   onChange={(e) => updateStage(si, { name: e.target.value })}
                   placeholder="Stage name"
-                  className="rounded border border-gray-300 px-2 py-1 text-xs"
+                  className="rounded-control border border-line-strong px-2 py-1 text-xs"
                 />
-                <label className="text-xs text-gray-500">
+                <label className="text-xs text-ink-muted">
                   weight
                   <input
                     type="number"
                     value={stage.weight}
                     onChange={(e) => updateStage(si, { weight: Number(e.target.value) })}
-                    className="ml-1 w-14 rounded border border-gray-300 px-1 py-1 text-xs"
+                    className="ml-1 w-14 rounded-control border border-line-strong px-1 py-1 text-xs"
                   />
                 </label>
-                <label className="text-xs text-gray-500">
+                <label className="text-xs text-ink-muted">
                   scores visible
                   <select
                     value={stage.panelScoreVisibility}
                     onChange={(e) =>
                       updateStage(si, { panelScoreVisibility: e.target.value as PanelScoreVisibility })
                     }
-                    className="ml-1 rounded border border-gray-300 px-1 py-1 text-xs"
+                    className="ml-1 rounded-control border border-line-strong px-1 py-1 text-xs"
                   >
                     <option value="ISOLATED">only to each panelist</option>
                     <option value="OPEN_WITH_NAMES">to the whole panel, with names</option>
                     <option value="OPEN_ANONYMOUS">to the whole panel, anonymously</option>
                   </select>
                 </label>
-                <label className="flex items-center gap-1 text-xs text-gray-500">
+                <label className="flex items-center gap-1 text-xs text-ink-muted">
                   <input
                     type="checkbox"
                     checked={stage.submissionRequired}
@@ -215,7 +215,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                 {stages.length > 1 && (
                   <button
                     onClick={() => setStages((prev) => prev.filter((_, idx) => idx !== si))}
-                    className="ml-auto text-xs text-red-500 hover:underline"
+                    className="ml-auto text-xs text-critical-700 hover:underline"
                   >
                     remove stage
                   </button>
@@ -223,14 +223,14 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
               </div>
 
               {/* Optional per-stage scheduling windows */}
-              <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 pl-3 text-xs text-gray-500">
+              <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 pl-3 text-xs text-ink-muted">
                 <label className="flex flex-col">
                   Submission opens
                   <input
                     type="datetime-local"
                     value={stage.submissionWindowStart}
                     onChange={(e) => updateStage(si, { submissionWindowStart: e.target.value })}
-                    className="mt-0.5 rounded border border-gray-300 px-1 py-0.5"
+                    className="mt-0.5 rounded-control border border-line-strong px-1 py-0.5"
                   />
                 </label>
                 <label className="flex flex-col">
@@ -239,7 +239,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                     type="datetime-local"
                     value={stage.submissionWindowEnd}
                     onChange={(e) => updateStage(si, { submissionWindowEnd: e.target.value })}
-                    className="mt-0.5 rounded border border-gray-300 px-1 py-0.5"
+                    className="mt-0.5 rounded-control border border-line-strong px-1 py-0.5"
                   />
                 </label>
                 <label className="flex flex-col">
@@ -248,7 +248,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                     type="datetime-local"
                     value={stage.executionWindowStart}
                     onChange={(e) => updateStage(si, { executionWindowStart: e.target.value })}
-                    className="mt-0.5 rounded border border-gray-300 px-1 py-0.5"
+                    className="mt-0.5 rounded-control border border-line-strong px-1 py-0.5"
                   />
                 </label>
                 <label className="flex flex-col">
@@ -257,23 +257,23 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                     type="datetime-local"
                     value={stage.executionWindowEnd}
                     onChange={(e) => updateStage(si, { executionWindowEnd: e.target.value })}
-                    className="mt-0.5 rounded border border-gray-300 px-1 py-0.5"
+                    className="mt-0.5 rounded-control border border-line-strong px-1 py-0.5"
                   />
                 </label>
-                <p className="col-span-2 text-gray-400">
+                <p className="col-span-2 text-ink-subtle">
                   Leave blank to use the phase window. Set both ends to give this stage its own time.
                 </p>
               </div>
 
               {/* Panel composition — who this stage expects, and how their marks count. */}
               <div className="mt-2 space-y-1 pl-3">
-                <p className="text-xs font-medium text-gray-600">Panel</p>
+                <p className="text-xs font-medium text-ink-muted">Panel</p>
                 {stage.panelRules.map((rule, ri) => (
                   <div key={ri} className="flex flex-wrap items-center gap-1">
                     <select
                       value={rule.role}
                       onChange={(e) => updateRule(si, ri, { role: e.target.value as PanelRole })}
-                      className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                      className="rounded-control border border-line-strong px-1 py-0.5 text-xs"
                     >
                       {PANEL_ROLES.map((r) => (
                         <option key={r} value={r}>
@@ -281,17 +281,17 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                         </option>
                       ))}
                     </select>
-                    <label className="text-xs text-gray-500">
+                    <label className="text-xs text-ink-muted">
                       min
                       <input
                         type="number"
                         min={0}
                         value={rule.minRequired}
                         onChange={(e) => updateRule(si, ri, { minRequired: Number(e.target.value) })}
-                        className="ml-1 w-12 rounded border border-gray-300 px-1 py-0.5 text-xs"
+                        className="ml-1 w-12 rounded-control border border-line-strong px-1 py-0.5 text-xs"
                       />
                     </label>
-                    <label className="text-xs text-gray-500">
+                    <label className="text-xs text-ink-muted">
                       max
                       <input
                         type="number"
@@ -299,19 +299,19 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                         value={rule.maxAllowed}
                         onChange={(e) => updateRule(si, ri, { maxAllowed: e.target.value })}
                         placeholder="any"
-                        className="ml-1 w-14 rounded border border-gray-300 px-1 py-0.5 text-xs"
+                        className="ml-1 w-14 rounded-control border border-line-strong px-1 py-0.5 text-xs"
                       />
                     </label>
                     <select
                       value={rule.markCounting}
                       onChange={(e) => updateRule(si, ri, { markCounting: e.target.value as MarkCounting })}
-                      className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                      className="rounded-control border border-line-strong px-1 py-0.5 text-xs"
                     >
                       <option value="COUNTED">marks count</option>
                       <option value="ADVISORY">advisory only</option>
                       <option value="COORDINATOR_DECIDES">pooled, coordinator weights</option>
                     </select>
-                    <label className="flex items-center gap-1 text-xs text-gray-500">
+                    <label className="flex items-center gap-1 text-xs text-ink-muted">
                       <input
                         type="checkbox"
                         checked={rule.openToAll}
@@ -323,7 +323,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                       onClick={() =>
                         updateStage(si, { panelRules: stage.panelRules.filter((_, idx) => idx !== ri) })
                       }
-                      className="text-xs text-red-500 hover:underline"
+                      className="text-xs text-critical-700 hover:underline"
                     >
                       remove
                     </button>
@@ -333,11 +333,11 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                   onClick={() =>
                     updateStage(si, { panelRules: [...stage.panelRules, defaultRule('SENIOR_EVALUATOR', 0)] })
                   }
-                  className="text-xs text-blue-600 hover:underline"
+                  className="text-xs text-brand-700 hover:underline"
                 >
                   + panel role
                 </button>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-ink-subtle">
                   With no role required, the session stays open until you close it at review — which is what an open
                   demonstration day needs, since people arrive and leave.
                 </p>
@@ -345,28 +345,28 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
 
               {/* Running order: the parts the presentation clock steps through */}
               <div className="mt-2 space-y-1 pl-3">
-                <p className="text-xs font-medium text-gray-600">Presentation running order</p>
+                <p className="text-xs font-medium text-ink-muted">Presentation running order</p>
                 {stage.timerSegments.map((segment, gi) => (
                   <div key={gi} className="flex flex-wrap items-center gap-1">
                     <input
                       value={segment.name}
                       onChange={(e) => updateSegment(si, gi, { name: e.target.value })}
                       placeholder="Presentation"
-                      className="w-40 rounded border border-gray-300 px-2 py-0.5 text-xs"
+                      className="w-40 rounded-control border border-line-strong px-2 py-0.5 text-xs"
                     />
                     <input
                       type="number"
                       min={1}
                       value={Math.round(segment.targetSeconds / 60)}
                       onChange={(e) => updateSegment(si, gi, { targetSeconds: Number(e.target.value) * 60 })}
-                      className="w-16 rounded border border-gray-300 px-2 py-0.5 text-xs"
+                      className="w-16 rounded-control border border-line-strong px-2 py-0.5 text-xs"
                     />
-                    <span className="text-xs text-gray-400">minutes</span>
+                    <span className="text-xs text-ink-subtle">minutes</span>
                     <button
                       onClick={() =>
                         updateStage(si, { timerSegments: stage.timerSegments.filter((_, idx) => idx !== gi) })
                       }
-                      className="text-xs text-red-500 hover:underline"
+                      className="text-xs text-critical-700 hover:underline"
                     >
                       remove
                     </button>
@@ -378,11 +378,11 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                       timerSegments: [...stage.timerSegments, { name: '', targetSeconds: 600 }],
                     })
                   }
-                  className="text-xs text-blue-600 hover:underline"
+                  className="text-xs text-brand-700 hover:underline"
                 >
                   + segment
                 </button>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-ink-subtle">
                   Leave empty to run one clock for the whole session. Segments never advance on their own — passing a
                   target starts counting the overrun, and whoever runs the room presses Next.
                 </p>
@@ -396,24 +396,24 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                       value={c.name}
                       onChange={(e) => updateCriterion(si, ci, { name: e.target.value })}
                       placeholder="criterion"
-                      className="rounded border border-gray-300 px-2 py-0.5 text-xs"
+                      className="rounded-control border border-line-strong px-2 py-0.5 text-xs"
                     />
-                    <label className="text-xs text-gray-400">
+                    <label className="text-xs text-ink-subtle">
                       w
                       <input
                         type="number"
                         value={c.weight}
                         onChange={(e) => updateCriterion(si, ci, { weight: Number(e.target.value) })}
-                        className="ml-1 w-12 rounded border border-gray-300 px-1 py-0.5 text-xs"
+                        className="ml-1 w-12 rounded-control border border-line-strong px-1 py-0.5 text-xs"
                       />
                     </label>
-                    <label className="text-xs text-gray-400">
+                    <label className="text-xs text-ink-subtle">
                       max
                       <input
                         type="number"
                         value={c.maxScore}
                         onChange={(e) => updateCriterion(si, ci, { maxScore: Number(e.target.value) })}
-                        className="ml-1 w-14 rounded border border-gray-300 px-1 py-0.5 text-xs"
+                        className="ml-1 w-14 rounded-control border border-line-strong px-1 py-0.5 text-xs"
                       />
                     </label>
                     {/* Per student is what lets two people in one group get
@@ -421,7 +421,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                     <select
                       value={c.level}
                       onChange={(e) => updateCriterion(si, ci, { level: e.target.value as CriterionLevel })}
-                      className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                      className="rounded-control border border-line-strong px-1 py-0.5 text-xs"
                     >
                       <option value="GROUP">whole group</option>
                       <option value="INDIVIDUAL">per student</option>
@@ -445,11 +445,11 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                         criteria: [...stage.criteria, { name: '', description: '', weight: 0, maxScore: 10, level: 'GROUP' }],
                       })
                     }
-                    className="text-xs text-blue-600 hover:underline"
+                    className="text-xs text-brand-700 hover:underline"
                   >
                     + criterion
                   </button>
-                  <span className={`text-xs ${critSum === 100 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`text-xs ${critSum === 100 ? 'text-positive-700' : 'text-critical-700'}`}>
                     criteria sum: {critSum}/100
                   </span>
                 </div>
@@ -476,40 +476,38 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
               },
             ])
           }
-          className="text-xs text-blue-600 hover:underline"
+          className="text-xs text-brand-700 hover:underline"
         >
           + stage
         </button>
-        <span className={`text-xs ${stageWeightsOk ? 'text-green-600' : 'text-red-600'}`}>
+        <span className={`text-xs ${stageWeightsOk ? 'text-positive-700' : 'text-critical-700'}`}>
           stage weights sum: {stageWeightSum}/100
         </span>
-        <button
+        <Button variant="primary" size="sm" className="ml-auto"
           onClick={save}
-          disabled={!canSave || setConfig.isPending}
-          className="ml-auto rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={!canSave || setConfig.isPending}>
           {setConfig.isPending ? '…' : 'Save config'}
-        </button>
+        </Button>
       </div>
 
       {/* Saved config + stage-evaluator assignment */}
       {saved && saved.length > 0 && (
         <div className="mt-4 border-t pt-3">
-          <p className="text-xs font-medium text-gray-600">Saved rubric</p>
+          <p className="text-xs font-medium text-ink-muted">Saved rubric</p>
           <ul className="mt-2 space-y-2">
             {saved.map((stage) => (
               <li key={stage.id} className="text-xs">
-                <p className="font-medium text-gray-800">
+                <p className="font-medium text-ink">
                   {stage.name} (weight {stage.weight}
                   {stage.submissionRequired && ', submission required'})
                 </p>
-                <p className="text-gray-400">
+                <p className="text-ink-subtle">
                   criteria:{' '}
                   {stage.criteria
                     .map((c) => `${c.name} ${c.weight}%/${c.maxScore}${c.level === 'INDIVIDUAL' ? ' per student' : ''}`)
                     .join(', ')}
                 </p>
-                <p className="text-gray-400">
+                <p className="text-ink-subtle">
                   evaluators:{' '}
                   {stage.evaluators.length
                     ? stage.evaluators.map((e) => personName(e.cpiEvaluator.lecturer.user)).join(', ')
@@ -519,7 +517,7 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                   <select
                     value={evaluatorInputs[stage.id] ?? ''}
                     onChange={(e) => setEvaluatorInputs((p) => ({ ...p, [stage.id]: e.target.value }))}
-                    className="rounded border border-gray-300 px-2 py-0.5 text-xs"
+                    className="rounded-control border border-line-strong px-2 py-0.5 text-xs"
                   >
                     <option value="">Select evaluator…</option>
                     {evaluatorPool.map((ev) => (
@@ -529,27 +527,25 @@ export function CpiEvaluationConfig({ cpiId }: { cpiId: string }) {
                       </option>
                     ))}
                   </select>
-                  <button
+                  <Button variant="neutral" size="sm"
                     onClick={() =>
                       assignEvaluator.mutate(
                         { stageId: stage.id, lecturerUserId: evaluatorInputs[stage.id] ?? '' },
                         { onSuccess: () => setEvaluatorInputs((p) => ({ ...p, [stage.id]: '' })) },
                       )
                     }
-                    disabled={!evaluatorInputs[stage.id] || assignEvaluator.isPending}
-                    className="rounded bg-gray-700 px-2 py-0.5 text-white hover:bg-gray-600 disabled:opacity-50"
-                  >
+                    disabled={!evaluatorInputs[stage.id] || assignEvaluator.isPending}>
                     assign
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}
           </ul>
           {assignEvaluator.isError && (
-            <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(assignEvaluator.error)}</p>
+            <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(assignEvaluator.error)}</p>
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

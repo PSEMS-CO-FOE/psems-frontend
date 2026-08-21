@@ -4,17 +4,20 @@ import {
   useGenerateAllocations,
   useOverrideAllocation,
   useFinalizeAllocations,
+  useReopenAllocations,
   useConfirmAllocation,
 } from '@/features/allocation/useAllocation';
 import type { CpiMode } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
+import { Button, Card, EmptyState, SkeletonText } from '@/components/ui';
 
 export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode }) {
   const { data, isLoading } = useAllocationMap(cpiId);
   const generate = useGenerateAllocations(cpiId);
   const override = useOverrideAllocation(cpiId);
   const finalize = useFinalizeAllocations(cpiId);
+  const reopen = useReopenAllocations(cpiId);
   const confirm = useConfirmAllocation(cpiId);
 
   const [overrideGroupId, setOverrideGroupId] = useState('');
@@ -25,39 +28,48 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
   // before finalize — Supervisor-Led carries mutual selection confirmation.
   const isCoordinatorManaged = mode === 'COORDINATOR_MANAGED';
 
-  const anyError = generate.error || override.error || finalize.error || confirm.error;
+  const anyError = generate.error || override.error || finalize.error || confirm.error || reopen.error;
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <Card>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">Allocation</h3>
+        <h2 className="text-base font-semibold tracking-tight text-ink">Allocation</h2>
         {data?.finalized && (
-          <span className="rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">Finalized</span>
+          <span className="rounded-control bg-line px-2 py-0.5 text-xs text-ink-muted">Finalized</span>
         )}
       </div>
 
       {anyError && (
-        <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(anyError)}</p>
+        <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(anyError)}</p>
       )}
 
       <div className="mt-3 flex gap-2">
-        <button
+        <Button variant="primary" size="sm"
           onClick={() => generate.mutate(undefined)}
-          disabled={data?.finalized || generate.isPending}
-          className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={data?.finalized || generate.isPending}>
           {generate.isPending ? '…' : 'Generate from selections'}
-        </button>
-        <button
+        </Button>
+        <Button variant="neutral" size="sm"
           onClick={() => finalize.mutate(undefined)}
-          disabled={data?.finalized || finalize.isPending}
-          className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
-        >
+          disabled={data?.finalized || finalize.isPending}>
           {finalize.isPending ? '…' : 'Finalize (lock)'}
-        </button>
+        </Button>
+        {/* A supervisor going on leave mid-semester is ordinary; before this the
+            lock had no way out and the pairing simply could not be changed. */}
+        {data?.finalized && (
+          <Button variant="neutral" size="sm"
+            onClick={() => {
+              const why = window.prompt('Why are you reopening allocations?');
+              if (why?.trim()) reopen.mutate(why.trim());
+            }}
+            disabled={reopen.isPending}
+            title="Unlocks pairings so a supervisor or idea can be changed. Refused once marks have been aggregated.">
+            {reopen.isPending ? '…' : 'Reopen'}
+          </Button>
+        )}
       </div>
 
-      {isLoading && <p className="mt-3 text-xs text-gray-500">Loading…</p>}
+      {isLoading && <SkeletonText className="mt-3" />}
 
       {data && (
         <>
@@ -65,48 +77,46 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
             {data.allocations.map((a) => {
               const reviewed = a.source === 'COORDINATOR_OVERRIDE';
               return (
-                <li key={a.id} className="flex flex-wrap items-center gap-2 text-xs text-gray-700">
+                <li key={a.id} className="flex flex-wrap items-center gap-2 text-xs text-ink">
                   <span>
                     {a.group.name} → {a.idea.title}
                     {a.supervisor && ` · ${a.supervisor.user.email}`}
-                    <span className="text-gray-400"> · {a.source}</span>
+                    <span className="text-ink-subtle"> · {a.source}</span>
                   </span>
                   {/* Coordinator-Managed per-pairing review (spec Step 7). */}
                   {isCoordinatorManaged && !data.finalized && (
                     reviewed ? (
-                      <span className="rounded bg-green-100 px-1.5 py-0.5 text-green-700">reviewed</span>
+                      <span className="rounded-control bg-positive-50 px-1.5 py-0.5 text-positive-700">reviewed</span>
                     ) : (
-                      <button
+                      <Button variant="neutral" size="sm"
                         onClick={() => confirm.mutate(a.group.id)}
-                        disabled={confirm.isPending}
-                        className="rounded bg-gray-700 px-2 py-0.5 font-medium text-white hover:bg-gray-600 disabled:opacity-50"
-                      >
+                        disabled={confirm.isPending}>
                         Confirm pairing
-                      </button>
+                      </Button>
                     )
                   )}
                 </li>
               );
             })}
             {data.allocations.length === 0 && (
-              <li className="text-xs text-gray-500">No allocations yet.</li>
+              <li><EmptyState density="compact" title="No allocations yet" hint="Allocations appear once supervisors and groups have confirmed each other." /></li>
             )}
           </ul>
 
           {isCoordinatorManaged && !data.finalized && data.allocations.some((a) => a.source === 'FROM_SELECTION') && (
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-ink-muted">
               Confirm or reassign every pairing before you can finalize.
             </p>
           )}
 
           {data.unmatchedGroups.length > 0 && (
-            <p className="mt-2 text-xs text-yellow-700">
+            <p className="mt-2 text-xs text-caution-700">
               Unmatched groups: {data.unmatchedGroups.map((g) => g.name).join(', ')}
             </p>
           )}
 
           {data.unmatchedSupervisorIdeas.length > 0 && (
-            <p className="mt-1 text-xs text-yellow-700">
+            <p className="mt-1 text-xs text-caution-700">
               Unallocated supervisor ideas:{' '}
               {data.unmatchedSupervisorIdeas.map((i) => i.title).join(', ')}
             </p>
@@ -116,14 +126,14 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
 
       {data && !data.finalized && (
         <div className="mt-3 border-t pt-3">
-          <p className="mb-1 text-xs font-medium text-gray-600">
+          <p className="mb-1 text-xs font-medium text-ink-muted">
             {isCoordinatorManaged ? 'Assign / reassign a group' : "Override a group's allocation"}
           </p>
           <div className="flex flex-wrap gap-2">
             <select
               value={overrideGroupId}
               onChange={(e) => setOverrideGroupId(e.target.value)}
-              className="rounded border border-gray-300 px-2 py-1 text-xs"
+              className="rounded-control border border-line-strong px-2 py-1 text-xs"
             >
               <option value="">Select group…</option>
               {/* Every group in the CPI — allocated ones (to reassign) and unmatched. */}
@@ -138,7 +148,7 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
             <select
               value={overrideIdeaId}
               onChange={(e) => setOverrideIdeaId(e.target.value)}
-              className="rounded border border-gray-300 px-2 py-1 text-xs"
+              className="rounded-control border border-line-strong px-2 py-1 text-xs"
             >
               <option value="">Select idea…</option>
               {data.ideas.map((i) => (
@@ -150,7 +160,7 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
             <select
               value={overrideSupervisorUserId}
               onChange={(e) => setOverrideSupervisorUserId(e.target.value)}
-              className="rounded border border-gray-300 px-2 py-1 text-xs"
+              className="rounded-control border border-line-strong px-2 py-1 text-xs"
             >
               <option value="">No supervisor</option>
               {data.supervisors.map((s) => (
@@ -159,7 +169,7 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
                 </option>
               ))}
             </select>
-            <button
+            <Button variant="neutral" size="sm"
               onClick={() =>
                 override.mutate(
                   {
@@ -176,14 +186,12 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
                   },
                 )
               }
-              disabled={!overrideGroupId || !overrideIdeaId || override.isPending}
-              className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
-            >
+              disabled={!overrideGroupId || !overrideIdeaId || override.isPending}>
               {isCoordinatorManaged ? 'Assign' : 'Override'}
-            </button>
+            </Button>
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
