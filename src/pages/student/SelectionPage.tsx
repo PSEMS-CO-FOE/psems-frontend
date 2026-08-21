@@ -10,6 +10,8 @@ import {
 } from '@/features/selection/useSelection';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
+import { Button, Card, EmptyState, Notice } from '@/components/ui';
+import { PolicyNote } from '@/components/PolicyNote';
 
 export function SelectionPage() {
   const { cpiId = '' } = useParams();
@@ -24,47 +26,67 @@ export function SelectionPage() {
   const [ideaId, setIdeaId] = useState('');
   const [supervisorUserId, setSupervisorUserId] = useState('');
 
-  if (isLoading) return <p className="text-sm text-gray-500">Loading selection…</p>;
+  if (isLoading) return <p className="text-sm text-ink-muted">Loading selection…</p>;
   if (isError || !state) {
     return (
-      <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+      <Notice tone="critical">
         {getApiErrorMessage(error, 'Could not load selection')}
-      </p>
+      </Notice>
     );
   }
   if (state.role !== 'STUDENT') {
-    return <p className="text-sm text-gray-500">Selection view is for students here.</p>;
+    return <p className="text-sm text-ink-muted">Selection view is for students here.</p>;
   }
 
   const ideaOptions = ideas ?? [];
 
+  const CONFIRMER = {
+    SUPERVISOR: 'the supervisor you choose',
+    COORDINATOR: 'the coordinator',
+    EITHER: 'either the coordinator or the supervisor you choose',
+  };
+
   return (
     <div className="space-y-4">
+      <PolicyNote
+        cpiId={cpiId}
+        lines={(p) => [
+          p.interestEnabled
+            ? 'Express interest first — a project is not yours until it is confirmed.'
+            : 'Interest is not used here; a project is assigned directly.',
+          `A selection is confirmed by ${CONFIRMER[p.selectionConfirmedBy]}.`,
+          p.interestEnabled &&
+            (p.allowInterestWithdrawal
+              ? 'You may withdraw interest while this phase is open.'
+              : 'Interest cannot be withdrawn once you express it.'),
+          p.maxInterestsPerGroup !== null &&
+            `Your group may express at most ${p.maxInterestsPerGroup} interest(s).`,
+        ]}
+      />
       {/* Current selection */}
-      <div className="rounded-lg border bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-700">Your group's selection</h2>
+      <Card>
+        <h2 className="text-sm font-semibold text-ink">Your group's selection</h2>
         {state.selection ? (
-          <p className="mt-2 text-sm text-gray-700">
+          <p className="mt-2 text-sm text-ink">
             {state.selection.idea.title} —{' '}
             <span className="font-medium">{state.selection.status}</span>
             {state.selection.supervisor && ` · ${state.selection.supervisor.user.email}`}
           </p>
         ) : (
-          <p className="mt-2 text-xs text-gray-500">No project selected yet.</p>
+          <EmptyState density="compact" title="No project selected yet" hint="Register interest in a supervisor’s idea, or post your own, while the selection phase is open." />
         )}
-      </div>
+      </Card>
 
       {/* Select a project */}
       {!state.selection && (
-        <div className="rounded-lg border bg-white p-4">
-          <h3 className="text-sm font-semibold text-gray-700">Select a project</h3>
+        <Card title="Select a project">
           {select.isError && (
-            <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(select.error)}</p>
+            <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(select.error)}</p>
           )}
           <select
             value={ideaId}
             onChange={(e) => setIdeaId(e.target.value)}
-            className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+            className="mt-2 w-full rounded-control border border-line-strong px-2 py-1 text-sm"
           >
             <option value="">Choose an idea…</option>
             {ideaOptions.map((i) => (
@@ -79,7 +101,7 @@ export function SelectionPage() {
             <select
               value={supervisorUserId}
               onChange={(e) => setSupervisorUserId(e.target.value)}
-              className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-xs"
+              className="mt-2 w-full rounded-control border border-line-strong px-2 py-1 text-xs"
             >
               <option value="">Choose a willing supervisor (for your own idea)…</option>
               {state.willingSupervisors
@@ -91,29 +113,27 @@ export function SelectionPage() {
                 ))}
             </select>
           )}
-          <button
+          <Button variant="primary" className="mt-2"
             onClick={() =>
               select.mutate({ ideaId, supervisorUserId: supervisorUserId || undefined })
             }
-            disabled={!ideaId || select.isPending}
-            className="mt-2 rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-          >
+            disabled={!ideaId || select.isPending}>
             {select.isPending ? '…' : 'Select project'}
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {/* Supervisor-Led EOI actions */}
-      <div className="rounded-lg border bg-white p-4">
-        <h3 className="text-sm font-semibold text-gray-700">
+      <Card>
+        <h3 className="text-sm font-semibold text-ink">
           Interest (Supervisor-Led){' '}
-          <span className="font-normal text-gray-400">— express interest / seek a supervisor</span>
+          <span className="font-normal text-ink-subtle">— express interest / seek a supervisor</span>
         </h3>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <select
             value={ideaId}
             onChange={(e) => setIdeaId(e.target.value)}
-            className="rounded border border-gray-300 px-2 py-1 text-xs"
+            className="rounded-control border border-line-strong px-2 py-1 text-xs"
           >
             <option value="">Choose an idea…</option>
             {ideaOptions.map((i) => (
@@ -122,23 +142,19 @@ export function SelectionPage() {
               </option>
             ))}
           </select>
-          <button
+          <Button variant="neutral" size="sm"
             onClick={() => interest.mutate(ideaId)}
-            disabled={!ideaId || interest.isPending}
-            className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
-          >
+            disabled={!ideaId || interest.isPending}>
             Express interest
-          </button>
-          <button
+          </Button>
+          <Button variant="neutral" size="sm"
             onClick={() => seeking.mutate(ideaId)}
-            disabled={!ideaId || seeking.isPending}
-            className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
-          >
+            disabled={!ideaId || seeking.isPending}>
             Seek supervisor (own idea)
-          </button>
+          </Button>
         </div>
         {(interest.isError || seeking.isError) && (
-          <p className="mt-2 text-xs text-red-600">
+          <p className="mt-2 text-xs text-critical-700">
             {getApiErrorMessage(interest.error || seeking.error)}
           </p>
         )}
@@ -146,7 +162,7 @@ export function SelectionPage() {
         {state.groupInterest.length > 0 && (
           <ul className="mt-3 space-y-1">
             {state.groupInterest.filter((e) => !e.withdrawnAt).map((e) => (
-              <li key={e.id} className="flex items-center gap-2 text-xs text-gray-600">
+              <li key={e.id} className="flex items-center gap-2 text-xs text-ink-muted">
                 <span>
                   {e.type === 'SEEKING_SUPERVISOR' ? 'Seeking a supervisor for' : 'Interested in'} — {e.idea.title}
                 </span>
@@ -154,7 +170,7 @@ export function SelectionPage() {
                 <button
                   onClick={() => withdraw.mutate({ ideaId: e.idea.id, type: e.type })}
                   disabled={withdraw.isPending}
-                  className="text-red-500 hover:underline disabled:opacity-50"
+                  className="text-critical-700 hover:underline disabled:opacity-50"
                 >
                   withdraw
                 </button>
@@ -162,8 +178,8 @@ export function SelectionPage() {
             ))}
           </ul>
         )}
-        {withdraw.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(withdraw.error)}</p>}
-      </div>
+        {withdraw.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(withdraw.error)}</p>}
+      </Card>
     </div>
   );
 }
