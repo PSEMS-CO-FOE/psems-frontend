@@ -3,32 +3,31 @@ import { useParams } from 'react-router-dom';
 import { useEvaluationConfig, type SavedStage } from '@/features/evaluations/useEvaluationConfig';
 import { useSubmissions, useSubmitProposal } from '@/features/files/useSubmissions';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Badge, Button, Card, EmptyState, SkeletonText } from '@/components/ui';
 
 function StageUpload({ cpiId, stage }: { cpiId: string; stage: SavedStage }) {
   const submit = useSubmitProposal(cpiId);
   const [file, setFile] = useState<File | null>(null);
 
   return (
-    <div className="rounded-lg border bg-white p-3">
-      <p className="text-sm font-medium text-gray-800">{stage.name}</p>
+    <Card>
+      <p className="text-sm font-medium text-ink">{stage.name}</p>
       <div className="mt-2 flex items-center gap-2">
         <input
           type="file"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="text-xs"
         />
-        <button
+        <Button variant="primary" size="sm"
           onClick={() => file && submit.mutate({ stageId: stage.id, file })}
-          disabled={!file || submit.isPending}
-          className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={!file || submit.isPending}>
           {submit.isPending ? 'Uploading…' : 'Upload'}
-        </button>
+        </Button>
       </div>
       {submit.isError && (
-        <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(submit.error)}</p>
+        <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(submit.error)}</p>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -42,12 +41,14 @@ export function SubmissionsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-700">Submit a proposal</h2>
-        {loadingConfig && <p className="text-sm text-gray-500">Loading stages…</p>}
+        <h2 className="mb-2 text-sm font-semibold text-ink">Submit a proposal</h2>
+        {loadingConfig && <SkeletonText />}
         {config && submissionStages.length === 0 && (
-          <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-            No stages currently require a submission.
-          </p>
+          <EmptyState
+            density="compact"
+            title="Nothing to submit right now"
+            hint="Stages that need a file appear here once your coordinator opens their submission window."
+          />
         )}
         <div className="space-y-2">
           {submissionStages.map((stage) => (
@@ -57,15 +58,15 @@ export function SubmissionsPage() {
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-700">Your submissions</h2>
+        <h2 className="mb-2 text-sm font-semibold text-ink">Your submissions</h2>
         {submissions && submissions.length === 0 && (
-          <p className="text-xs text-gray-500">Nothing submitted yet.</p>
+          <EmptyState density="compact" title="Nothing submitted yet" hint="Upload your file before the stage’s deadline; a late upload is accepted but flagged." />
         )}
         <ul className="space-y-1">
           {submissions?.map((s) => (
-            <li key={s.id} className="rounded border bg-white px-3 py-2 text-xs text-gray-700">
+            <li key={s.id} className="rounded-control border bg-surface px-3 py-2 text-xs text-ink">
               {s.stage.name}: {s.fileName} ({Math.round(s.fileSize / 1024)} KB)
-              {s.isLate && <span className="ml-2 rounded bg-red-100 px-1 text-red-700">LATE</span>}
+              {s.isLate && <Badge tone="critical" className="ml-2">late</Badge>}
             </li>
           ))}
         </ul>
