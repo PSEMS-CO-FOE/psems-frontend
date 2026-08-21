@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
+import { cpiDetailKey } from '@/features/courses/useCpiDetail';
+import type { CpiMode } from '@/features/courses/types';
 
 export type SelectionConfirmer = 'SUPERVISOR' | 'COORDINATOR' | 'EITHER';
 export type AvailabilityRequirement = 'EVALUATORS_ONLY' | 'EVALUATORS_AND_SUPERVISORS' | 'NONE';
@@ -35,7 +37,7 @@ export interface CpiPolicy {
   caContributionPercent: number | null;
 }
 
-function policyKey(cpiId: string) {
+export function policyKey(cpiId: string) {
   return ['policy', cpiId] as const;
 }
 
@@ -64,3 +66,41 @@ export function useUpdateCpiPolicy(cpiId: string) {
     },
   });
 }
+
+/**
+ * A preset is a starting point, not a mode the course is locked into: applying
+ * one writes the five settings it has an opinion about and leaves every other
+ * one as the coordinator left it. It changes the course's mode label too, so
+ * the course detail has to be refetched alongside the policy.
+ */
+export function useApplyPreset(cpiId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (mode: Exclude<CpiMode, null>) => {
+      await api.post(`/courses/${cpiId}/preset`, { mode });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: policyKey(cpiId) });
+      queryClient.invalidateQueries({ queryKey: cpiDetailKey(cpiId) });
+    },
+  });
+}
+
+/** The settings each preset writes — shown to the coordinator before they
+ *  apply one, so nothing changes without being named first. */
+export const PRESET_EFFECTS: Record<Exclude<CpiMode, null>, string[]> = {
+  SUPERVISOR_LED: [
+    'Supervisors post ideas',
+    'The coordinator does not',
+    'Student ideas need no approval',
+    'Interest is used',
+    'The chosen supervisor confirms a selection',
+  ],
+  COORDINATOR_MANAGED: [
+    'The coordinator posts ideas',
+    'Supervisors do not',
+    'Student ideas need approval',
+    'Interest is turned off',
+    'The coordinator confirms a selection',
+  ],
+};

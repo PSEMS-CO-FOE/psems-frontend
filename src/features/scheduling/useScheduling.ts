@@ -138,16 +138,6 @@ export function useSessions(cpiId: string, options?: { refetchInterval?: number 
   });
 }
 
-export function useAvailabilityTemplate(cpiId: string) {
-  return useQuery({
-    queryKey: [...availabilityKey(cpiId), 'template'],
-    queryFn: async () => {
-      const res = await api.get<AvailabilityTemplate | null>(`/courses/${cpiId}/availability/template`);
-      return res.data;
-    },
-  });
-}
-
 export function useSetAvailabilityTemplate(cpiId: string) {
   const queryClient = useQueryClient();
   return useMutation({

@@ -59,6 +59,14 @@ export function useFinalizeAllocations(cpiId: string) {
   return useAllocationAction(cpiId, () => api.post(`/courses/${cpiId}/allocations/finalize`));
 }
 
+// Unlocking so a pairing can be changed after the fact — a supervisor going on
+// leave mid-semester. Refused once any mark exists for the course.
+export function useReopenAllocations(cpiId: string) {
+  return useAllocationAction(cpiId, (reason: string) =>
+    api.post(`/courses/${cpiId}/allocations/reopen`, { reason }),
+  );
+}
+
 // Coordinator-Managed only: mark a pairing reviewed/confirmed before finalize.
 export function useConfirmAllocation(cpiId: string) {
   return useAllocationAction(cpiId, (groupId: string) =>
