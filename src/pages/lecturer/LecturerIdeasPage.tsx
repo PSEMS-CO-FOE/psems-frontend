@@ -4,16 +4,65 @@ import {
   useAddCoSupervisor,
   useIdeas,
   usePostIdea,
+  useRemoveCoSupervisor,
   useRespondCoSupervisor,
   type Idea,
 } from '@/features/ideas/useIdeas';
 import { useApprovedLecturers } from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
 import { personName } from '@/lib/name';
+import { Button, Card, EmptyState, Notice, SkeletonText } from '@/components/ui';
+import { PolicyNote } from '@/components/PolicyNote';
 
 // Supervisor idea announcement (Supervisor-Led mode): an accepted supervisor
 // posts project ideas for groups to express interest in, and sees the CPI's
 // ideas. The backend authorizes posting by supervisor capacity.
+
+// Who would actually supervise this, and who is still deciding. The primary
+// supervisor can take a co-supervisor off again — inviting one was always
+// possible, undoing it was not, so a mistaken invite stuck permanently.
+function SupervisorChips({ cpiId, idea }: { cpiId: string; idea: Idea }) {
+  const remove = useRemoveCoSupervisor(cpiId);
+  if (!idea.supervisors || idea.supervisors.length === 0) return null;
+
+  return (
+    <>
+      <ul className="mt-1 flex flex-wrap gap-1">
+        {idea.supervisors.map((sup) => (
+          <li
+            key={sup.id}
+            className={`flex items-center gap-1 rounded-control px-2 py-0.5 text-xs ${
+              sup.invitationStatus === 'ACCEPTED'
+                ? 'bg-positive-50 text-positive-700'
+                : sup.invitationStatus === 'PENDING'
+                  ? 'bg-amber-50 text-amber-800'
+                  : 'bg-canvas text-ink-muted'
+            }`}
+          >
+            <span>
+              {personName(sup.lecturer.user)}
+              {sup.isPrimary ? ' · supervisor' : ' · co-supervisor'}
+              {sup.invitationStatus === 'PENDING' && ' (not yet accepted)'}
+              {sup.invitationStatus === 'DECLINED' && ' (declined)'}
+            </span>
+            {!sup.isPrimary && (
+              <button
+                onClick={() => remove.mutate({ ideaId: idea.id, coSupervisorId: sup.id })}
+                disabled={remove.isPending}
+                aria-label={`Remove ${personName(sup.lecturer.user)} as co-supervisor`}
+                title="Remove this co-supervisor"
+                className="text-critical-700 hover:underline"
+              >
+                ×
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {remove.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(remove.error)}</p>}
+    </>
+  );
+}
 
 // Naming a co-supervisor invites them — they have to accept before a group sees
 // them as attached. Only the idea's own supervisor may edit the list, so the
@@ -31,7 +80,7 @@ function CoSupervisorControls({ cpiId, idea }: { cpiId: string; idea: Idea }) {
       <select
         value={lecturerUserId}
         onChange={(e) => setLecturerUserId(e.target.value)}
-        className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+        className="rounded-control border border-line-strong px-1 py-0.5 text-xs"
       >
         <option value="">Add a co-supervisor…</option>
         {lecturers?.map((l) => (
@@ -40,33 +89,29 @@ function CoSupervisorControls({ cpiId, idea }: { cpiId: string; idea: Idea }) {
           </option>
         ))}
       </select>
-      <button
+      <Button variant="neutral" size="sm"
         onClick={() => add.mutate({ ideaId: idea.id, lecturerUserId })}
-        disabled={!lecturerUserId || add.isPending}
-        className="rounded bg-gray-700 px-2 py-0.5 text-xs text-white hover:bg-gray-600 disabled:opacity-50"
-      >
+        disabled={!lecturerUserId || add.isPending}>
         invite
-      </button>
+      </Button>
 
       {myInvite && (
         <>
-          <button
-            onClick={() => respond.mutate({ ideaId: idea.id, decision: 'ACCEPT' })}
-            className="rounded bg-green-600 px-2 py-0.5 text-xs text-white hover:bg-green-700"
-          >
+          <Button variant="success" size="sm"
+            onClick={() => respond.mutate({ ideaId: idea.id, decision: 'ACCEPT' })}>
             accept co-supervision
-          </button>
+          </Button>
           <button
             onClick={() => respond.mutate({ ideaId: idea.id, decision: 'DECLINE' })}
-            className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-50"
+            className="rounded-control border border-line-strong px-2 py-0.5 text-xs text-ink hover:bg-canvas"
           >
             decline
           </button>
         </>
       )}
 
-      {add.isError && <span className="text-xs text-red-600">{getApiErrorMessage(add.error)}</span>}
-      {respond.isError && <span className="text-xs text-red-600">{getApiErrorMessage(respond.error)}</span>}
+      {add.isError && <span className="text-xs text-critical-700">{getApiErrorMessage(add.error)}</span>}
+      {respond.isError && <span className="text-xs text-critical-700">{getApiErrorMessage(respond.error)}</span>}
     </div>
   );
 }
@@ -86,93 +131,84 @@ export function LecturerIdeasPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-700">Announce a project idea</h2>
-        <p className="mt-1 text-xs text-gray-500">
+      <PolicyNote
+        cpiId={cpiId}
+        lines={(p) => [
+          p.allowSupervisorIdeas
+            ? 'Supervisors post ideas on this course.'
+            : 'Supervisors are not posting ideas on this course.',
+          p.allowCoSupervisorOnIdea
+            ? 'You may name a co-supervisor on an idea you post.'
+            : 'Ideas cannot name a co-supervisor here.',
+          p.allowCoSupervisionInterest && 'You may offer to co-supervise another lecturer’s idea.',
+          p.allowLecturerInterestInGroupIdeas && 'You may express interest in a group’s own idea.',
+        ]}
+      />
+      <Card>
+        <h2 className="text-sm font-semibold text-ink">Announce a project idea</h2>
+        <p className="mt-1 text-xs text-ink-muted">
           Post ideas for groups to express interest in (Supervisor-Led mode, during Idea Announcement).
         </p>
         {postIdea.isError && (
-          <p className="mt-2 rounded bg-red-50 px-3 py-2 text-xs text-red-700">
+          <Notice tone="critical" size="xs" className="mt-2">
             {getApiErrorMessage(postIdea.error, 'Could not post idea')}
-          </p>
+          </Notice>
         )}
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Idea title"
-          className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mt-2 w-full rounded-control border border-line-strong px-3 py-2 text-sm"
         />
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe the idea"
           rows={3}
-          className="mt-2 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mt-2 w-full rounded-control border border-line-strong px-3 py-2 text-sm"
         />
-        <button
+        <Button variant="primary" className="mt-2"
           onClick={submit}
-          disabled={!title || !description || postIdea.isPending}
-          className="mt-2 rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={!title || !description || postIdea.isPending}>
           {postIdea.isPending ? 'Posting…' : 'Post idea'}
-        </button>
-      </div>
+        </Button>
+      </Card>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-gray-700">Ideas in this course</h2>
-        {isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+        <h2 className="mb-2 text-sm font-semibold text-ink">Ideas in this course</h2>
+        {isLoading && <SkeletonText />}
         {isError && getApiErrorStatus(error) === 403 && (
-          <p className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">
-            Only an accepted supervisor or the coordinator can post and view ideas here. If you were
-            invited to supervise, accept the invitation from <span className="font-medium">← My courses</span> first.
-          </p>
+          <EmptyState
+            title="You are not a supervisor on this course"
+            hint="Only an accepted supervisor or the coordinator can post and read ideas here. If you were invited, accept the invitation from My courses first."
+          />
         )}
         {isError && getApiErrorStatus(error) !== 403 && (
-          <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+          <Notice tone="critical">
             {getApiErrorMessage(error, 'Could not load ideas')}
-          </p>
+          </Notice>
         )}
         {ideas && ideas.length === 0 && (
-          <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-            No ideas posted yet.
-          </p>
+          <EmptyState
+            title="No ideas posted yet"
+            hint="Post one above while the idea announcement phase is open; groups pick from what is here."
+          />
         )}
         {ideas && ideas.length > 0 && (
           <ul className="space-y-2">
             {ideas.map((idea) => (
-              <li key={idea.id} className="rounded-lg border bg-white p-3">
+              <li key={idea.id} className="rounded-card border border-line bg-surface p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-800">{idea.title}</p>
-                  <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{idea.authorType}</span>
+                  <p className="text-sm font-medium text-ink">{idea.title}</p>
+                  <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">{idea.authorType}</span>
                 </div>
-                <p className="mt-1 text-xs text-gray-600">{idea.description}</p>
-                <p className="mt-2 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-ink-muted">{idea.description}</p>
+                <p className="mt-2 text-xs text-ink-subtle">
                   by {personName(idea.author)}
                   {idea.group && ` · ${idea.group.name}`}
                 </p>
 
-                {/* Who would actually supervise this, and who is still deciding. */}
-                {idea.supervisors && idea.supervisors.length > 0 && (
-                  <ul className="mt-1 flex flex-wrap gap-1">
-                    {idea.supervisors.map((sup) => (
-                      <li
-                        key={sup.id}
-                        className={`rounded px-2 py-0.5 text-xs ${
-                          sup.invitationStatus === 'ACCEPTED'
-                            ? 'bg-green-50 text-green-800'
-                            : sup.invitationStatus === 'PENDING'
-                              ? 'bg-amber-50 text-amber-800'
-                              : 'bg-gray-100 text-gray-500'
-                        }`}
-                      >
-                        {personName(sup.lecturer.user)}
-                        {sup.isPrimary ? ' · supervisor' : ' · co-supervisor'}
-                        {sup.invitationStatus === 'PENDING' && ' (not yet accepted)'}
-                        {sup.invitationStatus === 'DECLINED' && ' (declined)'}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <SupervisorChips cpiId={cpiId} idea={idea} />
 
                 <CoSupervisorControls cpiId={cpiId} idea={idea} />
               </li>
