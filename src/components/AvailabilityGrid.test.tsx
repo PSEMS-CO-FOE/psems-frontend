@@ -110,4 +110,50 @@ describe('AvailabilityGrid', () => {
 
     expect(screen.getByTitle('3 free, 1 maybe, of 5 who answered')).toHaveTextContent('3 +1');
   });
+
+  describe('keyboard', () => {
+    // The visible text is only the status, so without a label the grid reads as
+    // "–, –, –". The date's exact wording is the runtime locale's business, so
+    // this asserts the parts the component is responsible for.
+    it('names each cell by its slot and status, not the status alone', () => {
+      render(<Harness />);
+      const labels = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? '');
+
+      expect(labels).toHaveLength(4);
+      expect(labels.filter((l) => l.includes('Morning'))).toHaveLength(2);
+      expect(labels.filter((l) => l.includes('Afternoon'))).toHaveLength(2);
+      for (const label of labels) {
+        expect(label).toMatch(/: –$/);
+        expect(label.length).toBeGreaterThan('Morning: –'.length);
+      }
+    });
+
+    it('moves between cells with the arrow keys', async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+
+      cell('Morning', 0).focus();
+
+      await user.keyboard('{ArrowRight}');
+      expect(document.activeElement).toBe(cell('Morning', 1));
+
+      await user.keyboard('{ArrowDown}');
+      expect(document.activeElement).toBe(cell('Afternoon', 1));
+
+      await user.keyboard('{ArrowLeft}');
+      expect(document.activeElement).toBe(cell('Afternoon', 0));
+    });
+
+    it('stops at the edges rather than wrapping around', async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+
+      cell('Morning', 0).focus();
+      await user.keyboard('{ArrowUp}{ArrowLeft}');
+      expect(document.activeElement).toBe(cell('Morning', 0));
+
+      await user.keyboard('{End}');
+      expect(document.activeElement).toBe(cell('Morning', 1));
+    });
+  });
 });
