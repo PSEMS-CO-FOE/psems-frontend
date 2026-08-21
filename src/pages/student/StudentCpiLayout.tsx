@@ -1,48 +1,39 @@
-import { Link, NavLink, Outlet, useParams } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router-dom';
 import { useCpiSummary } from '@/features/courses/useCourses';
-
-const tabClass = ({ isActive }: { isActive: boolean }) =>
-  `px-3 py-2 text-sm font-medium rounded ${
-    isActive ? 'bg-gray-800 text-white' : 'text-gray-600 hover:bg-gray-200'
-  }`;
+import { PageHeader, TabNav, Badge } from '@/components/ui';
 
 export function StudentCpiLayout() {
   const { cpiId = '' } = useParams();
   const { data: cpi } = useCpiSummary(cpiId);
 
   return (
-    <div className="space-y-4">
-      <Link to="/student" className="text-sm text-blue-600 hover:underline">
-        ← My courses
-      </Link>
-      <p className="text-sm font-semibold text-gray-700">
-        {cpi?.name ?? 'Course'}
-        {cpi && (
-          <span className="ml-2 text-xs font-normal text-gray-400">
-            {cpi.department} · {cpi.academicYear}
-          </span>
-        )}
-      </p>
-      <nav className="flex gap-2">
-        <NavLink to={`/student/cpi/${cpiId}/group`} className={tabClass}>
-          Group
-        </NavLink>
-        <NavLink to={`/student/cpi/${cpiId}/ideas`} className={tabClass}>
-          Ideas
-        </NavLink>
-        <NavLink to={`/student/cpi/${cpiId}/selection`} className={tabClass}>
-          Selection
-        </NavLink>
-        <NavLink to={`/student/cpi/${cpiId}/submissions`} className={tabClass}>
-          Submissions
-        </NavLink>
-        <NavLink to={`/student/cpi/${cpiId}/schedule`} className={tabClass}>
-          Schedule
-        </NavLink>
-        <NavLink to={`/student/cpi/${cpiId}/marks`} className={tabClass}>
-          Marks
-        </NavLink>
-      </nav>
+    <div className="space-y-6">
+      <PageHeader
+        back={{ to: '/student', label: 'My courses' }}
+        title={cpi?.name ?? 'Course'}
+        meta={
+          cpi && (
+            <>
+              <Badge tone="brand">{cpi.projectType}</Badge>
+              <Badge>{cpi.department}</Badge>
+              <Badge>{cpi.academicYear}</Badge>
+            </>
+          )
+        }
+      />
+
+      <TabNav
+        items={[
+          { to: `/student/cpi/${cpiId}/group`, label: 'Group' },
+          { to: `/student/cpi/${cpiId}/ideas`, label: 'Ideas' },
+          { to: `/student/cpi/${cpiId}/selection`, label: 'Selection' },
+          { to: `/student/cpi/${cpiId}/submissions`, label: 'Submissions' },
+          { to: `/student/cpi/${cpiId}/schedule`, label: 'Schedule' },
+          { to: `/student/cpi/${cpiId}/marks`, label: 'Marks' },
+        ]}
+        className="border-b border-line pb-3"
+      />
+
       <Outlet />
     </div>
   );
