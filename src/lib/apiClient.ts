@@ -42,9 +42,11 @@ async function refreshAccessToken(): Promise<string> {
     refreshPromise = refreshClient
       .post<RefreshResponse>('/auth/refresh')
       .then((res) => {
-        const newToken = res.data.accessToken;
-        useAuthStore.getState().setAccessToken(newToken);
-        return newToken;
+        const { accessToken, user, forcePasswordChange } = res.data;
+        // The whole session, not just the token: after a reload the store is
+        // empty, and the router needs the user before it can route anywhere.
+        useAuthStore.getState().setSession({ accessToken, user, forcePasswordChange });
+        return accessToken;
       })
       .finally(() => {
         refreshPromise = null;
@@ -54,8 +56,8 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 
-// Get a new access token using only the refresh cookie. The timer window opens in
-// a new tab with no token, and the cookie is shared between tabs.
+// Rebuild the session from the refresh cookie alone. Used on every page load,
+// and by the timer window, which opens in a new tab holding no token.
 export async function bootstrapSession(): Promise<string> {
   return refreshAccessToken();
 }
