@@ -22,4 +22,10 @@ export interface LoginResponse {
 
 export interface RefreshResponse {
   accessToken: string;
+  forcePasswordChange: boolean;
+  user: {
+    id: string;
+    email: string;
+    role: Role;
+  };
 }

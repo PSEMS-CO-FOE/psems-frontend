@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useSessionRestore } from '@/features/auth/useSessionRestore';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { HomeRedirect } from '@/routes/HomeRedirect';
 import { LoginPage } from '@/pages/LoginPage';
@@ -45,6 +46,8 @@ import { TimerWindowPage } from '@/pages/lecturer/TimerWindowPage';
 import { SchedulePage } from '@/pages/student/SchedulePage';
 
 export default function App() {
+  useSessionRestore();
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
