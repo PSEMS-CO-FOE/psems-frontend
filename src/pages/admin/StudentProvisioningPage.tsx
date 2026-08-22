@@ -4,20 +4,23 @@ import {
   useBatchStatus,
 } from '@/features/students/useProvisioning';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Button, Card, Notice, PageHeader } from '@/components/ui';
 
-const SAMPLE_CSV = `email,fullName,studentId,department,year
-alice.demo@psems.dev,Alice Demo,STU9001,Computer Engineering,4
-bob.demo@psems.dev,Bob Demo,STU9002,Computer Engineering,3
+// registrationNumber may be left blank; mark sheets print it beside the index
+// number and show a dash without it.
+const SAMPLE_CSV = `email,fullName,studentId,registrationNumber,batch,department,year
+alice.demo@psems.dev,Alice Demo,STU9001,2022/E/001,22ENG,Computer Engineering,4
+bob.demo@psems.dev,Bob Demo,STU9002,,22ENG,Computer Engineering,3
 `;
 
 function StatusPill({ status }: { status: string }) {
   const color =
     status === 'SENT'
-      ? 'bg-green-100 text-green-700'
+      ? 'bg-positive-50 text-positive-700'
       : status === 'FAILED'
-      ? 'bg-red-100 text-red-700'
-      : 'bg-yellow-100 text-yellow-700';
-  return <span className={`rounded px-2 py-0.5 text-xs font-medium ${color}`}>{status}</span>;
+      ? 'bg-critical-50 text-critical-700'
+      : 'bg-caution-50 text-caution-700';
+  return <span className={`rounded-control px-2 py-0.5 text-xs font-medium ${color}`}>{status}</span>;
 }
 
 export function StudentProvisioningPage() {
@@ -48,14 +51,21 @@ export function StudentProvisioningPage() {
 
   return (
     <div className="space-y-6">
-      {/* Upload card */}
-      <div className="rounded-lg border bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-700">Bulk provision students</h2>
-        <p className="mt-1 text-xs text-gray-500">
+      <PageHeader
+        title="Student provisioning"
+        description="Create student accounts in bulk from a CSV. Each one is emailed a temporary password and must change it at first sign-in."
+      />
+
+      <Card title="Upload a CSV">
+        <p className="text-xs text-ink-muted">
           Upload a CSV with header{' '}
-          <code className="rounded bg-gray-100 px-1">email,fullName,studentId,department,year</code>.
-          Each student gets a temp password emailed to them.{' '}
-          <button onClick={downloadSample} className="text-blue-600 underline">
+          <code className="rounded-control bg-canvas px-1">
+            email,fullName,studentId,registrationNumber,batch,department,year
+          </code>
+          . The batch decides which courses a student sees, so it is required. The registration number
+          may be blank, but mark sheets carry it beside the index number. Each student gets a temp
+          password emailed to them.{' '}
+          <button onClick={downloadSample} className="text-brand-700 underline">
             Download sample
           </button>
         </p>
@@ -68,37 +78,35 @@ export function StudentProvisioningPage() {
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="text-sm"
           />
-          <button
+          <Button variant="primary"
             onClick={onUpload}
-            disabled={!file || provision.isPending}
-            className="rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-          >
+            disabled={!file || provision.isPending}>
             {provision.isPending ? 'Uploading…' : 'Upload'}
-          </button>
+          </Button>
         </div>
 
         {provision.isError && (
-          <p className="mt-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+          <Notice tone="critical" className="mt-3">
             {getApiErrorMessage(provision.error, 'Upload failed')}
-          </p>
+          </Notice>
         )}
-      </div>
+      </Card>
 
       {/* Upload result: created / skipped / invalid */}
       {result && (
-        <div className="rounded-lg border bg-white p-4">
-          <h3 className="text-sm font-semibold text-gray-700">
+        <Card>
+          <h3 className="text-sm font-semibold text-ink">
             Upload result — {result.created} created
           </h3>
 
           {result.skipped.length > 0 && (
             <div className="mt-3">
-              <p className="text-xs font-medium text-gray-600">
+              <p className="text-xs font-medium text-ink-muted">
                 Skipped ({result.skipped.length})
               </p>
               <ul className="mt-1 space-y-1">
                 {result.skipped.map((s) => (
-                  <li key={`${s.row}-${s.email}`} className="text-xs text-gray-500">
+                  <li key={`${s.row}-${s.email}`} className="text-xs text-ink-muted">
                     Row {s.row} — {s.email}: {s.reason}
                   </li>
                 ))}
@@ -108,31 +116,31 @@ export function StudentProvisioningPage() {
 
           {result.invalid.length > 0 && (
             <div className="mt-3">
-              <p className="text-xs font-medium text-red-600">
+              <p className="text-xs font-medium text-critical-700">
                 Invalid ({result.invalid.length})
               </p>
               <ul className="mt-1 space-y-1">
                 {result.invalid.map((v) => (
-                  <li key={v.row} className="text-xs text-red-500">
+                  <li key={v.row} className="text-xs text-critical-700">
                     Row {v.row}: {v.issues.join('; ')}
                   </li>
                 ))}
               </ul>
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Email delivery status (polls while queued) */}
       {batchId && batch.data && (
-        <div className="rounded-lg border bg-white p-4">
+        <Card>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700">Email delivery</h3>
+            <h3 className="text-sm font-semibold text-ink">Email delivery</h3>
             {batch.data.queued > 0 && (
-              <span className="text-xs text-gray-400">polling…</span>
+              <span className="text-xs text-ink-subtle">polling…</span>
             )}
           </div>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-ink-muted">
             {batch.data.total} total · {batch.data.sent} sent · {batch.data.failed} failed ·{' '}
             {batch.data.queued} queued
           </p>
@@ -140,12 +148,12 @@ export function StudentProvisioningPage() {
           <ul className="mt-3 divide-y">
             {batch.data.students.map((s) => (
               <li key={s.email} className="flex items-center justify-between py-2">
-                <span className="text-xs text-gray-700">{s.email}</span>
+                <span className="text-xs text-ink">{s.email}</span>
                 <StatusPill status={s.deliveryStatus} />
               </li>
             ))}
           </ul>
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -9,8 +9,10 @@ import {
 } from '@/features/evaluations/useEvaluationConfig';
 import { useSessionScores, useSubmitScores } from '@/features/scoring/useScoring';
 import { useCpiPolicy } from '@/features/policy/usePolicy';
-import { useSessionPanel } from '@/features/panel/usePanel';
+import { roleLabel, useJoinPanel, useSessionPanel, type PanelRole } from '@/features/panel/usePanel';
+import { useAuthStore } from '@/stores/authStore';
 import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
+import { Badge, Button, Card, EmptyState, Notice } from '@/components/ui';
 
 // The presentation clock. It is kept on the server so every evaluator sees the
 // same time. Parts never move on by themselves: going past a target turns the
@@ -37,77 +39,69 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
   const overrunning = !!current && display > current.targetSeconds;
 
   return (
-    <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3">
+    <div className="mt-3 rounded-control border border-line bg-canvas p-3">
       <div className="flex flex-wrap items-center gap-3">
         <span
-          className={`font-mono text-lg tabular-nums ${overrunning ? 'text-red-600' : 'text-gray-800'}`}
+          className={`font-mono text-lg tabular-nums ${overrunning ? 'text-critical-700' : 'text-ink'}`}
         >
           {formatClock(current ? current.targetSeconds - display : display)}
         </span>
-        {current && <span className="text-xs text-gray-600">{current.name}</span>}
+        {current && <span className="text-xs text-ink-muted">{current.name}</span>}
         <span
-          className={`rounded px-2 py-0.5 text-xs ${
-            running ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+          className={`rounded-control px-2 py-0.5 text-xs ${
+            running ? 'bg-positive-50 text-positive-700' : 'bg-line text-ink-muted'
           }`}
         >
           {running ? 'running' : 'stopped'}
         </span>
         {overrunning && (
-          <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">
+          <Badge tone="critical">
             over by {formatClock(display - (current?.targetSeconds ?? 0))}
-          </span>
+          </Badge>
         )}
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {!running ? (
-          <button
+          <Button variant="success" size="sm"
             onClick={() => control.mutate('start')}
-            disabled={control.isPending}
-            className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-          >
+            disabled={control.isPending}>
             {display > 0 ? 'Resume' : 'Start'}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button variant="caution" size="sm"
             onClick={() => control.mutate('pause')}
-            disabled={control.isPending}
-            className="rounded bg-yellow-600 px-3 py-1 text-xs font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
-          >
+            disabled={control.isPending}>
             Pause
-          </button>
+          </Button>
         )}
         <button
           onClick={() => control.mutate('previous')}
           disabled={control.isPending || !data?.segments.length}
-          className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+          className="rounded-control border border-line-strong px-3 py-1 text-xs text-ink-muted hover:bg-canvas disabled:opacity-50"
         >
           Previous
         </button>
-        <button
+        <Button variant="neutral" size="sm"
           onClick={() => control.mutate('next')}
-          disabled={control.isPending || !data?.segments.length}
-          className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
-        >
+          disabled={control.isPending || !data?.segments.length}>
           Next segment
-        </button>
-        <button
+        </Button>
+        <Button variant="primary" size="sm"
           onClick={() => control.mutate('stop')}
-          disabled={control.isPending}
-          className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={control.isPending}>
           Stop &amp; save
-        </button>
+        </Button>
         <button
           onClick={() => control.mutate('reset')}
           disabled={control.isPending}
-          className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+          className="rounded-control border border-line-strong px-3 py-1 text-xs text-ink-muted hover:bg-canvas disabled:opacity-50"
         >
           Reset
         </button>
         <button
           onClick={() => window.open(`/timer/${cpiId}/${session.id}`, '_blank', 'noopener,width=1280,height=800')}
-          className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100"
+          className="rounded-control border border-line-strong px-3 py-1 text-xs text-ink-muted hover:bg-canvas"
         >
           Open timer window
         </button>
@@ -119,16 +113,16 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
             <li key={segment.id} className="flex flex-wrap items-center gap-2 text-xs">
               <span
                 className={
-                  segment.orderIndex === data.currentSegmentIndex ? 'font-medium text-gray-800' : 'text-gray-500'
+                  segment.orderIndex === data.currentSegmentIndex ? 'font-medium text-ink' : 'text-ink-muted'
                 }
               >
                 {segment.name}
               </span>
-              <span className="font-mono text-gray-500">
+              <span className="font-mono text-ink-muted">
                 {formatClock(segment.elapsedSeconds)} / {formatClock(segment.targetSeconds)}
               </span>
               {segment.overranSeconds > 0 && (
-                <span className="text-red-600">+{formatClock(segment.overranSeconds)}</span>
+                <span className="text-critical-700">+{formatClock(segment.overranSeconds)}</span>
               )}
               {segment.completedAt && (
                 <select
@@ -139,27 +133,72 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
                       timeliness: e.target.value as 'ON_TIME' | 'OVERTIME' | 'UNDER',
                     })
                   }
-                  className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                  className="rounded-control border border-line-strong px-1 py-0.5 text-xs"
                 >
                   <option value="ON_TIME">on time</option>
                   <option value="OVERTIME">overtime</option>
                   <option value="UNDER">under</option>
                 </select>
               )}
-              {segment.timelinessManual && <span className="text-gray-400">(set by hand)</span>}
+              {segment.timelinessManual && <span className="text-ink-subtle">(set by hand)</span>}
             </li>
           ))}
         </ul>
       )}
 
-      <p className="mt-2 text-xs text-gray-500">
+      <p className="mt-2 text-xs text-ink-muted">
         {data?.presentationDurationSeconds != null
           ? `Saved presentation time: ${formatClock(data.presentationDurationSeconds)}`
           : data?.segments.length
             ? 'Segments never advance on their own — press Next when the group finishes.'
             : 'This stage has no segments configured; the clock runs as one.'}
       </p>
-      {control.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(control.error)}</p>}
+      {control.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(control.error)}</p>}
+    </div>
+  );
+}
+
+// An evaluation whose stage is open to all: at an FYP demo nobody is assigned,
+// every lecturer is invited and whoever turns up marks. Seating yourself is the
+// only way in, so this is shown to any lecturer holding no seat here.
+function JoinOpenPanel({
+  cpiId,
+  sessionId,
+  openRoles,
+}: {
+  cpiId: string;
+  sessionId: string;
+  openRoles: PanelRole[];
+}) {
+  const join = useJoinPanel(cpiId, sessionId);
+  const [role, setRole] = useState<PanelRole>(openRoles[0]);
+
+  return (
+    <div className="mt-2 rounded-control border border-brand-200 bg-brand-50 px-3 py-2">
+      <p className="text-xs font-medium text-brand-700">This evaluation is open to join.</p>
+      <p className="mt-0.5 text-xs text-ink-muted">
+        You are not on this panel yet. Take a seat to mark; your marks count according to the seat you take.
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {openRoles.length > 1 && (
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as PanelRole)}
+            aria-label="Seat to take"
+            className="rounded-control border border-line-strong px-2 py-1 text-xs"
+          >
+            {openRoles.map((r) => (
+              <option key={r} value={r}>
+                {roleLabel(r)}
+              </option>
+            ))}
+          </select>
+        )}
+        <Button variant="primary" size="sm" onClick={() => join.mutate(role)} disabled={join.isPending}>
+          {join.isPending ? '\u2026' : `Join as ${roleLabel(role)}`}
+        </Button>
+      </div>
+      {join.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(join.error)}</p>}
     </div>
   );
 }
@@ -182,26 +221,47 @@ function SessionScorer({
   // Scoring is only open while SCHEDULED (still collecting) or CORRECTION_REQUESTED
   // (reopened for this panelist). Once AWAITING_REVIEW or FINALIZED, the backend
   // rejects writes — mirror that here so inputs are disabled too.
-  const locked = session.status !== 'SCHEDULED' && session.status !== 'CORRECTION_REQUESTED';
+  const myUserId = useAuthStore((st) => st.user?.id);
+  // A seat is what makes scoring possible; without one the backend refuses the
+  // write, so the form is held closed rather than failing on submit.
+  const seated = !panel || panel.panelists.some((pl) => pl.user?.id === myUserId);
+  const openRoles = panel?.rules.filter((r) => r.openToAll).map((r) => r.role) ?? [];
+  const locked =
+    !seated || (session.status !== 'SCHEDULED' && session.status !== 'CORRECTION_REQUESTED');
   const commentRequired = policy?.requireOverallComment ?? true;
   const openVisibility = scoreVisibility !== 'ISOLATED';
 
-  // Local form state: criterionId -> { score, comment }.
+  const members = session.group.members.map((m) => m.student);
+
+  // One input per criterion, or per criterion and student when the criterion is
+  // scored individually. The key carries both.
+  const fieldKey = (criterionId: string, studentId?: string) => `${criterionId}|${studentId ?? ''}`;
+
+  // Every box this panelist has to fill in.
+  const fields = criteria.flatMap((c) =>
+    c.level === 'INDIVIDUAL'
+      ? members.map((student) => ({ criterion: c, student }))
+      : [{ criterion: c, student: undefined as (typeof members)[number] | undefined }],
+  );
+
   const [values, setValues] = useState<Record<string, { score: string; comment: string }>>({});
   const [overallComment, setOverallComment] = useState('');
 
   useEffect(() => {
     if (!ownScores) return;
     const next: Record<string, { score: string; comment: string }> = {};
-    for (const c of criteria) {
-      const existing = ownScores.find((s) => s.rubricCriterionId === c.id);
-      next[c.id] = {
-        score: existing ? String(existing.score) : '',
-        comment: existing?.comment ?? '',
-      };
+    for (const field of fields) {
+      const key = fieldKey(field.criterion.id, field.student?.id);
+      const existing = ownScores.find(
+        (s) => s.rubricCriterionId === field.criterion.id && (s.studentId ?? undefined) === field.student?.id,
+      );
+      next[key] = { score: existing ? String(existing.score) : '', comment: existing?.comment ?? '' };
     }
     setValues(next);
-  }, [ownScores, criteria]);
+    // fields is rebuilt each render; the scores and criteria it derives from are
+    // what actually change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownScores, criteria, session.group.members]);
 
   // Reload an overall comment already saved for this seat, so resubmitting does
   // not force the panelist to retype it.
@@ -210,36 +270,40 @@ function SessionScorer({
     if (mine?.evaluation) setOverallComment(mine.evaluation.overallComment);
   }, [panel]);
 
-  const setField = (cid: string, field: 'score' | 'comment', v: string) =>
-    setValues((prev) => ({ ...prev, [cid]: { ...prev[cid], [field]: v } }));
+  const setField = (key: string, field: 'score' | 'comment', v: string) =>
+    setValues((prev) => ({ ...prev, [key]: { ...prev[key], [field]: v } }));
 
   const onSubmit = () => {
-    const payload = criteria
-      .filter((c) => values[c.id]?.score !== '')
-      .map((c) => ({
-        criterionId: c.id,
-        score: Number(values[c.id].score),
-        comment: values[c.id].comment || undefined,
-      }));
+    const payload = fields
+      .filter((f) => values[fieldKey(f.criterion.id, f.student?.id)]?.score !== '')
+      .map((f) => {
+        const value = values[fieldKey(f.criterion.id, f.student?.id)];
+        return {
+          criterionId: f.criterion.id,
+          studentId: f.student?.id,
+          score: Number(value.score),
+          comment: value.comment || undefined,
+        };
+      });
     submit.mutate({ scores: payload, overallComment: overallComment.trim() || undefined });
   };
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-gray-800">
+        <p className="text-sm font-medium text-ink">
           {session.group.name} · {session.stage.name}
         </p>
         <div className="flex items-center gap-2">
           {session.isOverdue && (
-            <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">overdue</span>
+            <Badge tone="critical">overdue</Badge>
           )}
-          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{session.status}</span>
+          <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
         </div>
       </div>
 
       {(session.scheduledStart || session.location) && (
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-ink-muted">
           {session.scheduledStart && new Date(session.scheduledStart).toLocaleString()}
           {session.location && ` · ${session.location}`}
         </p>
@@ -248,39 +312,63 @@ function SessionScorer({
       <PresentationTimer cpiId={cpiId} session={session} />
 
       {openVisibility && (
-        <p className="mt-2 rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-2 rounded-control bg-amber-50 px-3 py-2 text-xs text-amber-800">
           This evaluation is open: everyone on the panel can see each other&rsquo;s marks.
         </p>
       )}
 
+      {!seated && openRoles.length > 0 && (
+        <JoinOpenPanel cpiId={cpiId} sessionId={session.id} openRoles={openRoles} />
+      )}
+      {!seated && openRoles.length === 0 && (
+        <p className="mt-2 rounded-control bg-canvas px-3 py-2 text-xs text-ink-muted">
+          You are not on this panel, so you cannot mark here. Ask the coordinator to seat you.
+        </p>
+      )}
+
       <div className="mt-3 space-y-2">
-        {criteria.map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-2">
-            <span className="w-32 text-xs text-gray-700">{c.name}</span>
-            <input
-              type="number"
-              min={0}
-              max={c.maxScore}
-              value={values[c.id]?.score ?? ''}
-              onChange={(e) => setField(c.id, 'score', e.target.value)}
-              disabled={locked}
-              placeholder={`0–${c.maxScore}`}
-              className="w-20 rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
-            />
-            <input
-              value={values[c.id]?.comment ?? ''}
-              onChange={(e) => setField(c.id, 'comment', e.target.value)}
-              disabled={locked}
-              placeholder="comment (optional)"
-              className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
-            />
-          </div>
-        ))}
+        {fields.map((field) => {
+          const key = fieldKey(field.criterion.id, field.student?.id);
+          return (
+            <div key={key} className="flex flex-wrap items-center gap-2">
+              <span className="w-32 text-xs text-ink">
+                {field.criterion.name}
+                {field.student && (
+                  <span className="block text-ink-subtle">
+                    {field.student.user.fullName || field.student.studentId}
+                  </span>
+                )}
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={field.criterion.maxScore}
+                value={values[key]?.score ?? ''}
+                onChange={(e) => setField(key, 'score', e.target.value)}
+                disabled={locked}
+                placeholder={`0–${field.criterion.maxScore}`}
+                className="w-20 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+              />
+              <input
+                value={values[key]?.comment ?? ''}
+                onChange={(e) => setField(key, 'comment', e.target.value)}
+                disabled={locked}
+                placeholder="comment (optional)"
+                className="flex-1 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+              />
+            </div>
+          );
+        })}
+        {criteria.some((c) => c.level === 'INDIVIDUAL') && members.length === 0 && (
+          <p className="text-xs text-amber-700">
+            This stage is scored per student, but the group has no accepted members.
+          </p>
+        )}
       </div>
 
       <div className="mt-3">
-        <label className="text-xs font-medium text-gray-700">
-          Overall comment{commentRequired && <span className="text-red-600"> *</span>}
+        <label className="text-xs font-medium text-ink">
+          Overall comment{commentRequired && <span className="text-critical-700"> *</span>}
         </label>
         <textarea
           value={overallComment}
@@ -288,30 +376,28 @@ function SessionScorer({
           disabled={locked}
           rows={3}
           placeholder="Your overall assessment of this evaluation"
-          className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+          className="mt-1 w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
         />
       </div>
 
       {locked && (
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-ink-muted">
           Scoring is closed for this session — it is awaiting or has completed review.
         </p>
       )}
       {submit.isError && (
-        <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(submit.error)}</p>
+        <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(submit.error)}</p>
       )}
-      {submit.isSuccess && <p className="mt-2 text-xs text-green-600">Scores submitted.</p>}
+      {submit.isSuccess && <p className="mt-2 text-xs text-positive-700">Scores submitted.</p>}
 
       {!locked && (
-        <button
+        <Button variant="primary" size="sm" className="mt-3"
           onClick={onSubmit}
-          disabled={submit.isPending || (commentRequired && !overallComment.trim())}
-          className="mt-3 rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={submit.isPending || (commentRequired && !overallComment.trim())}>
           {submit.isPending ? '…' : 'Submit scores'}
-        </button>
+        </Button>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -321,28 +407,30 @@ export function LecturerSessionsPage() {
   const { data: sessions, isLoading, isError, error } = useSessions(cpiId, { refetchInterval: 3000 });
   const { data: config } = useEvaluationConfig(cpiId);
 
-  if (isLoading) return <p className="text-sm text-gray-500">Loading sessions…</p>;
+  if (isLoading) return <p className="text-sm text-ink-muted">Loading sessions…</p>;
   if (isError) {
     // Not an evaluator here (e.g. a supervisor who opened this tab) — inform,
     // don't alarm.
     if (getApiErrorStatus(error) === 403) {
       return (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-          This tab is for assigned evaluators — you have no evaluation sessions in this course.
-        </p>
+        <EmptyState
+          title="No evaluation sessions for you"
+          hint="This tab is for panelists. A coordinator seats you on a session before you can mark."
+        />
       );
     }
     return (
-      <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+      <Notice tone="critical">
         {getApiErrorMessage(error, 'Could not load sessions')}
-      </p>
+      </Notice>
     );
   }
   if (!sessions || sessions.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-        No sessions assigned to you.
-      </p>
+      <EmptyState
+        title="No sessions assigned to you"
+        hint="Sessions appear once the coordinator has generated them and seated you on a panel."
+      />
     );
   }
 

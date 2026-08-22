@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
-import type { Cpi, CpiParticipationMode, CpiProjectType } from './types';
+import type { Cpi, CourseStatus, CpiParticipationMode, CpiProjectType } from './types';
 
 const coursesKey = ['courses'] as const;
 
@@ -37,14 +37,49 @@ export function useCpiSummary(cpiId: string) {
   });
 }
 
-// CPIs a student can open (their department + any they've joined) — so they
-// pick from a list instead of pasting a CPI id.
+// Courses a student can open: their own batch's active ones, everything they
+// have already joined, and anything they were approved to join late.
 export interface StudentCpi {
   id: string;
   name: string;
   department: string;
+  batch: string;
+  status: CourseStatus;
   academicYear: string;
   projectType: string;
+}
+
+// An active course in the student's department for another batch — name and
+// batch only, never contents. This is how a repeated student names the course
+// they want to ask for.
+export interface OtherBatchCpi {
+  id: string;
+  name: string;
+  batch: string;
+  projectType: string;
+  academicYear: string;
+  request: { status: 'PENDING' | 'APPROVED' | 'REJECTED'; reason: string } | null;
+}
+
+export function useOtherBatchCpis() {
+  return useQuery({
+    queryKey: ['courses', 'other-batches'],
+    queryFn: async () => {
+      const res = await api.get<OtherBatchCpi[]>('/courses/other-batches');
+      return res.data;
+    },
+  });
+}
+
+export function useRequestToJoin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { cpiId: string; reason: string }) => {
+      const res = await api.post(`/courses/${args.cpiId}/join-requests`, { reason: args.reason });
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses'] }),
+  });
 }
 
 export function useStudentCpis() {

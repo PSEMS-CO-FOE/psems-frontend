@@ -10,6 +10,7 @@ import type { CpiMode } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 import type { UseMutationResult } from '@tanstack/react-query';
+import { Button, Card } from '@/components/ui';
 
 // Pick an approved lecturer by name/email (no more raw UUID pasting), then
 // submit their userId to the assignment action.
@@ -46,14 +47,14 @@ function LecturerPicker({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search lecturers by name or email"
           disabled={disabled}
-          className="w-full rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+          className="w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
         />
         <div className="flex gap-2">
           <select
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             disabled={disabled || isLoading}
-            className="w-full rounded border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-100"
+            className="w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
           >
             <option value="">
               {isLoading ? 'Loading lecturers…' : `Select a lecturer (${filtered.length})`}
@@ -64,20 +65,18 @@ function LecturerPicker({
               </option>
             ))}
           </select>
-          <button
+          <Button variant="primary" size="sm" className="whitespace-nowrap"
             onClick={() => action.mutate(userId, { onSuccess: () => setUserId('') })}
-            disabled={disabled || !userId || action.isPending}
-            className="whitespace-nowrap rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-          >
+            disabled={disabled || !userId || action.isPending}>
             {action.isPending ? '…' : label}
-          </button>
+          </Button>
         </div>
       </div>
       {disabled && disabledReason && (
-        <p className="mt-1 text-xs text-gray-400">{disabledReason}</p>
+        <p className="mt-1 text-xs text-ink-subtle">{disabledReason}</p>
       )}
       {action.isError && (
-        <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(action.error)}</p>
+        <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(action.error)}</p>
       )}
     </div>
   );
@@ -93,55 +92,53 @@ export function CpiAssignments({ cpiId, mode }: { cpiId: string; mode: CpiMode }
   const isSupervisorLed = mode === 'SUPERVISOR_LED';
 
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <h3 className="text-sm font-semibold text-gray-700">
-        Assignments <span className="font-normal text-gray-400">(during Supervisor Addition phase)</span>
+    <Card>
+      <h3 className="text-sm font-semibold text-ink">
+        Assignments <span className="font-normal text-ink-subtle">(during Supervisor Addition phase)</span>
       </h3>
 
       <div className="mt-3 space-y-4">
         <div>
-          <p className="mb-1 text-xs font-medium text-gray-600">Invite supervisor</p>
+          <p className="mb-1 text-xs font-medium text-ink-muted">Invite supervisor</p>
           <LecturerPicker
             label="Invite"
             action={inviteSupervisor}
             disabled={isCoordinatorManaged}
             disabledReason="CPI is finalized as Coordinator-Managed."
           />
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-ink-subtle">
             The first invite locks this CPI into Supervisor-Led mode.
           </p>
         </div>
 
         <div>
-          <p className="mb-1 text-xs font-medium text-gray-600">Assign evaluator</p>
+          <p className="mb-1 text-xs font-medium text-ink-muted">Assign evaluator</p>
           <LecturerPicker label="Assign" action={assignEvaluator} />
         </div>
 
         <div>
-          <p className="mb-1 text-xs font-medium text-gray-600">Set Head Judge</p>
+          <p className="mb-1 text-xs font-medium text-ink-muted">Set Head Judge</p>
           <LecturerPicker label="Set" action={setHeadJudge} />
-          <p className="mt-1 text-xs text-gray-400">Must already be an evaluator.</p>
+          <p className="mt-1 text-xs text-ink-subtle">Must already be an evaluator.</p>
         </div>
 
         <div className="border-t pt-3">
-          <p className="mb-1 text-xs font-medium text-gray-600">No supervisors?</p>
-          <button
+          <p className="mb-1 text-xs font-medium text-ink-muted">No supervisors?</p>
+          <Button variant="neutral" size="sm"
             onClick={() => finalize.mutate('')}
-            disabled={isSupervisorLed || isCoordinatorManaged || finalize.isPending}
-            className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
-          >
+            disabled={isSupervisorLed || isCoordinatorManaged || finalize.isPending}>
             {finalize.isPending ? '…' : 'Finalize as Coordinator-Managed'}
-          </button>
+          </Button>
           {isSupervisorLed && (
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-ink-subtle">
               Already Supervisor-Led — can't finalize as Coordinator-Managed.
             </p>
           )}
           {finalize.isError && (
-            <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(finalize.error)}</p>
+            <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(finalize.error)}</p>
           )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

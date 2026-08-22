@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useOpenCourses, useRequestToSupervise, type OpenCourse } from '@/features/courses/useSupervisorRequests';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Button, Card, EmptyState, PageHeader, SkeletonText } from '@/components/ui';
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: 'Request pending',
@@ -14,29 +15,27 @@ function CourseCard({ course }: { course: OpenCourse }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <Card>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-medium text-gray-800">{course.name}</p>
-          <p className="text-xs text-gray-500">
+          <p className="text-sm font-medium text-ink">{course.name}</p>
+          <p className="text-xs text-ink-muted">
             {course.department} · {course.academicYear} · {course.projectType}
           </p>
-          <p className="mt-0.5 text-xs text-gray-400">
+          <p className="mt-0.5 text-xs text-ink-subtle">
             Coordinated by {course.createdBy.fullName ?? course.createdBy.email} · {course._count.groups} group(s) ·{' '}
             {course._count.supervisors} supervisor(s)
           </p>
         </div>
         {course.requestStatus ? (
-          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+          <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">
             {STATUS_LABEL[course.requestStatus]}
           </span>
         ) : (
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700"
-          >
+          <Button variant="primary" size="sm"
+            onClick={() => setOpen((v) => !v)}>
             Ask to supervise
-          </button>
+          </Button>
         )}
       </div>
 
@@ -47,19 +46,17 @@ function CourseCard({ course }: { course: OpenCourse }) {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="why you'd like to supervise (optional)"
-            className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs"
+            className="flex-1 rounded-control border border-line-strong px-2 py-1 text-xs"
           />
-          <button
+          <Button variant="neutral" size="sm"
             onClick={() => request.mutate({ cpiId: course.id, note: note.trim() || undefined })}
-            disabled={request.isPending}
-            className="rounded bg-gray-700 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
-          >
+            disabled={request.isPending}>
             {request.isPending ? '…' : 'Send request'}
-          </button>
+          </Button>
         </div>
       )}
-      {request.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(request.error)}</p>}
-    </div>
+      {request.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(request.error)}</p>}
+    </Card>
   );
 }
 
@@ -70,17 +67,18 @@ export function DiscoverCoursesPage() {
   const { data, isLoading } = useOpenCourses();
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-gray-500">
-        Courses you are not on. Asking to supervise sends a request to the coordinator; if they approve it, you get an
-        invitation to accept.
-      </p>
-      {isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+    <div className="space-y-6">
+      <PageHeader
+        title="Find courses"
+        description="Courses you are not on. Asking to supervise sends a request to the coordinator; if they approve it, you get an invitation to accept."
+      />
+      {isLoading && <SkeletonText />}
       {data?.map((c) => <CourseCard key={c.id} course={c} />)}
       {data && data.length === 0 && (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-          No other courses to join.
-        </p>
+        <EmptyState
+          title="No other courses to join"
+          hint="Courses appear here when a coordinator opens one to supervisor requests."
+        />
       )}
     </div>
   );

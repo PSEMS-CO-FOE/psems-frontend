@@ -11,6 +11,7 @@ import {
 import { useRequestIdeaRevision } from '@/features/ideas/useIdeas';
 import type { SeekingIdea } from '@/features/selection/useSelection';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Button, Card, EmptyState, Notice } from '@/components/ui';
 
 function SeekingIdeaRow({ cpiId, seeking }: { cpiId: string; seeking: SeekingIdea }) {
   const markWilling = useMarkWilling(cpiId);
@@ -18,37 +19,33 @@ function SeekingIdeaRow({ cpiId, seeking }: { cpiId: string; seeking: SeekingIde
   const [note, setNote] = useState('');
 
   return (
-    <li className="rounded border border-gray-100 bg-gray-50 px-3 py-2 text-xs">
+    <li className="rounded-control border border-line bg-canvas px-3 py-2 text-xs">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-gray-700">
+        <span className="text-ink">
           <span className="font-medium">{seeking.idea.title}</span>
-          {seeking.group && <span className="text-gray-400"> · {seeking.group.name}</span>}
+          {seeking.group && <span className="text-ink-subtle"> · {seeking.group.name}</span>}
         </span>
-        <button
+        <Button variant="primary" size="sm" className="ml-auto"
           onClick={() => markWilling.mutate(seeking.ideaId)}
-          disabled={markWilling.isPending}
-          className="ml-auto rounded bg-gray-800 px-3 py-1 font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={markWilling.isPending}>
           Mark willing
-        </button>
+        </Button>
       </div>
       <div className="mt-1 flex gap-1">
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="ask the group to revise…"
-          className="flex-1 rounded border border-gray-300 px-2 py-0.5"
+          className="flex-1 rounded-control border border-line-strong px-2 py-0.5"
         />
-        <button
+        <Button variant="caution" size="sm"
           onClick={() => requestRevision.mutate({ ideaId: seeking.ideaId, note }, { onSuccess: () => setNote('') })}
-          disabled={!note || requestRevision.isPending}
-          className="rounded bg-yellow-600 px-2 py-0.5 font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
-        >
+          disabled={!note || requestRevision.isPending}>
           Request revision
-        </button>
+        </Button>
       </div>
       {(markWilling.isError || requestRevision.isError) && (
-        <p className="mt-1 text-red-600">{getApiErrorMessage(markWilling.error || requestRevision.error)}</p>
+        <p className="mt-1 text-critical-700">{getApiErrorMessage(markWilling.error || requestRevision.error)}</p>
       )}
     </li>
   );
@@ -66,73 +63,69 @@ export function SupervisorSelectionPage() {
   const coSupervision = useCoSupervisionInterest(cpiId);
   const [interestIdeaId, setInterestIdeaId] = useState('');
 
-  if (isLoading) return <p className="text-sm text-gray-500">Loading selection…</p>;
+  if (isLoading) return <p className="text-sm text-ink-muted">Loading selection…</p>;
   if (isError) {
     return (
-      <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+      <Notice tone="critical">
         {getApiErrorMessage(error, 'Could not load selection state')}
-      </p>
+      </Notice>
     );
   }
   if (!data || data.role !== 'SUPERVISOR') {
     return (
-      <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-        The supervisor selection view is only available to an accepted supervisor of this CPI,
-        during the Project Selection phase.
-      </p>
+      <EmptyState
+        title="Not open to you right now"
+        hint="This view is for an accepted supervisor of this course, while the project selection phase is open."
+      />
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Pending selections awaiting this supervisor's confirmation */}
-      <div className="rounded-lg border bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-700">Selections awaiting your response</h2>
+      <Card>
+        <h2 className="text-sm font-semibold text-ink">Selections awaiting your response</h2>
         {data.pendingSelections.length === 0 && (
-          <p className="mt-1 text-xs text-gray-500">No selections are waiting on you.</p>
+          <EmptyState density="compact" title="Nothing waiting on you" hint="Groups that register interest in one of your ideas appear here to accept or decline." />
         )}
         <ul className="mt-2 space-y-2">
           {data.pendingSelections.map((sel) => (
             <li
               key={sel.id}
-              className="flex flex-wrap items-center gap-2 rounded border border-gray-100 bg-gray-50 px-3 py-2 text-xs"
+              className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-canvas px-3 py-2 text-xs"
             >
-              <span className="text-gray-700">
+              <span className="text-ink">
                 <span className="font-medium">{sel.group.name}</span> chose{' '}
                 <span className="font-medium">{sel.idea.title}</span>
               </span>
               <span className="ml-auto flex gap-2">
-                <button
+                <Button variant="success" size="sm"
                   onClick={() => respond.mutate({ selectionId: sel.id, decision: 'ACCEPT' })}
-                  disabled={respond.isPending}
-                  className="rounded bg-green-600 px-3 py-1 font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                >
+                  disabled={respond.isPending}>
                   Accept
-                </button>
-                <button
+                </Button>
+                <Button variant="danger" size="sm"
                   onClick={() => respond.mutate({ selectionId: sel.id, decision: 'DECLINE' })}
-                  disabled={respond.isPending}
-                  className="rounded bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                >
+                  disabled={respond.isPending}>
                   Decline
-                </button>
+                </Button>
               </span>
             </li>
           ))}
         </ul>
         {respond.isError && (
-          <p className="mt-2 text-xs text-red-600">{getApiErrorMessage(respond.error)}</p>
+          <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(respond.error)}</p>
         )}
-      </div>
+      </Card>
 
       {/* Student ideas seeking a supervisor — mark willing */}
-      <div className="rounded-lg border bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-700">Ideas seeking a supervisor</h2>
-        <p className="mt-1 text-xs text-gray-500">
+      <Card>
+        <h2 className="text-sm font-semibold text-ink">Ideas seeking a supervisor</h2>
+        <p className="mt-1 text-xs text-ink-muted">
           Groups flagged these as needing a supervisor. Marking willing lets the group pick you.
         </p>
         {data.seekingIdeas.length === 0 && (
-          <p className="mt-2 text-xs text-gray-500">No ideas are currently seeking a supervisor.</p>
+          <EmptyState density="compact" title="No ideas seeking a supervisor" hint="Student ideas without a supervisor appear here while the selection phase is open." />
         )}
         <ul className="mt-2 space-y-2">
           {data.seekingIdeas.map((s) => (
@@ -143,12 +136,12 @@ export function SupervisorSelectionPage() {
         {/* The mirror image of a group expressing interest: a lecturer says they
             would like to take on a group's idea, or to co-supervise it. */}
         <div className="mt-3 border-t pt-3">
-          <p className="text-xs font-medium text-gray-700">Express your own interest</p>
+          <p className="text-xs font-medium text-ink">Express your own interest</p>
           <div className="mt-1 flex flex-wrap items-center gap-1">
             <select
               value={interestIdeaId}
               onChange={(e) => setInterestIdeaId(e.target.value)}
-              className="rounded border border-gray-300 px-2 py-1 text-xs"
+              className="rounded-control border border-line-strong px-2 py-1 text-xs"
             >
               <option value="">Choose an idea…</option>
               {data.seekingIdeas.map((s) => (
@@ -157,51 +150,49 @@ export function SupervisorSelectionPage() {
                 </option>
               ))}
             </select>
-            <button
+            <Button variant="neutral" size="sm"
               onClick={() => lecturerInterest.mutate(interestIdeaId)}
-              disabled={!interestIdeaId || lecturerInterest.isPending}
-              className="rounded bg-gray-700 px-2 py-1 text-xs text-white hover:bg-gray-600 disabled:opacity-50"
-            >
+              disabled={!interestIdeaId || lecturerInterest.isPending}>
               I'm interested
-            </button>
+            </Button>
             <button
               onClick={() => coSupervision.mutate(interestIdeaId)}
               disabled={!interestIdeaId || coSupervision.isPending}
-              className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-control border border-line-strong px-2 py-1 text-xs text-ink hover:bg-canvas disabled:opacity-50"
             >
               Offer to co-supervise
             </button>
           </div>
           {(lecturerInterest.isError || coSupervision.isError) && (
-            <p className="mt-1 text-xs text-red-600">
+            <p className="mt-1 text-xs text-critical-700">
               {getApiErrorMessage(lecturerInterest.error || coSupervision.error)}
             </p>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Ideas already marked willing, now withdrawable while the phase is open */}
       {data.willingByMe.filter((w) => !w.withdrawnAt).length > 0 && (
-        <div className="rounded-lg border bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-700">You marked willing on</h2>
+        <Card>
+          <h2 className="text-sm font-semibold text-ink">You marked willing on</h2>
           <ul className="mt-2 space-y-1">
             {data.willingByMe
               .filter((w) => !w.withdrawnAt)
               .map((w) => (
-                <li key={w.id} className="flex items-center gap-2 text-xs text-gray-600">
+                <li key={w.id} className="flex items-center gap-2 text-xs text-ink-muted">
                   <span>{w.idea.title}</span>
                   <button
                     onClick={() => withdraw.mutate({ ideaId: w.idea.id, type: w.type })}
                     disabled={withdraw.isPending}
-                    className="text-red-500 hover:underline disabled:opacity-50"
+                    className="text-critical-700 hover:underline disabled:opacity-50"
                   >
                     withdraw
                   </button>
                 </li>
               ))}
           </ul>
-          {withdraw.isError && <p className="mt-1 text-xs text-red-600">{getApiErrorMessage(withdraw.error)}</p>}
-        </div>
+          {withdraw.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(withdraw.error)}</p>}
+        </Card>
       )}
     </div>
   );

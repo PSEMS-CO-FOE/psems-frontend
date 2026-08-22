@@ -5,6 +5,7 @@ import { passwordPolicySchema } from '@/features/auth/passwordPolicy';
 import { useChangePassword } from '@/features/auth/useChangePassword';
 import { useAuthStore } from '@/stores/authStore';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Button, Notice } from '@/components/ui';
 
 // Two shapes: the forced first-login change omits currentPassword (the backend
 // skips that check when forcePasswordChange is set); a later voluntary change
@@ -65,51 +66,51 @@ export function ChangePasswordPage() {
     });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-sm rounded-lg bg-white p-8 shadow"
+        className="w-full max-w-sm rounded-card bg-surface p-8 shadow"
         noValidate
       >
-        <h1 className="text-xl font-bold text-gray-800">Change your password</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-xl font-bold text-ink">Change your password</h1>
+        <p className="mt-1 text-sm text-ink-muted">
           {forced
             ? 'Set a new password to finish signing in.'
             : 'Enter your current password and choose a new one.'}
         </p>
 
         {changePassword.isError && (
-          <p className="mt-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+          <Notice tone="critical" className="mt-4">
             {getApiErrorMessage(changePassword.error, 'Could not change password')}
-          </p>
+          </Notice>
         )}
 
         {/* Current password: only for a later voluntary change, not the forced
             first-login reset (the login just proved the current password). */}
         {!forced && (
           <>
-            <label className="mt-4 block text-sm font-medium text-gray-700">
+            <label className="mt-4 block text-sm font-medium text-ink">
               Current password
               <input
                 type="password"
                 autoComplete="current-password"
                 {...register('currentPassword')}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+                className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
               />
             </label>
             {errors.currentPassword && (
-              <p className="mt-1 text-xs text-red-600">{errors.currentPassword.message}</p>
+              <p className="mt-1 text-xs text-critical-700">{errors.currentPassword.message}</p>
             )}
           </>
         )}
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">
+        <label className="mt-4 block text-sm font-medium text-ink">
           New password
           <input
             type="password"
             autoComplete="new-password"
             {...register('newPassword')}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+            className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
           />
         </label>
 
@@ -119,7 +120,7 @@ export function ChangePasswordPage() {
             return (
               <li
                 key={rule.label}
-                className={`text-xs ${ok ? 'text-green-600' : 'text-gray-400'}`}
+                className={`text-xs ${ok ? 'text-positive-700' : 'text-ink-subtle'}`}
               >
                 {ok ? '✓' : '○'} {rule.label}
               </li>
@@ -127,26 +128,24 @@ export function ChangePasswordPage() {
           })}
         </ul>
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">
+        <label className="mt-4 block text-sm font-medium text-ink">
           Confirm new password
           <input
             type="password"
             autoComplete="new-password"
             {...register('confirmNewPassword')}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+            className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
           />
         </label>
         {errors.confirmNewPassword && (
-          <p className="mt-1 text-xs text-red-600">{errors.confirmNewPassword.message}</p>
+          <p className="mt-1 text-xs text-critical-700">{errors.confirmNewPassword.message}</p>
         )}
 
-        <button
+        <Button variant="primary" fullWidth className="mt-6"
           type="submit"
-          disabled={changePassword.isPending}
-          className="mt-6 w-full rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={changePassword.isPending}>
           {changePassword.isPending ? 'Saving…' : 'Change password'}
-        </button>
+        </Button>
       </form>
     </div>
   );

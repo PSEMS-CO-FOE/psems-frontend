@@ -32,7 +32,7 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `POST /users/:id/assign-coordinator` (SYSTEM_ADMIN) — promotes an approved lecturer to Course Coordinator.
 
 ### Students (`/students`) — System Admin only
-- `POST /students/bulk-provision` multipart `file` = CSV with header `email,fullName,studentId,department,year` → `{batchId, created, skipped[], invalid[]}`.
+- `POST /students/bulk-provision` multipart `file` = CSV with header `email,fullName,studentId,registrationNumber,batch,department,year` (registration number optional; **batch required**) → `{batchId, created, skipped[], invalid[]}`.
 - `GET /students/provisioning/:batchId` → `{batchId, total, sent, failed, queued, students[]}` — poll this for email delivery status after a bulk upload.
 
 ### Lecturers (`/lecturers`)
@@ -41,12 +41,13 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `POST /lecturers/:id/approve` / `POST /lecturers/:id/reject` (SYSTEM_ADMIN).
 
 ### Courses / CPIs (`/courses`) — Course Coordinator only, except invite-response
-- `POST /courses` `{name, projectType, participationMode, department, academicYear}` → creates CPI. `projectType` ∈ `FYP | DATA_MANAGEMENT | HPC | INNOVATION_CHALLENGE`. `participationMode` ∈ `GROUP | INDIVIDUAL`.
+- `POST /courses` `{name, projectType, participationMode, department, batch, academicYear}` → creates a course as a **DRAFT**. `batch` is required and decides which students ever see it. `projectType` ∈ `FYP | DATA_MANAGEMENT | HPC | INNOVATION_CHALLENGE`. `participationMode` ∈ `GROUP | INDIVIDUAL`.
 - `GET /courses` — coordinator's own CPIs. `GET /courses/:cpiId` — detail.
 - `PUT /courses/:cpiId/timeline` `{phases: [{phase, startDate, endDate}, ...]}` — replace-all over **any subset** of the 10 phases (minimum 1); order is validated among whichever are sent, and an omitted phase simply leaves its gated actions closed. Full order: `STUDENT_REGISTRATION, SUPERVISOR_ADDITION, IDEA_ANNOUNCEMENT, PROJECT_SELECTION, PROJECT_REGISTRATION, EVALUATION_CONFIG, PROPOSAL_SUBMISSION, AVAILABILITY_SUBMISSION, EVALUATION_EXECUTION, FINAL_SUBMISSION`. (This section is the 2026-07-14 reference; entries below it were corrected for Waves 1–3 where they had gone stale, but treat the source as authoritative over anything here.)
 - `POST /courses/:cpiId/supervisors` `{lecturerUserId}` — invite (only valid during `SUPERVISOR_ADDITION` phase window; **first invite sent flips the CPI into SUPERVISOR_LED mode**).
 - `POST /courses/:cpiId/supervisors/respond` (the invited lecturer) `{decision: "ACCEPT"|"DECLINE"}`.
-- `POST /courses/:cpiId/finalize-coordinator-managed` — no supervisors invited → locks CPI into COORDINATOR_MANAGED mode.
+- `POST /courses/:cpiId/preset` `{mode: "SUPERVISOR_LED" | "COORDINATOR_MANAGED"}` — applies a preset **at any time**, not only at creation. Writes the five settings the preset has an opinion about and leaves every other one alone. Added 2026-08-16.
+- `POST /courses/:cpiId/coordinator-managed-preset` — the original single-preset route, now a delegate of the above. (Was `finalize-coordinator-managed`, which locked the CPI into a mode; **nothing locks a mode any more** — since Wave 1 the mode is only a preset label.)
 - `POST /courses/:cpiId/evaluators` `{lecturerUserId}`, `POST /courses/:cpiId/head-judge` `{lecturerUserId}`.
 
 ### Groups (`/courses/:cpiId/groups`) — Student, phase = `STUDENT_REGISTRATION`
@@ -101,10 +102,13 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `POST /sessions/:sessionId/approve` — requires session status `AWAITING_HEAD_JUDGE` and all scores `FINALIZED`; locks the session.
 - `POST /sessions/:sessionId/request-correction` `{evaluatorUserId, reason}` — reopens that one evaluator's scores for correction.
 
-### Marks (`/courses/:cpiId/marks`) — added Week 8
-- `POST /aggregate` (Coordinator) — computes each group's marks from FINALIZED session scores (criterion % of maxScore → weighted by criterion weight → stage % → weighted by stage weight → overall 0–100). Requires every session FINALIZED first (409 otherwise).
-- `POST /publish` (Coordinator) — makes marks visible to students (409 if not aggregated yet).
-- `GET /` — Coordinator sees all groups' marks; a student sees **only their own group's, and only after publish** (403 before publish — don't build a UI state that assumes marks exist pre-publish).
+### Marks (`/courses/:cpiId/marks`) — reshaped for per-student marks and per-stage publishing
+- `POST /aggregate` (Coordinator) — works out every group's and every student's marks from FINALIZED session scores. Per criterion: combine the panel's scores, turn that into a percentage of the maximum, weight by the criterion's weight; GROUP criteria give every member the same share, INDIVIDUAL criteria give each their own. The stage total is weighted by the stage's weight. The group's figure is the average of its members'. Requires every session FINALIZED first (409 otherwise).
+- `POST /publish` (Coordinator) `{stageId, publishMarks, publishComments}` — `stageId: null` sets the whole course, a stage id sets that stage. Marks and comments are separate switches and **either can be set back to false**. A stage's own row wins; otherwise the course-wide row applies. 409 if marks have not been aggregated.
+- `GET /publications` (Coordinator) — the current switches, per stage and course-wide.
+- `PUT /grade-bands` (Coordinator) `{bands: [{label, minPercent}]}` — replace-all; only applied when the course policy has `gradingEnabled`. `GET /grade-bands` for any participant.
+- `GET /sheet` (Coordinator only) — the CA sheet: one row per student with surname and initials split out, one column per stage, a `weights` map summing to 1.00, a total, and `zeroTotal` flags. Coordinator only because it lists every student in the course.
+- `GET /` → `{gradingEnabled, caContributionPercent, pendingStages[], groups[]}`. The coordinator sees every group and every student. **A student gets 200 even before anything is published** — `groups` is empty and `pendingStages` names what is still to come. Do not build a UI that treats 403 as "not published"; that was the Week 8 behaviour and it is gone. A student sees only their own breakdown, never a group-mate's.
 
 ### Notifications (`/notifications`) — added Week 8
 - `GET /` (any authed user) — the caller's notifications, newest presumably first.
@@ -135,6 +139,104 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 
 ## Current phase
 
+**Course visibility COMPLETE as of 2026-08-22 (uncommitted).** `tsc -b` + `vite build` + lint + `npm test` clean (**59 tests / 10 suites**). Backend half in `psems-backend/CLAUDE.md`.
+
+- **The student's course list splits into Current and Past.** Archived courses are ones they took and finished; they stay readable but do not belong beside the work in front of them. Each card carries its batch.
+- **`OtherBatches` on the same page** — a repeated student can see active courses for other batches by name and batch only, never contents, and ask to join one with a reason. Their request's state is shown back to them rather than leaving them wondering.
+- **`CpiRoster.tsx`** on the coordinator's Setup tab: everyone in the batch with what they are doing, four counts led by **not started**, and the group flagged when it is over or under the target size. **A roster of zero says the batch is wrong** — which is the only way a mistyped batch surfaces, since the students would otherwise just see nothing and assume the course is not ready.
+- **`CourseStatePanel.tsx`** — publish, archive, back to draft, each saying plainly who can see the course in that state.
+- **Join requests** are approved or declined from the roster panel, with an optional note that reaches the student.
+- **Create a course** now takes a batch, suggested from the ones already used in the department via a datalist. Typed free, normalised on the server — a fixed pattern would block a special or repeat intake, which is why `projectType` was freed from its enum in the first place.
+- **Course settings** gained **pass mark** (with the line saying PSEMS will not tell the student) and **group size** (a guide, not a limit).
+- **The CA sheet** highlights and counts students below the pass mark alongside the existing zero-total flag.
+- **`StageWeights`** in `StageLiveSettings` — the credit split, editable after submissions until marks are aggregated, refusing to save unless the weights still total 100.
+- **The student upload sample and description** carry the new `batch` column.
+
+**Titles and shell layout COMPLETE as of 2026-08-17 (uncommitted).** `tsc -b` + `vite build` + lint + `npm test` clean (**46 tests / 7 suites**).
+
+- **Collapsing the rail now widens the content.** `main` was `mx-auto max-w-content` — a fixed 72rem cap — so retracting the rail freed 11rem that `mx-auto` turned straight back into gutter, and the page looked identical. The cap now follows the rail: `max-w-content` (1152px) expanded, **`max-w-wide` (1376px)** collapsed, which on a 1440px screen means the content fills the space instead of leaving it blank. A cap still exists in both states — unbounded line length is why it was there.
+- **`SectionHeader` added, and it is not a second `PageHeader`.** All three CPI sub-layouts (`CpiLayout`, `StudentCpiLayout`, `LecturerCpiLayout`) already render the page's `h1` with the course name plus the tab bar. The `PageHeader` I put on the student schedule and marks pages therefore produced **two `h1`s on one page**; both are `SectionHeader` now — an `h2`, and deliberately **no `useSetShellTitle`**, so the top bar keeps naming the course rather than flickering to the tab name and back to the role label when moving between tabs that do and do not set it.
+- **`PageHeader` on the eight top-level pages that had no title**: student and lecturer course lists, coordinator course list, lecturer course discovery, all three admin screens, and edit-profile (which also gained a back control).
+- **Jargon out of the UI.** The coordinator list said "Create a course instance (CPI)" and "My CPIs"; the rest of the app has always said courses.
+- **`EnterCpiPage` rewritten** — the card row was a `<button onClick={navigate}>`, so a student could not open a course in a new tab. It is a `Link` now, and the page picked up the skeleton and empty state the earlier sweep missed because its loading text read "Loading your courses…".
+- **17 of 20 remaining screens are titled by their layout or a titled `Card`** and were left alone; only `ReviewPage` and `CpiAllocation` genuinely had no heading, and both now do. `TimerWindowPage` stays bare on purpose — it is the projector.
+
+**Navigation and screen-quality pass COMPLETE as of 2026-08-17 (uncommitted).** `tsc -b` + `vite build` + lint + `npm test` clean (**46 tests / 7 suites**).
+
+- **Profile and the directory were rendering outside every layout.** `/profile/:userId`, `/profile/edit` and `/directory` sat as bare routes: no rail, no top bar, no page container, and **no way back** — while all three role rails link to `/directory`, so following that link dropped the reader out of the app. New `RoleShell` mounts them in the shell of whoever is signed in. The four role navs moved to one `roleNav.ts`; they were duplicated across four layouts and had already drifted (admin had no directory link at all).
+- **The rail header and the top bar now share a height.** The rail's brand block was `py-4` around a 36px crest (68px) against a `h-14` top bar, so their bottom borders drew two lines at different heights. Both are `h-14`; the crest is 32px.
+- **`LinkButton`** added — a navigation that looks like a button but stays an anchor, so middle-click and open-in-new-tab keep working. Several pages had been hand-rolling the button classes onto a `Link`.
+- **`PageHeader.back` no longer needs a destination.** Omit `to` and it steps back through history — a profile is reached from the directory, from a past project and from search, so a fixed target is wrong more often than right.
+- **`Avatar`** added, with `initialsFrom` living in `lib/name.ts` beside `personName` rather than being exported from a component file (the fast-refresh rule again, fixed rather than silenced).
+- **Profile** rebuilt: identity card with avatar, role badge and contact; tabs on the shared `Segmented` (so they are a real tablist — the tests moved from `role="button"` to `role="tab"`); one edit affordance instead of two, one of which was bare underlined text at the foot of the page.
+- **Directory** rebuilt: **search debounced at 250ms** (it fired a request per keystroke), area filters as proper chips, a result count, avatars, and a four-card skeleton instead of one.
+- **Schedule** rebuilt: it had no header at all, raw loading text, a hand-rolled empty state, hand-rolled cards, and the status printed as raw lowercase. Now grouped **Upcoming / Not yet timetabled / Completed**, with stat tiles led by the next session.
+- **Marks** rebuilt: the pending stages were stated **three times** (a tile, an empty-state hint and a trailing paragraph) and the student's own mark twice. Stage breakdown is now a table with tabular numerals rather than a run-on list, since this is the one figure a student checks against a printed sheet.
+- **The states sweep is finished.** The earlier pass matched exact wording and so missed 10 dashed-border empty states and 2 loading strings ("Loading pending lecturers…", "Loading stages…"). Now **zero** hand-rolled empty states, error blocks or loading text anywhere in `src/pages`.
+
+**Phases 4 and 5 COMPLETE as of 2026-08-16 (uncommitted). The frontend plan is finished — all five phases.** `tsc -b` + `vite build` + `npm run lint` + `npm test` clean, **46 tests / 7 suites**.
+
+- **One error voice.** 37 hand-rolled `bg-critical-50` blocks became zero; 31 `Notice` uses. `Notice` took an explicit `size` prop rather than accepting a className override, because `cn` plainly concatenates and `text-xs` against `text-sm` would have been decided by Tailwind's output order, not by intent. Inline status pills (late / overdue / deviation) became `Badge` — a pill is not a message.
+- **One loading treatment.** Zero `Loading…` paragraphs left. `SkeletonCard` for a whole page; **`SkeletonText`** added for a panel that already has card chrome, so loading never nests a card inside a card.
+- **Empty states carry a next step.** 22 uses, each written for its own screen rather than a generic "nothing here". `density="compact"` keeps the same voice inside dense panels.
+- **Availability grid: arrow keys, Home and End.** Every cell stays tabbable, so Tab still escapes the grid — this is an addition, not a roving-tabindex replacement. Each cell gained an `aria-label` naming its date and slot; the visible text is only the status, so the grid used to read as "–, –, –". Three tests cover movement, edge clamping and the labels; the label test asserts the parts the component owns, not the runtime locale's date wording.
+- **Projector view.** Clock scales with the viewport (`clamp(6rem, 20vw, 22rem)`). **Deliberately outside the theme** — always black, verified as black with the `dark` class both on and off — because the app's tokens describe a document on a white page. Controls fade after 4s idle and return on any input; Space starts/pauses and the arrows move between segments, which is what makes hiding them acceptable. `focus-within` restores them so a keyboard user never lands on an invisible button. Overrun rings the whole screen rather than only recolouring the numerals.
+- **Two plan items were already satisfied** and the plan was stale: visible focus states, and the grid's "second cue" for free/maybe/busy — the cells always rendered the words, and the coordinator's heat grid always rendered a count. The real gap was arrow-key movement.
+
+**Role-derived profiles COMPLETE as of 2026-08-16 (uncommitted).** The second half of Phase 3 in `FRONTEND_PLAN.md`; the directory was the first. `tsc` + `vite build` + lint + `npm test` clean (**43 tests / 7 files**).
+
+- **Tabs come from the person, not from a fixed array.** `ProfilePage` rendered the same three — About / Research / Projects supervised — for everyone, so every student was shown two tabs that could only ever be empty. A lecturer now gets **About · Research · Projects supervised**; a student gets **About · Skills and interests · Projects done**.
+- **A tab with nothing in it is hidden**, not shown blank. With one tab there is no choice to make, so the tab bar disappears entirely; with none, an `EmptyState` says so — and says what to do about it if the profile is your own.
+- **The model did not change.** A student’s competition entry and a lecturer’s paper are both a `ResearchOutput`; only the words differ. `EditProfilePage` follows the same split, so a student is asked for "skills and interests" and "work and achievements" rather than research areas and publications, with placeholders to match.
+- **"Edit my profile" only appears on your own profile.** It was previously shown on everyone’s, including profiles you cannot edit.
+- `ProfilePage.test.tsx` covers all four cases: a student never sees a supervising tab, a lecturer gets lecturer wording, an empty tab is hidden, and an empty profile says so.
+
+**Reachability pass COMPLETE as of 2026-08-16 (uncommitted).** Every backend route was cross-checked against every frontend call. Nine exported hooks had **zero importers** — nine features built, tested and reachable from no screen. All are wired now; **one unused hook remains and it was a duplicate, so it was deleted**. `tsc --noEmit` + `vite build` + lint + `npm test` clean (39 tests).
+
+- **The walk-in mark share was the live defect.** `pooledSharePercent` could only be set by `POST /stages/:id/pooled-share`, which had no UI and — unlike `panelRules` and `timerSegments` — is **not** part of the config PUT, so there was no path to it from anywhere in the app. Aggregation reads `pooledSharePercent ?? 0`, so an invited industry judge could score, the coordinator could read the marks, and they contributed **exactly nothing, silently**. Now set from `StageLiveSettings`, with the unset state called out rather than left to be discovered.
+- **`StageLiveSettings.tsx` carries everything that has to stay changeable once a course is running** — pooled share, panel composition (`PUT panel-rules`), stage name and score visibility (`PATCH /stages/:id`), and presentation segments (`PUT timer-segments`). These targeted endpoints were built in Wave 1 precisely because the replace-all config PUT **409s as soon as any submission exists**; none of them had a screen, so the answer to "restaff a panel on evaluation day" was that you could not.
+- **Walk-in joining**, on the lecturer sessions page: a lecturer holding no seat on an open evaluation gets a join control with a role picker; one holding no seat on a closed one is told plainly that they cannot mark here. The scoring form is held closed without a seat rather than failing on submit.
+- **Allocation reopen**, on the allocation panel, prompting for the reason the backend requires.
+- **Removing a co-supervisor.** Inviting one was always possible; undoing it was not, so a mistaken invite stuck permanently.
+- **`DirectoryPage`** at `/directory`, in all three role rails — browse people, filter by research area. `useProfileSearch` and `useResearchAreas` both existed and **nothing had ever called them**, so a student picking a supervisor had no way to search by subject, which is the entire reason interests are stored as tags rather than prose. This was Phase 3 of `FRONTEND_PLAN.md`; the directory half is now done, role-derived profile tabs are not.
+- **Block layout** on scheduling: place every unplaced session back to back from a start time, with a slot length and gap. Clashes are reported, never blocked.
+- Four endpoints still have no caller and are left deliberately: `GET /users/me` (the login response already carries it), `GET /courses/:cpiId/groups/:groupId`, `POST /sessions/:id/presentation-duration` (superseded by the segment timer, kept for manual entry), and `GET /profiles/areas`’ sibling paths. **No TODO or FIXME exists in either repo.**
+
+**Course settings and coordinator information architecture COMPLETE as of 2026-08-16 (uncommitted).** This is Phase 2 of `FRONTEND_PLAN.md` plus the settings rebuild that prompted it. `tsc --noEmit` + `vite build` + lint + `npm test` clean (**39 tests / 6 files**). Backend half: one route, see `psems-backend/CLAUDE.md`.
+
+- **The coordinator's course page is eight routes, not eleven stacked panels.** `/coordinator/:cpiId/{setup,ideas,selection,allocation,evaluation,submissions,schedule,marks}` under `CpiLayout`, each area linkable and bookmarkable. `/coordinator/:cpiId` redirects to `setup`, so every existing link still lands. `CpiDetailPage.tsx` is deleted; the timeline editor it carried is now `CpiTimelinePanel.tsx`.
+- **Eight tabs, not the seven the plan sketched.** Submissions had been left out and belongs to its own two phases (`PROPOSAL_SUBMISSION` / `FINAL_SUBMISSION`) rather than to evaluation.
+- **Tabs finally carry phase status.** `TabNav` had accepted a `status` prop since Phase 1 that nothing passed. `features/courses/phaseStatus.ts` derives it from the timeline the layout already fetches; a tab covering several phases takes the most active one, and a tab whose phases the course never enabled gets **no dot rather than a misleading one**. **The last day of a phase counts as open** — windows are stored as dates, so treating them as instants would shut people out a day early.
+- **Course settings is preset-first.** `CourseSettingsPanel.tsx` (replaces `CpiPolicyPanel.tsx`) opens with the two presets and five folded groups; the group whose phase is running is expanded on arrival and badged. Clicking a preset **names the five settings it will write before writing them** and says the rest is untouched. The old panel was 15 checkboxes and 2 dropdowns in one flat card with nothing to say which mattered.
+- **All six orphaned policy fields now have a control.** `allowLecturerIdeas`, `maxIdeasPerGroup`, `maxInterestsPerGroup`, `allowLecturerInterestInGroupIdeas`, `allowCoSupervisionInterest` and `caContributionPercent` were editable through the API and reachable from nowhere. **`caContributionPercent` was a live defect** — `MarksPage` reads it to show what a project contributes to its module, so with nothing able to set it that figure could never appear.
+- **Number settings commit on blur**, not per keystroke; typing "10" must not first save a limit of 1. Blank means "no limit" (or "this course is the whole module" for the contribution field).
+- **`components/PolicyNote.tsx` states the governing setting where it bites.** A student on the Ideas page reads "Only your group leader can post the group's idea" instead of pressing Post and getting a refusal they cannot explain. Read-only; the "Change in course settings" link renders **for coordinators only**. On seven screens across all three roles. Renders nothing when no line applies, rather than an empty heading.
+- **Tests added:** `CourseSettingsPanel.test.tsx` (which group opens, preset named before applied, blur-not-keystroke saving), `PolicyNote.test.tsx`, `phaseStatus.test.ts`. `policyKey` is exported so tests seed the query cache instead of mocking transport.
+- **Not verified in a browser.** The dev server picked the changes up and the app boots with no console errors, but reaching a coordinator screen needs a sign-in and passwords are not typed into forms here. Behaviour is covered by the tests above instead.
+- Still open from the plan: profile tabs are role-independent (Phase 3), the projector view is unstyled (Phase 4), and states/polish are untouched (Phase 5). **Phone support is deliberately deferred.**
+
+**Shell, theming and dashboard patterns COMPLETE as of 2026-08-16 (uncommitted).** `tsc -b` + `vite build` + `npm run lint` + `npm test` clean (24 tests). Design reference was **PES** (`pes-usj.vercel.app`), the faculty's student performance system — its 124-variable token layer was read directly off its stylesheet.
+
+- **Tokens that flip are now CSS variables** holding raw RGB channels (`--canvas: 245 248 246`), so Tailwind's `/<alpha-value>` still works and `bg-line/60` keeps functioning. Shades that read correctly on either ground — solid button fills, accent borders, chart series — stay literal hex, which keeps the variable list to 18 rather than the whole palette.
+- **Dark theme** on `.dark` (`darkMode: 'class'`). Ground is a green-tinted near-black (`#0E1512`), not pure black, so surfaces read as raised cards. Preference is light / dark / **system**, persisted, and `watchSystemTheme()` keeps following the OS while set to system rather than sampling it once at load. An inline script in `index.html` applies the class before first paint so a dark reload never flashes white.
+- **PES-derived token upgrades:** radius up to `1rem` cards / `0.625rem` controls; slate-tinted (`#101828`) three-step elevation; **motion tokens** (`duration-fast|base|slow`, `ease-standard`), which did not exist before; a fixed five-colour **chart series** ready for analytics.
+- **New primitives:** `StatTile` / `StatRow` (the 4-up metric row), `Segmented` (in-place view switch — use `TabNav` when the choice deserves a URL), and `Icon`, **8 inline SVGs rather than an icon package**.
+- **Shell rebuilt:** collapsible rail (persisted; collapsed links keep their accessible name via `title`), page title + faculty subtitle in the top bar, theme toggle, and **global search** over courses and people. Search uses `useProfileSearch`, which already existed and **nothing had ever called** — no backend work was needed.
+- **`PageHeader` registers its own title** into the top bar via `shellTitle.ts`, so pages get it for free; a non-string title falls back to the role name. Hooks live in a `.ts` file separate from the provider component, matching the `cellKey` fast-refresh fix rather than silencing the rule.
+- **Stat tiles are wired in**, not just built: coordinator marks (groups, students, stages released, awaiting release — using the same stage-wins-over-course-wide rule as the backend), coordinator scheduling (sessions, placed, overdue, finalized), and the student marks page, which also gained a real header and empty state.
+- `vitest` setup now polyfills **`matchMedia`** (jsdom ships none) and clears `localStorage` plus the `dark` class between tests.
+
+**Design foundation COMPLETE as of 2026-08-16 (uncommitted).** `tsc -b` + `vite build` + `npm run lint` + `npm test` all clean (20 tests). This is Phase 1 of `FRONTEND_PLAN.md` — presentation only, no logic or route changes.
+
+- **Tokens exist.** `tailwind.config.js` `theme.extend` was empty; it now carries the palette, type, radius and shadow scales. The brand green is `#3DB166`, sampled from the Faculty of Engineering site (eng.sjp.ac.lk) rather than invented, with a 50–950 scale around it. Neutrals are `ink` / `line` / `canvas` / `surface`; status colours (`positive` / `caution` / `critical` / `info`) are deliberately desaturated so the green stays the loudest thing on a screen. **Poppins** is the type family, also matching the faculty site.
+- **`src/components/ui/`** holds the primitives: `Card`, `Button`, `Field` / `Select` / `Textarea`, `Badge`, `PageHeader`, `TabNav`, `EmptyState`, `Notice` / `ErrorText`, `Skeleton` / `SkeletonCard`. **45 hand-copied card divs and 69 hand-written button class strings are gone** — every card and button now comes from the primitive.
+- **`components/layout/AppShell.tsx`** replaces four near-identical role headers. Light shell: white rail, brand-green active state, crest in the header, user + log out at the foot. `StudentLayout`, `LecturerLayout`, `CoordinatorLayout` and `AdminLayout` are each ~10 lines now. Below `lg` the rail's links move into the top bar rather than becoming unreachable.
+- **The crest is finally used** — `src/assets/crest.png` in the shell, `public/crest.png` as the favicon. It had been sitting in `assets/`, outside `src/`, imported by nothing.
+- **Focus is visible app-wide** — one `:focus-visible` ring in `index.css` rather than per-control opt-in.
+- **`TimerWindowPage` is deliberately untouched.** It is the projector view on a black background, where the light-shell neutrals would destroy contrast. It gets its own pass in Phase 4.
+- Still open from the plan: the coordinator's 11-panel page is still one scroll (Phase 2), profile tabs are still role-independent (Phase 3), and `TabNav` accepts a per-tab phase `status` that nothing passes yet — `CpiSummary` does not carry the timeline.
+
+
 **Collaboration screens COMPLETE as of 2026-08-10 (uncommitted).** `tsc -b` + `vite build` clean. Matching backend notes in `psems-backend/CLAUDE.md`.
 
 - New: `features/profiles/useProfiles.ts`, `features/courses/useSupervisorRequests.ts`; `pages/profile/ProfilePage.tsx` (About / Research / Projects-supervised tabs) and `EditProfilePage.tsx`; `pages/lecturer/DiscoverCoursesPage.tsx`; `pages/coordinator/CpiSupervisorRequests.tsx`.
@@ -143,7 +245,7 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 - `LecturerIdeasPage` shows each idea's supervisor list with its invitation state (accepted / not yet accepted / declined) and lets the idea's own supervisor invite a co-supervisor.
 - `CpiSessionPanels` gains a **per-stage "Apply to all groups"** block — the usual starting point, with per-session edits below it. It surfaces what the server kept and why, since anyone who already submitted marks is never removed.
 - `GroupPage` gains "Continue without a group"; `LecturerApprovalPage` gains the lecturer CSV upload.
-- **Course settings**: the toggles for co-supervisors, interest withdrawal, self-requests and individual participation are now live. Grading and availability remain disabled with a label saying what they wait on — a coordinator should never flip something that does nothing.
+- **Course settings**: the toggles for co-supervisors, interest withdrawal, self-requests and individual participation are now live. Grading and availability remain disabled with a label saying what they wait on — a coordinator should never flip something that does nothing. *(Superseded 2026-08-16: availability was enabled once scheduling shipped, and the whole panel was rebuilt as `CourseSettingsPanel` — every setting is live now.)*
 
 **Restructure Wave 1 COMPLETE as of 2026-08-09 (uncommitted).** `tsc -b` + `vite build` clean. Matching backend notes in `psems-backend/CLAUDE.md`; full plan in `PSEMS_Restructure_Plan.md`.
 
@@ -152,7 +254,7 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 - **`/guest?token=…` sits outside `ProtectedRoute` and every role layout** — the link is the credential. The issued link is shown once, on invite, with a warning: only its hash is stored server-side.
 - `CpiEvaluationConfig` builds **panel rules** (role, min, max, mark-counting, open-to-all) instead of a single `evaluatorsRequired` number, plus per-stage score visibility. `LecturerSessionsPage` gained the **mandatory overall-comment box** (submit is disabled without it) and an amber banner when a stage's scores are open to the whole panel. `ReviewPage` shows overall comments, targets corrections by **panelist seat** rather than user id (so a guest with no account can be asked to revise), and carries the three manual actions: **Close scoring**, **Approve & finalize**, **Reopen**. It also shows per-role readiness (`3/2 evaluators`) as information — nothing advances by itself, so the reviewer decides when marking ends.
 - `SessionStatus` union: `AWAITING_HEAD_JUDGE` → `AWAITING_REVIEW`.
-- **Known pre-existing gap, not introduced here:** the frontend has no ESLint config at all, so `npm run lint` has never worked (the backend has one). Everything here is verified by `tsc -b` + `vite build` only.
+- **Known gap at the time, fixed in Wave 4:** the frontend had no ESLint config, so `npm run lint` had never worked. Everything in this pass was verified by `tsc -b` + `vite build` only.
 **Customizability pass COMPLETE as of 2026-07-25 (uncommitted).** Frontend for four new features (`tsc -b` + `vite build` clean): **(A)** create-CPI project type is a free-text input with a datalist of suggestions (`PROJECT_TYPE_SUGGESTIONS`), no longer a fixed dropdown; **(B)** idea revise/resubmit — student `IdeasPage` shows the revision note and an inline edit/resubmit form on their own idea; coordinator `CpiIdeasModeration` and supervisor `SupervisorSelectionPage` have a "Request revision" note+button (`useUpdateIdea`, `useRequestIdeaRevision`); **(C)** `LecturerSessionsPage` timer is now server-driven and polled (`useControlTimer`, `useSessions(cpiId, { refetchInterval: 3000 })`) so all evaluators share one live clock; **(D)** `CpiEvaluationConfig` has optional per-stage submission + scoring (execution) datetime windows, and `CpiDetailPage`'s timeline editor has per-phase enable checkboxes so a CPI can use any subset of phases. New hook exports: `useStudentCpis`/`useLecturerCpis`/`useCpiSummary`, `useUpdateIdea`/`useRequestIdeaRevision`, `useControlTimer`.
 
 **No-UUID pass COMPLETE as of 2026-07-25 (uncommitted).** Removed every raw-UUID/id text input in the app — nothing requires typing an id anymore:
@@ -162,6 +264,19 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 - **`ReviewPage`** request-correction: dropdown of the session's evaluators (review scores now include evaluator `id`).
 - **`SelectionPage`** own-idea supervisor pick: dropdown of willing supervisors (selection supervisor refs now include `user.id`).
 Verified: frontend `tsc -b` + `vite build` clean; backend `tsc`+lint clean, 38 tests/10 suites green.
+
+**Restructure Wave 4 frontend COMPLETE as of 2026-08-16 (uncommitted).** What shipped:
+
+- **`CpiMarks.tsx` rebuilt** from two buttons into the real screen: aggregate, a publish matrix (marks and comments, per stage and for the whole course, each switchable off), a grade-band editor, and the CA sheet with a **Download CSV** button and a print view. Zero-total rows are highlighted.
+- **`features/marks/export.ts`** builds the CSV — a pure function, so it is unit-tested rather than click-tested. Uses a blob URL, not a data URL, since a full cohort exceeds what a URL may hold, and writes a BOM so Excel reads UTF-8 rather than guessing.
+- **`MarksPage.tsx`** shows the student's own mark, the group's, and for a stage with per-student criteria the split between group work and their own. Stages not yet released are **named as pending** rather than hidden, and the CA contribution line says what share of the module this is worth. The old 403 handling is gone — the API returns 200 with an empty list now.
+- **`CpiEvaluationConfig.tsx`** gained a whole group / per student selector on each criterion.
+- **`LecturerSessionsPage.tsx`** scoring grid is keyed by criterion **and** student, so a per-student criterion renders one row per member. It warns when a stage is scored per student but the group has no accepted members.
+- **Course settings**: the grading toggle is live. The "not active until X ships" marker is gone entirely — every setting on that screen now does something.
+
+**Tooling added this pass (plan risk #4 is closed):**
+- **ESLint now works.** There was no config at all, so `npm run lint` had never run. `eslint.config.js` is flat config with typescript-eslint and the React hooks rules; it is ESM because this package is `"type": "module"` (the backend's is CommonJS). The one warning it found was real — `cellKey` exported from a component file breaks fast refresh — and was fixed by moving it to `features/scheduling/useScheduling.ts` rather than silenced.
+- **Vitest + Testing Library + jsdom.** `npm test` runs; `vitest.config.ts` is separate from `vite.config.ts` so build config stays free of test settings. 16 tests: the availability grid's click-cycling, read-only and summary modes, and the CSV export's escaping, weight row, blank handling and grade column.
 
 **Restructure Wave 3 frontend COMPLETE as of 2026-08-16 (uncommitted).** `tsc -b` + `vite build` clean. What shipped:
 
@@ -174,7 +289,7 @@ Verified: frontend `tsc -b` + `vite build` clean; backend `tsc`+lint clean, 38 t
 - **`features/scheduling/useTimer.ts`** - its own light polling hook, separate from `useSessions`. `LecturerSessionsPage` gained Previous / Next segment / Open timer window and a per-segment log with a hand-override for the verdict; `ReviewPage` shows the segment log read-only so time management is marked against real data.
 - **`CpiEvaluationConfig.tsx`** gained a per-stage running-order editor (name + minutes). Leaving it empty runs one clock, which is the old behaviour.
 
-**Note: `npm run lint` does not work in this repo** - the script exists but there is no `eslint.config.js`, so it has never run. Verification here is `tsc -b` + `vite build` only. Worth its own decision alongside adding Vitest (restructure plan risk #4).
+**Verification here is now `tsc -b` + `vite build` + `npm run lint` + `npm test`.** ESLint and Vitest were added in Wave 4; before that neither existed.
 
 **Full gap-closure pass COMPLETE as of 2026-07-25 (uncommitted).** Built the frontend for every actionable item in `docs/E2E_TEST_GUIDE.md` 4.2 (items 1–16; 17–18 accepted; no ML). `tsc -b` typecheck + `vite build` both clean. What shipped: `RegisterPage.tsx` (public `/register` lecturer self-registration, linked from login) [#1]; pending supervisor-invites list + Accept/Decline on `LecturerEnterCpiPage` [#2]; `SupervisorSelectionPage.tsx` at `/lecturer/cpi/:id/selection` — mark willing + accept/decline selections, with a new "Selection (supervisor)" tab [#3]; lecturer name/email **picker** (`useApprovedLecturers`) replacing raw-UUID inputs in `CpiAssignments` [#4]; real pending group-invites list on `GroupPage` replacing the UUID paste [#5]; score inputs now lock at `AWAITING_HEAD_JUDGE`/`FINALIZED` in `LecturerSessionsPage` [#6]; session **location** input + read-only display, **overdue** tag, and scheduling **conflict** warnings in `CpiScheduling` + `LecturerSessionsPage` [#14–16]; unmatched supervisor ideas + Coordinator-Managed "Confirm pairing" workflow in `CpiAllocation` [#9, #11]; **presentation-day timer** (start/pause/resume/stop, save-once) on `LecturerSessionsPage` with read-only duration in `ReviewPage` [#12]; forced first-login change hides the current-password field [#13]. New hooks: `useSupervisorInvites`, `useApprovedLecturers`/`useRegisterLecturer`, `usePendingGroupInvites`, `useMarkWilling`, `useSetPresentationDuration`, `useConfirmAllocation`. Next: Week 9 ML UI alongside the ML service.
 

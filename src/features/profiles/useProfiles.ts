@@ -37,10 +37,22 @@ export interface SupervisedProject {
   students: { studentId: string; fullName: string | null }[];
 }
 
+// What a student did, as opposed to what a lecturer supervised. Also derived
+// from allocations rather than stored.
+export interface OwnProject {
+  title: string;
+  course: string;
+  academicYear: string;
+  projectType: string;
+  groupName: string;
+  supervisor: { id: string; fullName: string | null; email: string } | null;
+}
+
 export interface ProfileView {
   profile: UserProfile | null;
   user: { id: string; email: string; fullName: string | null; role: string };
   supervisedProjects: SupervisedProject[];
+  ownProjects: OwnProject[];
 }
 
 export interface ProfileUpdate {

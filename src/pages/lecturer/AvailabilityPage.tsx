@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { AvailabilityGrid, AvailabilityLegend, cellKey } from '@/components/AvailabilityGrid';
+import { AvailabilityGrid, AvailabilityLegend } from '@/components/AvailabilityGrid';
 import {
+  cellKey,
   useMyAvailability,
   useSubmitAvailability,
   type AvailabilityStatus,
 } from '@/features/scheduling/useScheduling';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { Button, Card, EmptyState, Notice, SkeletonCard } from '@/components/ui';
 
 export function AvailabilityPage() {
   const { cpiId = '' } = useParams();
@@ -29,13 +31,14 @@ export function AvailabilityPage() {
     if (!dirty) setValues(serverValues);
   }, [serverValues, dirty]);
 
-  if (isLoading) return <p className="text-sm text-gray-500">Loading…</p>;
+  if (isLoading) return <SkeletonCard rows={3} />;
 
   if (!data?.template) {
     return (
-      <p className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-        The coordinator hasn't published an availability grid for this course yet.
-      </p>
+      <EmptyState
+        title="No availability grid yet"
+        hint="Your coordinator publishes the grid before asking for availability. You will be notified when it opens."
+      />
     );
   }
 
@@ -58,10 +61,10 @@ export function AvailabilityPage() {
   };
 
   return (
-    <div className="space-y-3 rounded-lg border bg-white p-4">
+    <Card className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold text-gray-700">My availability</h2>
-        <p className="mt-1 text-xs text-gray-500">
+        <h2 className="text-sm font-semibold text-ink">My availability</h2>
+        <p className="mt-1 text-xs text-ink-muted">
           Click a cell to cycle through free, maybe and busy.{' '}
           {data.required
             ? 'This course expects your availability.'
@@ -78,20 +81,18 @@ export function AvailabilityPage() {
       />
 
       {submit.isError && (
-        <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">{getApiErrorMessage(submit.error)}</p>
+        <Notice tone="critical" size="xs">{getApiErrorMessage(submit.error)}</Notice>
       )}
 
       <div className="flex items-center gap-2">
-        <button
+        <Button variant="primary" size="sm"
           onClick={save}
-          disabled={!dirty || submit.isPending}
-          className="rounded bg-gray-800 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+          disabled={!dirty || submit.isPending}>
           {submit.isPending ? '…' : 'Save availability'}
-        </button>
+        </Button>
         {dirty && <span className="text-xs text-amber-600">Unsaved changes</span>}
-        {!dirty && submit.isSuccess && <span className="text-xs text-green-600">Saved.</span>}
+        {!dirty && submit.isSuccess && <span className="text-xs text-positive-700">Saved.</span>}
       </div>
-    </div>
+    </Card>
   );
 }

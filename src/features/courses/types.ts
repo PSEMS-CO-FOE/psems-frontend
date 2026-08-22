@@ -35,12 +35,18 @@ export const PHASE_ORDER: CpiPhaseName[] = [
   'FINAL_SUBMISSION',
 ];
 
+export type CourseStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
 export interface Cpi {
   id: string;
   name: string;
   projectType: CpiProjectType;
   participationMode: CpiParticipationMode;
   department: string;
+  // The intake this course runs for, e.g. 22ENG. With department, this decides
+  // which students can see it.
+  batch: string;
+  status: CourseStatus;
   academicYear: string;
   mode: CpiMode;
   createdById: string;
