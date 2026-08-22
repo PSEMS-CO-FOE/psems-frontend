@@ -32,7 +32,7 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `POST /users/:id/assign-coordinator` (SYSTEM_ADMIN) — promotes an approved lecturer to Course Coordinator.
 
 ### Students (`/students`) — System Admin only
-- `POST /students/bulk-provision` multipart `file` = CSV with header `email,fullName,studentId,registrationNumber,department,year` (registration number optional) → `{batchId, created, skipped[], invalid[]}`.
+- `POST /students/bulk-provision` multipart `file` = CSV with header `email,fullName,studentId,registrationNumber,batch,department,year` (registration number optional; **batch required**) → `{batchId, created, skipped[], invalid[]}`.
 - `GET /students/provisioning/:batchId` → `{batchId, total, sent, failed, queued, students[]}` — poll this for email delivery status after a bulk upload.
 
 ### Lecturers (`/lecturers`)
@@ -41,7 +41,7 @@ Base URL: `VITE_API_BASE_URL` (default `http://localhost:4000`). All protected r
 - `POST /lecturers/:id/approve` / `POST /lecturers/:id/reject` (SYSTEM_ADMIN).
 
 ### Courses / CPIs (`/courses`) — Course Coordinator only, except invite-response
-- `POST /courses` `{name, projectType, participationMode, department, academicYear}` → creates CPI. `projectType` ∈ `FYP | DATA_MANAGEMENT | HPC | INNOVATION_CHALLENGE`. `participationMode` ∈ `GROUP | INDIVIDUAL`.
+- `POST /courses` `{name, projectType, participationMode, department, batch, academicYear}` → creates a course as a **DRAFT**. `batch` is required and decides which students ever see it. `projectType` ∈ `FYP | DATA_MANAGEMENT | HPC | INNOVATION_CHALLENGE`. `participationMode` ∈ `GROUP | INDIVIDUAL`.
 - `GET /courses` — coordinator's own CPIs. `GET /courses/:cpiId` — detail.
 - `PUT /courses/:cpiId/timeline` `{phases: [{phase, startDate, endDate}, ...]}` — replace-all over **any subset** of the 10 phases (minimum 1); order is validated among whichever are sent, and an omitted phase simply leaves its gated actions closed. Full order: `STUDENT_REGISTRATION, SUPERVISOR_ADDITION, IDEA_ANNOUNCEMENT, PROJECT_SELECTION, PROJECT_REGISTRATION, EVALUATION_CONFIG, PROPOSAL_SUBMISSION, AVAILABILITY_SUBMISSION, EVALUATION_EXECUTION, FINAL_SUBMISSION`. (This section is the 2026-07-14 reference; entries below it were corrected for Waves 1–3 where they had gone stale, but treat the source as authoritative over anything here.)
 - `POST /courses/:cpiId/supervisors` `{lecturerUserId}` — invite (only valid during `SUPERVISOR_ADDITION` phase window; **first invite sent flips the CPI into SUPERVISOR_LED mode**).
@@ -138,6 +138,19 @@ Steps 2–3 alone make Weeks 1–2 of backend demoable — don't wait until the 
 Students must never see other groups' ideas or marks, evaluators must never see each other's scores before Head Judge review (not relevant yet — Week 7). The backend already enforces this server-side; the frontend's job is to not defeat it by over-fetching, caching stale cross-role data in Zustand, or leaving a previous user's state visible after a role switch/logout (clear all client state on logout).
 
 ## Current phase
+
+**Course visibility COMPLETE as of 2026-08-22 (uncommitted).** `tsc -b` + `vite build` + lint + `npm test` clean (**59 tests / 10 suites**). Backend half in `psems-backend/CLAUDE.md`.
+
+- **The student's course list splits into Current and Past.** Archived courses are ones they took and finished; they stay readable but do not belong beside the work in front of them. Each card carries its batch.
+- **`OtherBatches` on the same page** — a repeated student can see active courses for other batches by name and batch only, never contents, and ask to join one with a reason. Their request's state is shown back to them rather than leaving them wondering.
+- **`CpiRoster.tsx`** on the coordinator's Setup tab: everyone in the batch with what they are doing, four counts led by **not started**, and the group flagged when it is over or under the target size. **A roster of zero says the batch is wrong** — which is the only way a mistyped batch surfaces, since the students would otherwise just see nothing and assume the course is not ready.
+- **`CourseStatePanel.tsx`** — publish, archive, back to draft, each saying plainly who can see the course in that state.
+- **Join requests** are approved or declined from the roster panel, with an optional note that reaches the student.
+- **Create a course** now takes a batch, suggested from the ones already used in the department via a datalist. Typed free, normalised on the server — a fixed pattern would block a special or repeat intake, which is why `projectType` was freed from its enum in the first place.
+- **Course settings** gained **pass mark** (with the line saying PSEMS will not tell the student) and **group size** (a guide, not a limit).
+- **The CA sheet** highlights and counts students below the pass mark alongside the existing zero-total flag.
+- **`StageWeights`** in `StageLiveSettings` — the credit split, editable after submissions until marks are aggregated, refusing to save unless the weights still total 100.
+- **The student upload sample and description** carry the new `batch` column.
 
 **Titles and shell layout COMPLETE as of 2026-08-17 (uncommitted).** `tsc -b` + `vite build` + lint + `npm test` clean (**46 tests / 7 suites**).
 

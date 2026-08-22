@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCourses, useCreateCpi } from '@/features/courses/useCourses';
+import { useDepartmentBatches } from '@/features/courses/useCourseAccess';
 import { PROJECT_TYPE_SUGGESTIONS } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { Button, Card, EmptyState, Notice, PageHeader, SkeletonText } from '@/components/ui';
@@ -13,12 +14,14 @@ const createCpiSchema = z.object({
   participationMode: z.enum(['GROUP', 'INDIVIDUAL']),
   department: z.string().min(1, 'Department is required'),
   academicYear: z.string().min(1, 'Academic year is required'),
+  batch: z.string().min(1, 'Batch is required'),
 });
 
 type CreateCpiForm = z.infer<typeof createCpiSchema>;
 
 export function CpiListPage() {
   const { data: courses, isLoading, isError, error } = useCourses();
+  const { data: batches } = useDepartmentBatches();
   const createCpi = useCreateCpi();
 
   const {
@@ -32,6 +35,7 @@ export function CpiListPage() {
       projectType: 'Final Year Project',
       participationMode: 'GROUP',
       academicYear: '2026/2027',
+      batch: '',
     },
   });
 
@@ -114,6 +118,28 @@ export function CpiListPage() {
             {errors.academicYear && (
               <p className="mt-1 text-xs text-critical-700">{errors.academicYear.message}</p>
             )}
+          </label>
+
+          {/* The batch decides which students see this course, so it is
+              suggested from the ones already in use rather than left free —
+              the same code typed two ways would split one batch into two. */}
+          <label className="block text-sm text-ink">
+            Batch
+            <input
+              {...register('batch')}
+              list="known-batches"
+              className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm uppercase"
+              placeholder="22ENG"
+            />
+            <datalist id="known-batches">
+              {batches?.map((batch) => (
+                <option key={batch} value={batch} />
+              ))}
+            </datalist>
+            <span className="mt-1 block text-xs text-ink-muted">
+              Only students in this batch will see the course.
+            </span>
+            {errors.batch && <p className="mt-1 text-xs text-critical-700">{errors.batch.message}</p>}
           </label>
 
           <div className="col-span-2">

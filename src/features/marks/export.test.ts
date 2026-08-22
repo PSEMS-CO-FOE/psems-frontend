@@ -6,6 +6,7 @@ const sheet: MarkSheet = {
   courseName: 'Computer Engineering FYP',
   academicYear: '2026',
   gradingEnabled: false,
+  passMarkPercent: null,
   caContributionPercent: 40,
   stages: [
     { id: 'st1', name: 'Proposal', weight: 40 },
@@ -24,6 +25,7 @@ const sheet: MarkSheet = {
       total: 86,
       grade: null,
       zeroTotal: false,
+      belowPassMark: false,
     },
     {
       indexNumber: 'EN002',
@@ -36,9 +38,11 @@ const sheet: MarkSheet = {
       total: 0,
       grade: null,
       zeroTotal: true,
+      belowPassMark: true,
     },
   ],
   flagged: 1,
+  belowPassMark: 1,
 };
 
 function lines(csv: string) {

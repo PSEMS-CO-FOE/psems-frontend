@@ -49,6 +49,8 @@ const policy = {
   availabilityRequiredFrom: 'EVALUATORS_ONLY',
   gradingEnabled: true,
   caContributionPercent: null,
+  passMarkPercent: null,
+  targetGroupSize: null,
 } satisfies CpiPolicy;
 
 // Ideas is open today; every other phase sits in the past.

@@ -4,6 +4,8 @@ import { Badge, Card, EmptyState } from '@/components/ui';
 import { CpiTimelinePanel } from './CpiTimelinePanel';
 import { CourseSettingsPanel } from './CourseSettingsPanel';
 import { CpiAssignments } from './CpiAssignments';
+import { CourseStatePanel } from './CourseStatePanel';
+import { CpiRoster } from './CpiRoster';
 
 const INVITE_TONE = {
   ACCEPTED: 'positive',
@@ -17,6 +19,10 @@ export function CpiSetupPage() {
 
   return (
     <div className="space-y-6">
+      {cpi && <CourseStatePanel cpiId={cpiId} status={cpi.status} batch={cpi.batch} />}
+
+      <CpiRoster cpiId={cpiId} />
+
       <CourseSettingsPanel cpiId={cpiId} />
 
       <CpiTimelinePanel cpiId={cpiId} />

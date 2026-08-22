@@ -70,6 +70,8 @@ export interface MarkSheet {
   courseName: string;
   academicYear: string;
   gradingEnabled: boolean;
+  // Null when the course has no pass mark. Coordinator-facing only.
+  passMarkPercent: number | null;
   caContributionPercent: number | null;
   stages: { id: string; name: string; weight: number }[];
   // Fractions summing to 1.00, matching the printed sheet's weight row.
@@ -85,8 +87,10 @@ export interface MarkSheet {
     total: number;
     grade: string | null;
     zeroTotal: boolean;
+    belowPassMark: boolean;
   }[];
   flagged: number;
+  belowPassMark: number;
 }
 
 function marksKey(cpiId: string) {
@@ -162,6 +166,21 @@ export function useSetGradeBands(cpiId: string) {
       return res.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: marksKey(cpiId) }),
+  });
+}
+
+// Change the credit split after submissions exist, until marks are aggregated.
+export function useSetStageWeights(cpiId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (weights: { stageId: string; weight: number }[]) => {
+      const res = await api.put(`/courses/${cpiId}/evaluations/stage-weights`, { weights });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['evaluationConfig', cpiId] });
+      queryClient.invalidateQueries({ queryKey: marksKey(cpiId) });
+    },
   });
 }
 
