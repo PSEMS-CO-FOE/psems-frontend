@@ -70,6 +70,15 @@ const GROUPS: Group[] = [
       { key: 'allowIndividualParticipation', label: 'Students may take part individually' },
       { key: 'autoCreateSoloGroup', label: 'Create a solo group automatically' },
     ],
+    numbers: [
+      {
+        key: 'targetGroupSize',
+        label: 'Group size',
+        hint: 'A guide, not a limit. A batch rarely divides evenly, so a group over or under this is flagged on the roster rather than refused.',
+        min: 1,
+        max: 20,
+      },
+    ],
   },
   {
     title: 'Evaluation',
@@ -86,6 +95,14 @@ const GROUPS: Group[] = [
     phases: ['FINAL_SUBMISSION'],
     toggles: [{ key: 'gradingEnabled', label: 'Award grades as well as marks' }],
     numbers: [
+      {
+        key: 'passMarkPercent',
+        label: 'Pass mark',
+        hint: 'Students below this are shown to you on the mark sheet. PSEMS never tells a student they have been repeated — that decision is yours to make and to communicate.',
+        min: 0,
+        max: 100,
+        suffix: '%',
+      },
       {
         key: 'caContributionPercent',
         label: 'Contribution to the module',

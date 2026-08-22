@@ -27,6 +27,9 @@ export interface CpiPolicy {
   selectionConfirmedBy: SelectionConfirmer;
 
   allowIndividualParticipation: boolean;
+  // The group size the coordinator wants. Advisory — a group over or under it is
+  // flagged on the roster, never refused.
+  targetGroupSize: number | null;
   autoCreateSoloGroup: boolean;
 
   headJudgeEnabled: boolean;
@@ -35,6 +38,8 @@ export interface CpiPolicy {
 
   gradingEnabled: boolean;
   caContributionPercent: number | null;
+  // Below this a student is repeated. Shown to the coordinator only.
+  passMarkPercent: number | null;
 }
 
 export function policyKey(cpiId: string) {

@@ -8,6 +8,7 @@ import {
   useSetTimerSegments,
   type SavedStage,
 } from '@/features/evaluations/useEvaluationConfig';
+import { useSetStageWeights } from '@/features/marks/useMarks';
 import { PANEL_ROLES, roleLabel, type MarkCounting, type PanelRole } from '@/features/panel/usePanel';
 import { personName } from '@/lib/name';
 import { getApiErrorMessage } from '@/lib/apiError';
@@ -466,6 +467,65 @@ function StageBlock({ cpiId, stage }: { cpiId: string; stage: SavedStage }) {
  * coordinator restaff a panel, retime a presentation or weight the walk-in
  * marks on the day itself.
  */
+// The credit split. Locked out of the rubric editor once submissions exist,
+// which matters when one course spans two semesters: the first semester's
+// upload would otherwise freeze the split for the rest of the module.
+function StageWeights({ cpiId, stages }: { cpiId: string; stages: SavedStage[] }) {
+  const save = useSetStageWeights(cpiId);
+  const [draft, setDraft] = useState<Record<string, number> | null>(null);
+
+  const weights = draft ?? Object.fromEntries(stages.map((s) => [s.id, s.weight]));
+  const total = Object.values(weights).reduce((sum, w) => sum + w, 0);
+
+  return (
+    <div className="rounded-control border border-line p-3">
+      <p className="text-xs font-medium text-ink">Credit split</p>
+      <p className="mt-0.5 text-xs text-ink-muted">
+        What each stage is worth. Changeable until marks are aggregated — after that it would rewrite
+        marks students have already seen.
+      </p>
+
+      <div className="mt-2 space-y-1">
+        {stages.map((stage) => (
+          <div key={stage.id} className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="w-40 truncate text-ink">{stage.name}</span>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={weights[stage.id]}
+              onChange={(e) => setDraft({ ...weights, [stage.id]: Number(e.target.value) })}
+              className="w-20 rounded-control border border-line-strong px-2 py-1"
+            />
+            <span className="text-ink-muted">%</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span className={`text-xs ${total === 100 ? 'text-ink-muted' : 'text-critical-700'}`}>
+          Total {total}%
+        </span>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() =>
+            save.mutate(
+              stages.map((stage) => ({ stageId: stage.id, weight: weights[stage.id] })),
+              { onSuccess: () => setDraft(null) },
+            )
+          }
+          disabled={!draft || total !== 100 || save.isPending}
+        >
+          {save.isPending ? '…' : 'Save split'}
+        </Button>
+      </div>
+
+      {save.isError && <Notice tone="critical">{getApiErrorMessage(save.error)}</Notice>}
+    </div>
+  );
+}
+
 export function StageLiveSettings({ cpiId }: { cpiId: string }) {
   const { data: stages } = useEvaluationConfig(cpiId);
 
@@ -477,6 +537,7 @@ export function StageLiveSettings({ cpiId }: { cpiId: string }) {
       description="These save one at a time and keep working after submissions have started, when the full rubric editor above is locked."
     >
       <div className="space-y-2">
+        <StageWeights cpiId={cpiId} stages={stages} />
         {stages.map((stage) => (
           <StageBlock key={stage.id} cpiId={cpiId} stage={stage} />
         ))}

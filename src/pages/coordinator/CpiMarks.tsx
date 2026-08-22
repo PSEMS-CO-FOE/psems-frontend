@@ -159,6 +159,13 @@ function MarkSheetPanel({ cpiId }: { cpiId: string }) {
               {sheet.flagged} student(s) have a total of zero — check they were scored.
             </p>
           )}
+          {/* Who to look at, not a verdict: PSEMS never tells a student they
+              have been repeated. */}
+          {sheet.belowPassMark > 0 && sheet.passMarkPercent !== null && (
+            <p className="mb-1 text-xs text-amber-700">
+              {sheet.belowPassMark} student(s) fell below the {sheet.passMarkPercent}% pass mark.
+            </p>
+          )}
           <table className="min-w-full text-xs">
             <thead>
               <tr className="text-left text-ink-muted">
@@ -188,7 +195,10 @@ function MarkSheetPanel({ cpiId }: { cpiId: string }) {
             </thead>
             <tbody>
               {sheet.rows.map((row) => (
-                <tr key={row.indexNumber} className={row.zeroTotal ? 'bg-amber-50 text-ink' : 'text-ink'}>
+                <tr
+                  key={row.indexNumber}
+                  className={row.zeroTotal || row.belowPassMark ? 'bg-amber-50 text-ink' : 'text-ink'}
+                >
                   <td className="pr-3">{row.indexNumber}</td>
                   <td className="pr-3">{row.registrationNumber ?? '—'}</td>
                   <td className="pr-3">{row.surname}</td>

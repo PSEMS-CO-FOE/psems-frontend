@@ -9,6 +9,7 @@ import {
   useRespondGroupInvite,
   usePendingGroupInvites,
 } from '@/features/groups/useGroups';
+import { useCpiPolicy } from '@/features/policy/usePolicy';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 import { Button, Card, Notice } from '@/components/ui';
@@ -125,10 +126,19 @@ function MyGroupCard({
 function CreateGroupCard({ cpiId }: { cpiId: string }) {
   const create = useCreateGroup(cpiId);
   const solo = useCreateSoloGroup(cpiId);
+  const { data: policy } = useCpiPolicy(cpiId);
   const [name, setName] = useState('');
   return (
     <Card>
       <h2 className="text-sm font-semibold text-ink">Create a group</h2>
+      {/* A guide, not a limit — the batch rarely divides evenly, so the last
+          group is expected to differ and is never refused. */}
+      {policy?.targetGroupSize != null && (
+        <p className="mt-1 text-xs text-ink-muted">
+          Groups are usually {policy.targetGroupSize}. Yours can be larger or smaller if the numbers do
+          not divide evenly.
+        </p>
+      )}
       <div className="mt-2 flex gap-2">
         <input
           value={name}

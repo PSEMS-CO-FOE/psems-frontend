@@ -8,9 +8,9 @@ import { Button, Card, Notice, PageHeader } from '@/components/ui';
 
 // registrationNumber may be left blank; mark sheets print it beside the index
 // number and show a dash without it.
-const SAMPLE_CSV = `email,fullName,studentId,registrationNumber,department,year
-alice.demo@psems.dev,Alice Demo,STU9001,2022/E/001,Computer Engineering,4
-bob.demo@psems.dev,Bob Demo,STU9002,,Computer Engineering,3
+const SAMPLE_CSV = `email,fullName,studentId,registrationNumber,batch,department,year
+alice.demo@psems.dev,Alice Demo,STU9001,2022/E/001,22ENG,Computer Engineering,4
+bob.demo@psems.dev,Bob Demo,STU9002,,22ENG,Computer Engineering,3
 `;
 
 function StatusPill({ status }: { status: string }) {
@@ -60,10 +60,11 @@ export function StudentProvisioningPage() {
         <p className="text-xs text-ink-muted">
           Upload a CSV with header{' '}
           <code className="rounded-control bg-canvas px-1">
-            email,fullName,studentId,registrationNumber,department,year
+            email,fullName,studentId,registrationNumber,batch,department,year
           </code>
-          . The registration number may be blank, but mark sheets carry it beside the index number. Each
-          student gets a temp password emailed to them.{' '}
+          . The batch decides which courses a student sees, so it is required. The registration number
+          may be blank, but mark sheets carry it beside the index number. Each student gets a temp
+          password emailed to them.{' '}
           <button onClick={downloadSample} className="text-brand-700 underline">
             Download sample
           </button>
