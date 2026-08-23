@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useGuestWorkspace, useSubmitGuestScores, type GuestSession } from '@/features/panel/useGuest';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Button, Card, Notice, SkeletonCard } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Notice, SkeletonCard } from '@/components/ui';
+import { SiteFooter } from '@/components/layout/SiteFooter';
+import crest from '@/assets/crest.png';
 
 function GuestSessionCard({ token, session }: { token: string; session: GuestSession }) {
   const submit = useSubmitGuestScores(token);
@@ -39,11 +41,18 @@ function GuestSessionCard({ token, session }: { token: string; session: GuestSes
 
   return (
     <Card>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-ink">
-          {session.group.name} · {session.stage.name}
-        </p>
-        <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
+            {session.stage.name}
+          </p>
+          <p className="mt-0.5 text-base font-semibold tracking-tight text-ink">
+            {session.group.name}
+          </p>
+        </div>
+        <Badge tone={locked ? 'neutral' : 'brand'} dot>
+          {session.status.toLowerCase().replace(/_/g, ' ')}
+        </Badge>
       </div>
       {session.scheduledStart && (
         <p className="mt-1 text-xs text-ink-muted">
@@ -52,11 +61,18 @@ function GuestSessionCard({ token, session }: { token: string; session: GuestSes
         </p>
       )}
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-4 space-y-2">
         {session.criteria.map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-2">
-            <span className="w-40 text-xs text-ink" title={c.description ?? undefined}>
+          <div
+            key={c.id}
+            className="flex flex-wrap items-center gap-2 rounded-control bg-canvas-sunken p-2"
+          >
+            <span
+              className="w-40 shrink-0 text-xs font-medium text-ink"
+              title={c.description ?? undefined}
+            >
               {c.name}
+              <span className="ml-1 font-normal text-ink-subtle">/ {c.maxScore}</span>
             </span>
             <input
               type="number"
@@ -66,40 +82,49 @@ function GuestSessionCard({ token, session }: { token: string; session: GuestSes
               onChange={(e) => setField(c.id, 'score', e.target.value)}
               disabled={locked}
               placeholder={`0–${c.maxScore}`}
-              className="w-20 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+              aria-label={`Score for ${c.name}`}
+              className="h-9 w-20 px-2.5 text-xs"
             />
             <input
               value={values[c.id]?.comment ?? ''}
               onChange={(e) => setField(c.id, 'comment', e.target.value)}
               disabled={locked}
-              placeholder="comment (optional)"
-              className="flex-1 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+              placeholder="Comment (optional)"
+              aria-label={`Comment on ${c.name}`}
+              className="h-9 min-w-40 flex-1 px-2.5 text-xs"
             />
           </div>
         ))}
       </div>
 
-      <div className="mt-3">
-        <label className="text-xs font-medium text-ink">
+      <div className="mt-4">
+        <label htmlFor={`overall-${session.sessionId}`} className="text-xs font-medium text-ink">
           Overall comment <span className="text-critical-700">*</span>
         </label>
         <textarea
+          id={`overall-${session.sessionId}`}
           value={overallComment}
           onChange={(e) => setOverallComment(e.target.value)}
           disabled={locked}
           rows={3}
-          className="mt-1 w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+          className="mt-1.5 w-full px-3 py-2 text-xs"
         />
       </div>
 
-      {submit.isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(submit.error)}</p>}
-      {submit.isSuccess && <p className="mt-2 text-xs text-positive-700">Marks submitted. Thank you.</p>}
+      {submit.isError && (
+        <Notice tone="critical" size="xs" className="mt-3">
+          {getApiErrorMessage(submit.error)}
+        </Notice>
+      )}
+      {submit.isSuccess && (
+        <Notice tone="positive" size="xs" className="mt-3">
+          Marks submitted. Thank you.
+        </Notice>
+      )}
 
       {!locked && (
-        <Button variant="primary" size="sm" className="mt-3"
-          onClick={onSubmit}
-          disabled={submit.isPending}>
-          {submit.isPending ? '…' : 'Submit marks'}
+        <Button variant="primary" className="mt-4" onClick={onSubmit} disabled={submit.isPending}>
+          {submit.isPending ? 'Submitting…' : 'Submit marks'}
         </Button>
       )}
     </Card>
@@ -113,37 +138,77 @@ export function GuestScoringPage() {
   const token = params.get('token') ?? '';
   const { data, isLoading, isError, error } = useGuestWorkspace(token);
 
-  if (!token) {
-    return <p className="p-6 text-sm text-ink-muted">This page needs the scoring link you were sent.</p>;
-  }
-  if (isLoading) return <SkeletonCard rows={3} className="p-6" />;
-  if (isError) {
+  // Every state of this screen sits inside the same frame. A guest holds no
+  // account and will see PSEMS exactly once, so a bare sentence on a white page
+  // gives them nothing to tell a working link from a broken one.
+  const body = () => {
+    if (!token) {
+      return (
+        <Notice tone="caution">This page needs the scoring link you were sent.</Notice>
+      );
+    }
+    if (isLoading) return <SkeletonCard rows={3} />;
+    if (isError) {
+      return (
+        <Notice tone="critical">
+          {getApiErrorMessage(error, 'This scoring link is not valid')}
+        </Notice>
+      );
+    }
+    if (!data) return null;
+
     return (
-      <Notice tone="critical" className="m-6">
-        {getApiErrorMessage(error, 'This scoring link is not valid')}
-      </Notice>
+      <>
+        <Card accent>
+          <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-brand-700">
+            Guest evaluator
+          </p>
+          <h1 className="mt-1.5 text-title font-semibold text-ink">{data.courseInstance.name}</h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            Welcome, {data.guest.fullName}
+            {data.guest.organization && ` · ${data.guest.organization}`}
+          </p>
+          <p className="mt-3 border-t border-line pt-3 text-xs text-ink-subtle">
+            This link works until {new Date(data.expiresAt).toLocaleDateString()} and covers only
+            the evaluations below.
+          </p>
+        </Card>
+
+        {data.sessions.length === 0 ? (
+          <EmptyState
+            title="No evaluations yet"
+            hint="You have not been added to any. The coordinator will let you know when there is something to mark."
+          />
+        ) : (
+          data.sessions.map((s) => <GuestSessionCard key={s.sessionId} token={token} session={s} />)
+        )}
+      </>
     );
-  }
+  };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-6">
-      <div>
-        <h1 className="text-lg font-semibold text-ink">{data!.courseInstance.name}</h1>
-        <p className="text-sm text-ink-muted">
-          Welcome, {data!.guest.fullName}
-          {data!.guest.organization && ` · ${data!.guest.organization}`}
-        </p>
-        <p className="mt-1 text-xs text-ink-subtle">
-          This link works until {new Date(data!.expiresAt).toLocaleDateString()} and covers only the evaluations below.
-        </p>
-      </div>
+    <div className="min-h-screen bg-canvas">
+      <header className="border-b border-line surface-glass">
+        <div className="mx-auto flex h-16 max-w-3xl items-center gap-3 px-6">
+          <img
+            src={crest}
+            alt=""
+            className="h-9 w-9 shrink-0 rounded-lg bg-brand-50 object-contain p-1 ring-1 ring-brand-200"
+          />
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold tracking-tight text-ink">PSEMS</span>
+            <span className="block truncate text-[11px] text-ink-subtle">
+              Faculty of Engineering — USJ
+            </span>
+          </span>
+        </div>
+      </header>
 
-      {data!.sessions.length === 0 && (
-        <p className="text-sm text-ink-muted">You have not been added to any evaluations yet.</p>
-      )}
-      {data!.sessions.map((s) => (
-        <GuestSessionCard key={s.sessionId} token={token} session={s} />
-      ))}
+      <main className="mx-auto max-w-3xl space-y-4 px-6 pb-[calc(var(--footer-h)+2rem)] pt-8">
+        {body()}
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }

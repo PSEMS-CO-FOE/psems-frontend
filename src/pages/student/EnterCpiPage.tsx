@@ -23,18 +23,28 @@ function CourseCard({ cpi }: { cpi: StudentCpi }) {
     <li>
       {/* A link, not a button: opening a course in a new tab is a normal thing
           to want, and `navigate` throws that away. */}
-      <Link to={`/student/cpi/${cpi.id}/group`} className="block">
-        <Card className="transition-shadow duration-fast ease-standard hover:shadow-raised">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
+      <Link to={`/student/cpi/${cpi.id}/group`} className="group block">
+        <Card interactive>
+          <div className="flex items-center gap-4">
+            {/* An initial to aim at, instead of three lines of grey text. */}
+            <span
+              aria-hidden="true"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-brand-wash text-base font-semibold text-brand-700 ring-1 ring-inset ring-brand-200"
+            >
+              {cpi.name.trim().charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-ink">{cpi.name}</p>
               <p className="mt-0.5 truncate text-xs text-ink-muted">
                 {cpi.batch} · {cpi.department} · {cpi.academicYear}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2.5">
               {cpi.status === 'ARCHIVED' && <Badge tone="neutral">Finished</Badge>}
-              <span aria-hidden="true" className="text-sm text-ink-subtle">
+              <span
+                aria-hidden="true"
+                className="text-base text-ink-subtle transition-transform duration-base ease-standard group-hover:translate-x-1 group-hover:text-brand-700"
+              >
                 →
               </span>
             </div>
@@ -127,6 +137,7 @@ export function EnterCpiPage() {
     <div className="space-y-6">
       <PageHeader
         title="My courses"
+        eyebrow="Student"
         description="Open a course to form your group, browse ideas and track your project."
       />
 

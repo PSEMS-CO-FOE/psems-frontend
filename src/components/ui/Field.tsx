@@ -1,9 +1,11 @@
 import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
+// `h-10` matches the medium button, so a field and the button beside it sit on
+// the same baseline instead of one overhanging the other by two pixels.
 const controlClass =
-  'w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-sm text-ink ' +
-  'placeholder:text-ink-subtle transition-colors ' +
+  'h-10 w-full rounded-control border border-line-strong bg-surface px-3 text-sm text-ink shadow-card ' +
+  'placeholder:text-ink-subtle transition-colors duration-fast ease-standard ' +
   'hover:border-ink-subtle focus:border-brand-500 ' +
   'disabled:cursor-not-allowed disabled:bg-canvas disabled:text-ink-subtle';
 
@@ -101,7 +103,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         ref={ref}
         id={fieldId}
         aria-invalid={error != null || undefined}
-        className={cn(controlClass, 'min-h-[5rem] resize-y', error != null && invalidClass)}
+        className={cn(controlClass, 'h-auto min-h-[5rem] resize-y py-2', error != null && invalidClass)}
         {...props}
       />
     </Labelled>

@@ -100,7 +100,7 @@ function GradeBandsPanel({ cpiId, gradingEnabled }: { cpiId: string; gradingEnab
             className="w-20 rounded-control border border-line-strong px-2 py-0.5"
           />
           <span className="text-ink-muted">%</span>
-          <button onClick={() => setDraft(rows.filter((_, j) => j !== i))} className="text-critical-700 hover:underline">
+          <button onClick={() => setDraft(rows.filter((_, j) => j !== i))} className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60">
             remove
           </button>
         </div>
@@ -108,7 +108,7 @@ function GradeBandsPanel({ cpiId, gradingEnabled }: { cpiId: string; gradingEnab
       <div className="flex items-center gap-2">
         <button
           onClick={() => setDraft([...rows, { label: '', minPercent: 50 }])}
-          className="text-xs text-brand-700 hover:underline"
+          className="rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors duration-fast ease-standard hover:border-brand-400"
         >
           + grade
         </button>
@@ -130,7 +130,7 @@ function MarkSheetPanel({ cpiId }: { cpiId: string }) {
   return (
     <div className="border-t pt-3">
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => setOpen((v) => !v)} className="text-xs text-brand-700 hover:underline">
+        <button onClick={() => setOpen((v) => !v)} className="rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors duration-fast ease-standard hover:border-brand-400">
           {open ? 'Hide CA sheet' : 'CA sheet'}
         </button>
         {open && sheet && (
@@ -139,12 +139,13 @@ function MarkSheetPanel({ cpiId }: { cpiId: string }) {
               onClick={() => downloadCsv(markSheetFilename(sheet), markSheetToCsv(sheet))}>
               Download CSV
             </Button>
-            <button
+            <Button
               onClick={() => window.print()}
-              className="rounded-control border border-line-strong px-2 py-0.5 text-xs text-ink-muted hover:bg-canvas"
+              variant="secondary"
+              size="sm"
             >
               Print
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -153,43 +154,43 @@ function MarkSheetPanel({ cpiId }: { cpiId: string }) {
       {open && isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(error)}</p>}
 
       {open && sheet && (
-        <div className="mt-2 overflow-x-auto">
+        <div className="mt-3 table-scroll">
           {sheet.flagged > 0 && (
-            <p className="mb-1 text-xs text-amber-700">
+            <p className="mb-2 text-xs font-medium text-caution-700">
               {sheet.flagged} student(s) have a total of zero — check they were scored.
             </p>
           )}
           {/* Who to look at, not a verdict: PSEMS never tells a student they
               have been repeated. */}
           {sheet.belowPassMark > 0 && sheet.passMarkPercent !== null && (
-            <p className="mb-1 text-xs text-amber-700">
+            <p className="mb-2 text-xs font-medium text-caution-700">
               {sheet.belowPassMark} student(s) fell below the {sheet.passMarkPercent}% pass mark.
             </p>
           )}
-          <table className="min-w-full text-xs">
+          <table className="data-table min-w-full text-xs">
             <thead>
-              <tr className="text-left text-ink-muted">
-                <th className="pr-3 font-medium">Index</th>
-                <th className="pr-3 font-medium">Reg. No</th>
-                <th className="pr-3 font-medium">Surname</th>
-                <th className="pr-3 font-medium">Initials</th>
+              <tr>
+                <th>Index</th>
+                <th>Reg. No</th>
+                <th>Surname</th>
+                <th>Initials</th>
                 {sheet.stages.map((stage) => (
-                  <th key={stage.id} className="pr-3 font-medium">
+                  <th key={stage.id}>
                     {stage.name}
                   </th>
                 ))}
-                <th className="pr-3 font-medium">Total</th>
-                {sheet.gradingEnabled && <th className="font-medium">Grade</th>}
+                <th>Total</th>
+                {sheet.gradingEnabled && <th>Grade</th>}
               </tr>
-              <tr className="text-left text-ink-subtle">
-                <td className="pr-3">Weight</td>
+              <tr className="bg-canvas-sunken text-left text-[11px] font-medium text-ink-subtle">
+                <td>Weight</td>
                 <td /> <td /> <td />
                 {sheet.stages.map((stage) => (
-                  <td key={stage.id} className="pr-3">
+                  <td key={stage.id}>
                     {sheet.weights[stage.id]?.toFixed(2)}
                   </td>
                 ))}
-                <td className="pr-3">1.00</td>
+                <td>1.00</td>
                 {sheet.gradingEnabled && <td />}
               </tr>
             </thead>
@@ -197,18 +198,18 @@ function MarkSheetPanel({ cpiId }: { cpiId: string }) {
               {sheet.rows.map((row) => (
                 <tr
                   key={row.indexNumber}
-                  className={row.zeroTotal || row.belowPassMark ? 'bg-amber-50 text-ink' : 'text-ink'}
+                  className={row.zeroTotal || row.belowPassMark ? 'bg-caution-50 text-ink' : 'text-ink'}
                 >
-                  <td className="pr-3">{row.indexNumber}</td>
-                  <td className="pr-3">{row.registrationNumber ?? '—'}</td>
-                  <td className="pr-3">{row.surname}</td>
-                  <td className="pr-3">{row.initials}</td>
+                  <td>{row.indexNumber}</td>
+                  <td>{row.registrationNumber ?? '—'}</td>
+                  <td>{row.surname}</td>
+                  <td>{row.initials}</td>
                   {sheet.stages.map((stage) => (
-                    <td key={stage.id} className="pr-3">
+                    <td key={stage.id}>
                       {row.stagePercents[stage.id] ?? '—'}
                     </td>
                   ))}
-                  <td className="pr-3 font-medium">{row.total}</td>
+                  <td className="font-semibold text-ink">{row.total}</td>
                   {sheet.gradingEnabled && <td>{row.grade ?? '—'}</td>}
                 </tr>
               ))}

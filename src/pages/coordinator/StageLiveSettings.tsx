@@ -12,7 +12,7 @@ import { useSetStageWeights } from '@/features/marks/useMarks';
 import { PANEL_ROLES, roleLabel, type MarkCounting, type PanelRole } from '@/features/panel/usePanel';
 import { personName } from '@/lib/name';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Badge, Button, Card, ErrorText, Notice } from '@/components/ui';
+import { Badge, Button, EmptyState, ErrorText, Notice } from '@/components/ui';
 
 type PanelScoreVisibility = SavedStage['panelScoreVisibility'];
 
@@ -263,7 +263,7 @@ function PanelComposition({ cpiId, stage }: { cpiId: string; stage: SavedStage }
             </label>
             <button
               onClick={() => setRules_((prev) => prev.filter((_, idx) => idx !== i))}
-              className="text-xs text-critical-700 hover:underline"
+              className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60"
             >
               remove
             </button>
@@ -401,7 +401,7 @@ function TimerSegments({ cpiId, stage }: { cpiId: string; stage: SavedStage }) {
             </label>
             <button
               onClick={() => setSegments_((prev) => prev.filter((_, idx) => idx !== i))}
-              className="text-xs text-critical-700 hover:underline"
+              className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60"
             >
               remove
             </button>
@@ -436,7 +436,7 @@ function StageBlock({ cpiId, stage }: { cpiId: string; stage: SavedStage }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full flex-wrap items-center gap-2 px-4 py-2.5 text-left hover:bg-canvas"
+        className="flex w-full flex-wrap items-center gap-2 px-4 py-2.5 text-left hover:bg-brand-50"
       >
         <span className="text-sm font-medium text-ink">{stage.name}</span>
         {pooled && stage.pooledSharePercent == null && <Badge tone="caution">pooled marks count for nothing</Badge>}
@@ -529,19 +529,22 @@ function StageWeights({ cpiId, stages }: { cpiId: string; stages: SavedStage[] }
 export function StageLiveSettings({ cpiId }: { cpiId: string }) {
   const { data: stages } = useEvaluationConfig(cpiId);
 
-  if (!stages || stages.length === 0) return null;
+  // Not null on an empty course: silence read as a broken screen.
+  if (!stages || stages.length === 0) {
+    return (
+      <EmptyState
+        title="No stages to settle yet"
+        hint="Save the rubric first. These settings act on stages that already exist, which is what lets them keep working after marking starts."
+      />
+    );
+  }
 
   return (
-    <Card
-      title="Stage settings during the course"
-      description="These save one at a time and keep working after submissions have started, when the full rubric editor above is locked."
-    >
-      <div className="space-y-2">
-        <StageWeights cpiId={cpiId} stages={stages} />
-        {stages.map((stage) => (
-          <StageBlock key={stage.id} cpiId={cpiId} stage={stage} />
-        ))}
-      </div>
-    </Card>
+    <div className="space-y-2.5">
+      <StageWeights cpiId={cpiId} stages={stages} />
+      {stages.map((stage) => (
+        <StageBlock key={stage.id} cpiId={cpiId} stage={stage} />
+      ))}
+    </div>
   );
 }

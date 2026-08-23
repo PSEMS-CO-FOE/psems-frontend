@@ -46,6 +46,7 @@ export function CpiListPage() {
     <div className="space-y-6">
       <PageHeader
         title="My courses"
+        eyebrow="Course coordinator"
         description="Every course instance you coordinate. Open one to set its timeline, people and evaluation."
       />
 
@@ -153,7 +154,7 @@ export function CpiListPage() {
       </Card>
 
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+        <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
           Your courses
         </h2>
         {isLoading && <SkeletonText />}
@@ -169,12 +170,12 @@ export function CpiListPage() {
           />
         )}
         {courses && courses.length > 0 && (
-          <ul className="divide-y rounded-card border border-line bg-surface">
+          <ul className="divide-y divide-line rounded-card border border-line bg-surface">
             {courses.map((cpi) => (
               <li key={cpi.id}>
                 <Link
                   to={`/coordinator/${cpi.id}`}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-canvas"
+                  className="flex items-center justify-between px-4 py-3 hover:bg-brand-50"
                 >
                   <div>
                     <p className="text-sm font-medium text-ink">{cpi.name}</p>

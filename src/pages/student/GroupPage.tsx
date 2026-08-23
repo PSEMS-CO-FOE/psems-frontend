@@ -86,7 +86,7 @@ function MyGroupCard({
         )}
       </div>
 
-      <ul className="mt-3 divide-y">
+      <ul className="mt-3 divide-y divide-line">
         {group.members.map((m) => (
           <li key={m.id} className="flex items-center justify-between py-2 text-xs">
             <span className="text-ink">
@@ -160,13 +160,15 @@ function CreateGroupCard({ cpiId }: { cpiId: string }) {
           where a student who never found a group would otherwise be stuck. */}
       <div className="mt-3 border-t pt-3">
         <p className="text-xs text-ink-muted">Taking part on your own?</p>
-        <button
+        <Button
           onClick={() => solo.mutate()}
           disabled={solo.isPending}
-          className="mt-1 rounded-control border border-line-strong px-3 py-1 text-xs font-medium text-ink hover:bg-canvas disabled:opacity-50"
+          variant="secondary"
+          size="sm"
+          className="mt-1"
         >
           {solo.isPending ? '…' : 'Continue without a group'}
-        </button>
+        </Button>
         {solo.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(solo.error)}</p>}
       </div>
     </Card>
@@ -190,7 +192,7 @@ function RespondInviteCard({ cpiId }: { cpiId: string }) {
         {invites?.map((inv) => (
           <li
             key={inv.groupId}
-            className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-canvas px-3 py-2 text-xs"
+            className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-canvas-sunken px-3 py-2 text-xs"
           >
             <span className="text-ink">
               <span className="font-medium">{inv.group.name}</span>{' '}

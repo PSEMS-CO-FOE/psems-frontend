@@ -60,14 +60,14 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
     <div className="rounded-control border p-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium text-ink-muted">Availability grid</p>
-        <button onClick={() => setOpen((v) => !v)} className="text-xs text-brand-700 hover:underline">
+        <button onClick={() => setOpen((v) => !v)} className="rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors duration-fast ease-standard hover:border-brand-400">
           {open ? 'Cancel' : template ? 'Redefine grid' : 'Set up grid'}
         </button>
       </div>
 
       {open && (
         <div className="mt-2 space-y-2">
-          <p className="text-xs text-amber-600">
+          <p className="text-xs text-caution-700">
             Republishing replaces the slots, and answers given against a removed slot go with it.
           </p>
           <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -114,7 +114,7 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
               {slots.length > 1 && (
                 <button
                   onClick={() => setSlots(slots.filter((_, j) => j !== i))}
-                  className="text-critical-700 hover:underline"
+                  className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60"
                 >
                   remove
                 </button>
@@ -125,7 +125,7 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSlots([...slots, { name: '', startTime: '13:00', endTime: '17:00' }])}
-              className="text-xs text-brand-700 hover:underline"
+              className="rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors duration-fast ease-standard hover:border-brand-400"
             >
               + add slot
             </button>
@@ -153,7 +153,7 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
           <AvailabilityLegend />
           <AvailabilityGrid template={template} values={new Map()} readOnly summary={summary} />
           {data && data.outstanding.length > 0 && (
-            <p className="text-xs text-amber-700">
+            <p className="text-xs text-caution-700">
               Still to answer: {data.outstanding.map((l) => personName(l.user)).join(', ')}
             </p>
           )}
@@ -171,14 +171,14 @@ function AlternativeSlots({ cpiId, session }: { cpiId: string; session: Evaluati
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="self-start text-xs text-brand-700 hover:underline">
+      <button onClick={() => setOpen(true)} className="self-start rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors duration-fast ease-standard hover:border-brand-400">
         Find a slot everyone can make
       </button>
     );
   }
 
   return (
-    <div className="rounded-control bg-canvas px-2 py-1">
+    <div className="rounded-control bg-canvas-sunken px-2 py-1">
       {isLoading && <span className="text-xs text-ink-muted">Checking availability…</span>}
       {data && data.length === 0 && (
         <span className="text-xs text-ink-muted">
@@ -448,7 +448,7 @@ export function CpiScheduling({ cpiId }: { cpiId: string }) {
           {generate.isError && <span className="text-xs text-critical-700">{getApiErrorMessage(generate.error)}</span>}
         </div>
 
-        <ul className="mt-2 divide-y">
+        <ul className="mt-2 divide-y divide-line">
           {sessions?.map((s) => (
             <SessionRow key={s.id} cpiId={cpiId} session={s} />
           ))}

@@ -36,13 +36,14 @@ export function CpiSupervisorRequests({ cpiId }: { cpiId: string }) {
                 disabled={decide.isPending}>
                 Approve
               </Button>
-              <button
+              <Button
                 onClick={() => decide.mutate({ requestId: r.id, decision: 'REJECT' })}
                 disabled={decide.isPending}
-                className="rounded-control border border-line-strong px-2 py-0.5 text-xs text-ink hover:bg-canvas disabled:opacity-50"
+                variant="secondary"
+                size="sm"
               >
                 Decline
-              </button>
+              </Button>
             </div>
           </li>
         ))}

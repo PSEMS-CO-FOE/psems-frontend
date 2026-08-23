@@ -26,7 +26,12 @@ const statusLabel: Record<TabStatus, string> = {
 
 export function TabNav({ items, className }: { items: TabItem[]; className?: string }) {
   return (
-    <nav className={cn('flex flex-wrap items-center gap-1', className)}>
+    <nav
+      className={cn(
+        'flex flex-wrap items-center gap-1 rounded-card border border-line bg-surface p-1.5 shadow-card',
+        className,
+      )}
+    >
       {items.map((item) => (
         <NavLink
           key={item.to}
@@ -34,10 +39,10 @@ export function TabNav({ items, className }: { items: TabItem[]; className?: str
           end={item.end}
           className={({ isActive }) =>
             cn(
-              'inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-sm font-medium transition-colors',
+              'inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-sm font-medium transition-all duration-fast ease-standard',
               isActive
                 ? 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200'
-                : 'text-ink-muted hover:bg-line/50 hover:text-ink',
+                : 'text-ink-muted hover:bg-line/40 hover:text-ink',
             )
           }
         >

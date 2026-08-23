@@ -117,20 +117,20 @@ export function GlobalSearch() {
           }}
           onFocus={() => setOpen(true)}
           placeholder="Search courses, people"
-          className="w-full rounded-full border border-line bg-canvas py-2 pl-9 pr-12 text-sm text-ink placeholder:text-ink-subtle transition-colors duration-fast ease-standard hover:border-line-strong focus:border-brand-500"
+          className="h-10 w-full rounded-pill border border-line bg-canvas-sunken pl-9 pr-16 text-sm text-ink placeholder:text-ink-subtle transition-colors duration-fast ease-standard hover:border-line-strong focus:border-brand-500 focus:bg-surface"
         />
-        <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-line px-1.5 text-[10px] font-medium text-ink-subtle">
+        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md border border-line bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-ink-subtle shadow-card">
           Ctrl K
         </kbd>
       </label>
 
       {active && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-full max-w-sm overflow-hidden rounded-card border border-line bg-surface shadow-pop">
+        <div className="absolute right-0 top-full z-30 mt-2 w-full max-w-sm overflow-hidden rounded-card border border-line bg-surface-raised shadow-pop motion-safe:animate-rise">
           {empty && <p className="px-4 py-6 text-center text-xs text-ink-subtle">Nothing matches “{trimmed}”.</p>}
 
           {courseHits.length > 0 && (
             <section>
-              <h2 className="border-b border-line px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">
+              <h2 className="border-b border-line px-4 py-2 text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
                 Courses
               </h2>
               <ul>
@@ -139,7 +139,7 @@ export function GlobalSearch() {
                     <button
                       type="button"
                       onClick={() => go(courseHref(role, c.id))}
-                      className="block w-full px-4 py-2.5 text-left transition-colors duration-fast ease-standard hover:bg-canvas"
+                      className="block w-full px-4 py-2.5 text-left transition-colors duration-fast ease-standard hover:bg-brand-50"
                     >
                       <span className="block truncate text-sm font-medium text-ink">{c.name}</span>
                       <span className="block text-xs text-ink-muted">
@@ -154,7 +154,7 @@ export function GlobalSearch() {
 
           {peopleHits.length > 0 && (
             <section>
-              <h2 className="border-y border-line px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">
+              <h2 className="border-y border-line px-4 py-2 text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
                 People
               </h2>
               <ul>
@@ -163,7 +163,7 @@ export function GlobalSearch() {
                     <button
                       type="button"
                       onClick={() => go(`/profile/${p.userId}`)}
-                      className="block w-full px-4 py-2.5 text-left transition-colors duration-fast ease-standard hover:bg-canvas"
+                      className="block w-full px-4 py-2.5 text-left transition-colors duration-fast ease-standard hover:bg-brand-50"
                     >
                       <span className="block truncate text-sm font-medium text-ink">
                         {p.user.fullName ?? p.user.email}

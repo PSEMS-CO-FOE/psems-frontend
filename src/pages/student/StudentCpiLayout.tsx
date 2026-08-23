@@ -11,15 +11,8 @@ export function StudentCpiLayout() {
       <PageHeader
         back={{ to: '/student', label: 'My courses' }}
         title={cpi?.name ?? 'Course'}
-        meta={
-          cpi && (
-            <>
-              <Badge tone="brand">{cpi.projectType}</Badge>
-              <Badge>{cpi.department}</Badge>
-              <Badge>{cpi.academicYear}</Badge>
-            </>
-          )
-        }
+        eyebrow={cpi && `${cpi.department} · ${cpi.academicYear}`}
+        meta={cpi && <Badge tone="brand">{cpi.projectType}</Badge>}
       />
 
       <TabNav
@@ -31,7 +24,6 @@ export function StudentCpiLayout() {
           { to: `/student/cpi/${cpiId}/schedule`, label: 'Schedule' },
           { to: `/student/cpi/${cpiId}/marks`, label: 'Marks' },
         ]}
-        className="border-b border-line pb-3"
       />
 
       <Outlet />

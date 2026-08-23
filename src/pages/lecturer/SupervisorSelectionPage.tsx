@@ -19,7 +19,7 @@ function SeekingIdeaRow({ cpiId, seeking }: { cpiId: string; seeking: SeekingIde
   const [note, setNote] = useState('');
 
   return (
-    <li className="rounded-control border border-line bg-canvas px-3 py-2 text-xs">
+    <li className="rounded-control border border-line bg-canvas-sunken px-3 py-2 text-xs">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-ink">
           <span className="font-medium">{seeking.idea.title}</span>
@@ -92,7 +92,7 @@ export function SupervisorSelectionPage() {
           {data.pendingSelections.map((sel) => (
             <li
               key={sel.id}
-              className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-canvas px-3 py-2 text-xs"
+              className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-canvas-sunken px-3 py-2 text-xs"
             >
               <span className="text-ink">
                 <span className="font-medium">{sel.group.name}</span> chose{' '}
@@ -155,13 +155,14 @@ export function SupervisorSelectionPage() {
               disabled={!interestIdeaId || lecturerInterest.isPending}>
               I'm interested
             </Button>
-            <button
+            <Button
               onClick={() => coSupervision.mutate(interestIdeaId)}
               disabled={!interestIdeaId || coSupervision.isPending}
-              className="rounded-control border border-line-strong px-2 py-1 text-xs text-ink hover:bg-canvas disabled:opacity-50"
+              variant="secondary"
+              size="sm"
             >
               Offer to co-supervise
-            </button>
+            </Button>
           </div>
           {(lecturerInterest.isError || coSupervision.isError) && (
             <p className="mt-1 text-xs text-critical-700">
@@ -184,7 +185,7 @@ export function SupervisorSelectionPage() {
                   <button
                     onClick={() => withdraw.mutate({ ideaId: w.idea.id, type: w.type })}
                     disabled={withdraw.isPending}
-                    className="text-critical-700 hover:underline disabled:opacity-50"
+                    className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60 disabled:opacity-50"
                   >
                     withdraw
                   </button>

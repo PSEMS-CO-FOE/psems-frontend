@@ -1,7 +1,15 @@
 import { cn } from '@/lib/cn';
 
+/** A sweep, not a pulse — a fading block reads as broken. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-control bg-line', className)} aria-hidden="true" />;
+  return (
+    <div
+      className={cn('relative overflow-hidden rounded-control bg-line/70', className)}
+      aria-hidden="true"
+    >
+      <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-surface/70 to-transparent motion-safe:animate-shimmer" />
+    </div>
+  );
 }
 
 /** The app's single loading treatment: a card-shaped placeholder, not a spinner. */

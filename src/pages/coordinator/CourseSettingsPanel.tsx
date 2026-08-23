@@ -134,7 +134,7 @@ function Toggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2 rounded-control px-2 py-1.5 hover:bg-canvas">
+    <label className="flex cursor-pointer items-start gap-2 rounded-control px-2 py-1.5 hover:bg-brand-50">
       <input
         type="checkbox"
         checked={checked}
@@ -203,7 +203,7 @@ function NumberSetting({
             placeholder="no limit"
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
-            className="w-28 rounded-control border border-line-strong bg-surface px-2 py-1 text-sm disabled:bg-canvas"
+            className="w-28 rounded-control border border-line-strong bg-surface px-2 py-1 text-sm disabled:bg-canvas-sunken"
           />
           {suffix && <span className="text-sm text-ink-muted">{suffix}</span>}
         </span>
@@ -318,7 +318,7 @@ export function CourseSettingsPanel({ cpiId }: { cpiId: string }) {
                 type="button"
                 onClick={() => toggleGroup(group.title)}
                 aria-expanded={isOpen}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-canvas"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-brand-50"
               >
                 <span className="text-sm font-medium text-ink">{group.title}</span>
                 {inPlay && <Badge tone="brand">this phase is open</Badge>}
@@ -398,7 +398,7 @@ export function CourseSettingsPanel({ cpiId }: { cpiId: string }) {
         })}
       </div>
 
-      <p className="mt-4 rounded-control bg-canvas px-3 py-2 text-xs text-ink-muted">
+      <p className="mt-4 rounded-control bg-canvas-sunken px-3 py-2 text-xs text-ink-muted">
         Who marks and how much their marks count is not set here — it is per stage and per session, under Evaluation. A
         supervisor marking their own group and an external guest both count in full unless you deliberately set their
         seat to advisory.

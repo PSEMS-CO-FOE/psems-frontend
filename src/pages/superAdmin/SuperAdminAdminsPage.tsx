@@ -27,6 +27,7 @@ export function SuperAdminAdminsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Administrators"
+        eyebrow="Account management"
         description="System Admins approve lecturers, upload students and appoint coordinators. A Super Admin does none of that — the two roles are deliberately separate."
       />
 

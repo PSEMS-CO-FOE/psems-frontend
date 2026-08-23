@@ -47,14 +47,14 @@ function LecturerPicker({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search lecturers by name or email"
           disabled={disabled}
-          className="w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+          className="w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas-sunken"
         />
         <div className="flex gap-2">
           <select
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             disabled={disabled || isLoading}
-            className="w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+            className="w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas-sunken"
           >
             <option value="">
               {isLoading ? 'Loading lecturers…' : `Select a lecturer (${filtered.length})`}

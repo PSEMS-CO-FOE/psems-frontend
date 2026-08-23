@@ -38,7 +38,7 @@ export function RegisterPage() {
           <Notice tone="positive">{registerLecturer.data.message}</Notice>
           <Link
             to="/login"
-            className="flex w-full items-center justify-center rounded-control bg-brand-600 px-4 py-3.5 text-sm font-semibold text-white shadow-card transition duration-fast ease-standard hover:bg-brand-700 hover:shadow-raised active:translate-y-px"
+            className="flex w-full items-center justify-center rounded-control bg-brand-gradient px-4 py-3.5 text-sm font-semibold text-white shadow-brand transition-all duration-fast ease-standard hover:shadow-brand-lg hover:brightness-105 active:translate-y-px"
           >
             Back to sign in
           </Link>
@@ -96,7 +96,7 @@ export function RegisterPage() {
         <button
           type="submit"
           disabled={registerLecturer.isPending}
-          className="group flex w-full items-center justify-center gap-2 rounded-control bg-brand-600 px-4 py-3.5 text-sm font-semibold text-white shadow-card transition duration-fast ease-standard hover:bg-brand-700 hover:shadow-raised active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+          className="group flex w-full items-center justify-center gap-2 rounded-control bg-brand-gradient px-4 py-3.5 text-sm font-semibold text-white shadow-brand transition-all duration-fast ease-standard hover:shadow-brand-lg hover:brightness-105 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
         >
           {registerLecturer.isPending ? 'Creating account…' : 'Create account'}
           <svg

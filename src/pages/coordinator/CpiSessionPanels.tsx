@@ -18,7 +18,7 @@ import {
 } from '@/features/panel/usePanel';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
-import { Button, Card, EmptyState } from '@/components/ui';
+import { Button, EmptyState, InfoTip, SkeletonCard } from '@/components/ui';
 
 const COUNTING_LABEL: Record<MarkCounting, string> = {
   COUNTED: 'counts',
@@ -106,7 +106,7 @@ function SessionPanelCard({ cpiId, session }: { cpiId: string; session: Evaluati
                     {p.evaluation && <span className="text-positive-700">submitted</span>}
                     <button
                       onClick={() => remove.mutate(p.id)}
-                      className="text-critical-700 hover:underline"
+                      className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60"
                       title="Removing a seat also removes that person's marks from this session"
                     >
                       remove
@@ -244,7 +244,7 @@ function GuestInviter({ cpiId, sessions }: { cpiId: string; sessions: Evaluation
       {invite.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(invite.error)}</p>}
 
       {issuedLink && (
-        <div className="mt-2 rounded-control bg-amber-50 px-2 py-2 text-xs text-amber-900">
+        <div className="mt-2 rounded-control bg-caution-50 px-2 py-2 text-xs text-caution-700">
           <p className="font-medium">Copy this link now — it cannot be shown again.</p>
           <code className="mt-1 block break-all">{issuedLink}</code>
         </div>
@@ -262,7 +262,7 @@ function GuestInviter({ cpiId, sessions }: { cpiId: string; sessions: Evaluation
               {g.revokedAt ? (
                 <span className="rounded-control bg-line px-1 text-ink-muted">revoked</span>
               ) : (
-                <button onClick={() => revoke.mutate(g.id)} className="text-critical-700 hover:underline">
+                <button onClick={() => revoke.mutate(g.id)} className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60">
                   revoke
                 </button>
               )}
@@ -318,7 +318,7 @@ function StagePanelSetter({ cpiId, stageId, stageName }: { cpiId: string; stageI
             </select>
             <button
               onClick={() => setRows((prev) => prev.filter((_, idx) => idx !== i))}
-              className="text-xs text-critical-700 hover:underline"
+              className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60"
             >
               remove
             </button>
@@ -329,7 +329,7 @@ function StagePanelSetter({ cpiId, stageId, stageName }: { cpiId: string; stageI
       <div className="mt-1 flex flex-wrap items-center gap-2">
         <button
           onClick={() => setRows((prev) => [...prev, { userId: '', role: 'EVALUATOR' }])}
-          className="text-xs text-brand-700 hover:underline"
+          className="rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors duration-fast ease-standard hover:border-brand-400"
         >
           + person
         </button>
@@ -355,7 +355,7 @@ function StagePanelSetter({ cpiId, stageId, stageName }: { cpiId: string; stageI
           {/* Someone who already marked is never removed — that would discard
               their scoring silently. */}
           {apply.data.kept.map((k, i) => (
-            <p key={i} className="text-amber-700">
+            <p key={i} className="text-caution-700">
               Kept on {k.group}: {k.reason}
             </p>
           ))}
@@ -377,29 +377,48 @@ export function CpiSessionPanels({ cpiId }: { cpiId: string }) {
   const { data: config } = useEvaluationConfig(cpiId);
 
   return (
-    <Card title="Evaluation panels" description="Each session has its own panel. Changing one group&rsquo;s panel does not touch any other, so an unavailable
-        supervisor or evaluator is a one-row swap.">
-
-      {isLoading && <p className="mt-2 text-xs text-ink-muted">Loading sessions…</p>}
+    // Two halves, named separately: apply to a stage, then adjust one session.
+    <div className="space-y-5">
+      {isLoading && <SkeletonCard rows={2} />}
       {sessions && sessions.length === 0 && (
-        <EmptyState density="compact" title="No sessions yet" hint="Generate them under Schedule first; panels are seated per session." />
+        <EmptyState
+          title="No sessions yet"
+          hint="Generate them under Schedule first; panels are seated per session."
+        />
       )}
 
       {config && config.length > 0 && (
-        <div className="mt-3 space-y-2">
+        <section className="space-y-2.5">
+          <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-eyebrow text-brand-700">
+            Apply to a whole stage
+            <InfoTip label="Apply to a whole stage">
+              Seats the same panel on every group in the stage — the usual starting point. Anyone
+              who has already submitted marks for a session is kept rather than removed, and the
+              result says so.
+            </InfoTip>
+          </h3>
           {config.map((stage) => (
             <StagePanelSetter key={stage.id} cpiId={cpiId} stageId={stage.id} stageName={stage.name} />
           ))}
-        </div>
+        </section>
       )}
 
-      <div className="mt-3 space-y-2">
-        {sessions?.map((s) => (
-          <SessionPanelCard key={s.id} cpiId={cpiId} session={s} />
-        ))}
-      </div>
+      {sessions && sessions.length > 0 && (
+        <section className="space-y-2.5">
+          <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-eyebrow text-brand-700">
+            One session at a time
+            <InfoTip label="One session at a time">
+              Overrides the stage-wide panel for a single group. Use it when one evaluator cannot
+              make one slot — changing a session here never touches any other.
+            </InfoTip>
+          </h3>
+          {sessions.map((s) => (
+            <SessionPanelCard key={s.id} cpiId={cpiId} session={s} />
+          ))}
+        </section>
+      )}
 
       {sessions && sessions.length > 0 && <GuestInviter cpiId={cpiId} sessions={sessions} />}
-    </Card>
+    </div>
   );
 }

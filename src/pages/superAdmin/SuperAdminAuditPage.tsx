@@ -15,6 +15,7 @@ export function SuperAdminAuditPage() {
     <div className="space-y-6">
       <PageHeader
         title="Audit log"
+        eyebrow="Account management"
         description="Every change anyone makes: who did it, what they touched and the outcome. What was sent is hashed, never stored, so this records the act without keeping the contents."
       />
 
@@ -32,23 +33,23 @@ export function SuperAdminAuditPage() {
 
       {entries && entries.length > 0 && (
         <Card title="Most recent" description={`Last ${entries.length} changes.`} flush>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-line text-ink-muted">
+          <div className="table-scroll">
+            <table className="data-table text-xs">
+              <thead>
                 <tr>
-                  <th scope="col" className="px-4 py-2 font-semibold">When</th>
-                  <th scope="col" className="px-4 py-2 font-semibold">Who</th>
-                  <th scope="col" className="px-4 py-2 font-semibold">Action</th>
-                  <th scope="col" className="px-4 py-2 font-semibold">Result</th>
+                  <th scope="col">When</th>
+                  <th scope="col">Who</th>
+                  <th scope="col">Action</th>
+                  <th scope="col">Result</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody>
                 {entries.map((entry) => (
                   <tr key={entry.id}>
-                    <td className="whitespace-nowrap px-4 py-2 tabular-nums text-ink-muted">
+                    <td className="whitespace-nowrap text-ink-muted">
                       {new Date(entry.createdAt).toLocaleString()}
                     </td>
-                    <td className="px-4 py-2">
+                    <td>
                       {/* Null once the account is gone: the log outlives the
                           person, which is the point of keeping it. */}
                       {entry.actor ? (
@@ -57,8 +58,8 @@ export function SuperAdminAuditPage() {
                         <span className="text-ink-subtle">Account removed</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 font-mono text-[11px] text-ink">{entry.action}</td>
-                    <td className="px-4 py-2">
+                    <td className="font-mono text-[11px] text-ink">{entry.action}</td>
+                    <td>
                       <Badge tone={toneFor(entry.statusCode)}>{entry.statusCode}</Badge>
                     </td>
                   </tr>

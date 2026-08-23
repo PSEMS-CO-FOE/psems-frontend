@@ -22,7 +22,7 @@ export const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(function A
       <div className="flex items-baseline justify-between gap-3">
         <label
           htmlFor={id}
-          className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted"
+          className="text-[11px] font-semibold uppercase tracking-eyebrow text-ink-muted"
         >
           {label}
         </label>
@@ -35,7 +35,7 @@ export const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(function A
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         className={cn(
-          'mt-2 w-full rounded-control border bg-surface px-4 py-3 text-sm text-ink shadow-card outline-none transition duration-fast ease-standard placeholder:text-ink-subtle',
+          'mt-2 h-12 w-full rounded-control border bg-surface px-4 text-sm text-ink shadow-card outline-none transition duration-fast ease-standard placeholder:text-ink-subtle',
           'hover:border-line-strong focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15',
           error ? 'border-critical-500' : 'border-line',
           className,

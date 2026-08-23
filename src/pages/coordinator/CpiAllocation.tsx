@@ -10,7 +10,7 @@ import {
 import type { CpiMode } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
-import { Button, Card, EmptyState, SkeletonText } from '@/components/ui';
+import { Button, Card, EmptyState, InfoTip, SkeletonText } from '@/components/ui';
 
 export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode }) {
   const { data, isLoading } = useAllocationMap(cpiId);
@@ -43,17 +43,35 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
         <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(anyError)}</p>
       )}
 
-      <div className="mt-3 flex gap-2">
-        <Button variant="primary" size="sm"
-          onClick={() => generate.mutate(undefined)}
-          disabled={data?.finalized || generate.isPending}>
-          {generate.isPending ? '…' : 'Generate from selections'}
-        </Button>
-        <Button variant="neutral" size="sm"
-          onClick={() => finalize.mutate(undefined)}
-          disabled={data?.finalized || finalize.isPending}>
-          {finalize.isPending ? '…' : 'Finalize (lock)'}
-        </Button>
+      {/* These are hard to undo, and the labels alone did not say what. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="flex items-center gap-1.5">
+          <Button variant="primary" size="sm"
+            onClick={() => generate.mutate(undefined)}
+            disabled={data?.finalized || generate.isPending}>
+            {generate.isPending ? '…' : 'Generate from selections'}
+          </Button>
+          <InfoTip label="Generate from selections">
+            Creates a group-to-supervisor pairing for every selection a supervisor has already
+            accepted. Groups with no accepted selection are listed as unmatched for you to pair by
+            hand. Safe to run more than once — it seeds from what exists rather than replacing your
+            overrides.
+          </InfoTip>
+        </span>
+
+        <span className="flex items-center gap-1.5">
+          <Button variant="neutral" size="sm"
+            onClick={() => finalize.mutate(undefined)}
+            disabled={data?.finalized || finalize.isPending}>
+            {finalize.isPending ? '…' : 'Finalize (lock)'}
+          </Button>
+          <InfoTip label="Finalize (lock)">
+            Locks every pairing so it can no longer be edited, which is what lets evaluation
+            sessions be generated from it. Reopening afterwards needs a written reason, and is
+            refused outright once marks have been aggregated — so finalize when the pairings are
+            settled, not before.
+          </InfoTip>
+        </span>
         {/* A supervisor going on leave mid-semester is ordinary; before this the
             lock had no way out and the pairing simply could not be changed. */}
         {data?.finalized && (
@@ -62,10 +80,16 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
               const why = window.prompt('Why are you reopening allocations?');
               if (why?.trim()) reopen.mutate(why.trim());
             }}
-            disabled={reopen.isPending}
-            title="Unlocks pairings so a supervisor or idea can be changed. Refused once marks have been aggregated.">
+            disabled={reopen.isPending}>
             {reopen.isPending ? '…' : 'Reopen'}
           </Button>
+        )}
+        {data?.finalized && (
+          <InfoTip label="Reopen">
+            Unlocks the pairings so a supervisor or an idea can be changed — an ordinary thing when
+            someone goes on leave mid-semester. You are asked for a reason, which is recorded.
+            Refused once marks have been aggregated.
+          </InfoTip>
         )}
       </div>
 

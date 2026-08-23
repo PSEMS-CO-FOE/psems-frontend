@@ -35,7 +35,7 @@ function SupervisorChips({ cpiId, idea }: { cpiId: string; idea: Idea }) {
               sup.invitationStatus === 'ACCEPTED'
                 ? 'bg-positive-50 text-positive-700'
                 : sup.invitationStatus === 'PENDING'
-                  ? 'bg-amber-50 text-amber-800'
+                  ? 'bg-caution-50 text-caution-700'
                   : 'bg-canvas text-ink-muted'
             }`}
           >
@@ -51,7 +51,7 @@ function SupervisorChips({ cpiId, idea }: { cpiId: string; idea: Idea }) {
                 disabled={remove.isPending}
                 aria-label={`Remove ${personName(sup.lecturer.user)} as co-supervisor`}
                 title="Remove this co-supervisor"
-                className="text-critical-700 hover:underline"
+                className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60"
               >
                 ×
               </button>
@@ -101,12 +101,13 @@ function CoSupervisorControls({ cpiId, idea }: { cpiId: string; idea: Idea }) {
             onClick={() => respond.mutate({ ideaId: idea.id, decision: 'ACCEPT' })}>
             accept co-supervision
           </Button>
-          <button
+          <Button
             onClick={() => respond.mutate({ ideaId: idea.id, decision: 'DECLINE' })}
-            className="rounded-control border border-line-strong px-2 py-0.5 text-xs text-ink hover:bg-canvas"
+            variant="secondary"
+            size="sm"
           >
             decline
-          </button>
+          </Button>
         </>
       )}
 
@@ -200,7 +201,7 @@ export function LecturerIdeasPage() {
               <li key={idea.id} className="rounded-card border border-line bg-surface p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-ink">{idea.title}</p>
-                  <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">{idea.authorType}</span>
+                  <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{idea.authorType}</span>
                 </div>
                 <p className="mt-1 text-xs text-ink-muted">{idea.description}</p>
                 <p className="mt-2 text-xs text-ink-subtle">

@@ -170,7 +170,7 @@ export function SelectionPage() {
                 <button
                   onClick={() => withdraw.mutate({ ideaId: e.idea.id, type: e.type })}
                   disabled={withdraw.isPending}
-                  className="text-critical-700 hover:underline disabled:opacity-50"
+                  className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60 disabled:opacity-50"
                 >
                   withdraw
                 </button>

@@ -24,7 +24,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       title={next[preference]}
       aria-label={next[preference]}
       className={cn(
-        'flex h-9 w-9 items-center justify-center rounded-control text-ink-muted transition-colors duration-fast ease-standard hover:bg-line/50 hover:text-ink',
+        'flex h-9 w-9 items-center justify-center rounded-control text-ink-subtle transition-colors duration-fast ease-standard hover:bg-brand-50 hover:text-brand-700',
         className,
       )}
     >

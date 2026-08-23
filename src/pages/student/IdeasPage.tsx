@@ -25,7 +25,7 @@ function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
     <li className="rounded-card border border-line bg-surface p-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-ink">{idea.title}</p>
-        <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">{idea.authorType}</span>
+        <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{idea.authorType}</span>
       </div>
       <p className="mt-1 text-xs text-ink-muted">{idea.description}</p>
       <p className="mt-2 text-xs text-ink-subtle">
@@ -41,12 +41,14 @@ function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
       )}
 
       {editable && !editing && idea.approvalStatus !== 'APPROVED' && idea.approvalStatus !== 'REJECTED' && (
-        <button
+        <Button
           onClick={() => setEditing(true)}
-          className="mt-2 rounded-control border border-line-strong px-3 py-1 text-xs text-ink-muted hover:bg-canvas"
+          variant="secondary"
+          size="sm"
+          className="mt-2"
         >
           Edit &amp; resubmit
-        </button>
+        </Button>
       )}
 
       {editing && (
@@ -68,12 +70,13 @@ function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
               disabled={!title || !description || update.isPending}>
               {update.isPending ? '…' : 'Resubmit'}
             </Button>
-            <button
+            <Button
               onClick={() => setEditing(false)}
-              className="rounded-control border border-line-strong px-3 py-1 text-xs text-ink-muted hover:bg-canvas"
+              variant="secondary"
+              size="sm"
             >
               Cancel
-            </button>
+            </Button>
           </div>
           {update.isError && (
             <p className="text-xs text-critical-700">{getApiErrorMessage(update.error)}</p>
