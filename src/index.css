@@ -5,45 +5,62 @@
 @layer base {
   /* Raw RGB channels, not hex, so Tailwind's `/<alpha-value>` still works. */
   :root {
-    --canvas: 245 248 246;
+    /* Four grounds: page, inset, card, raised. Kept far enough apart that a
+       card reads as a card without relying on its shadow. */
+    --canvas: 219 228 222;
+    --canvas-sunken: 233 238 234;
     --surface: 255 255 255;
-    --line: 227 232 229;
-    --line-strong: 203 211 206;
-    --ink: 24 32 28;
-    --ink-muted: 90 100 94;
-    --ink-subtle: 139 148 142;
+    --surface-raised: 255 255 255;
+    --line: 196 209 200;
+    --line-strong: 155 173 161;
+    --ink: 21 28 24;
+    --ink-muted: 82 94 87;
+    --ink-subtle: 123 137 129;
+    --brand-soft: 236 249 240;
+    --brand-ring: 180 228 198;
+    --brand-strong: 32 105 60;
 
-    --brand-soft: 240 250 243;
-    --brand-ring: 187 231 203;
-    --brand-strong: 39 116 67;
-
-    --positive-soft: 240 250 243;
-    --positive-strong: 39 116 67;
+    /* Gradient stops. Tokens, so a gradient inverts with the theme. */
+    --brand-grad-a: 26 92 55;
+    --brand-grad-b: 45 145 82;
+    --brand-grad-c: 82 190 139;
+    --positive-soft: 236 249 240;
+    --positive-strong: 32 105 60;
     --caution-soft: 254 247 236;
     --caution-strong: 143 95 12;
     --critical-soft: 254 242 242;
     --critical-strong: 155 47 41;
     --info-soft: 241 246 253;
     --info-strong: 42 84 143;
+
+    /* Read by the fixed footer so it lines up with the content column. The
+       shell republishes the last two when the rail collapses. */
+    --footer-h: 2.75rem;
+    --rail-w: 0rem;
+    --content-max: 86rem;
   }
 
-  /* Green-tinted near-black rather than pure black: a true #000 ground makes
-     the surfaces above it read as grey boxes instead of raised cards. */
+  /* Green-tinted near-black; a true #000 makes the cards above it read grey. */
   .dark {
-    --canvas: 14 21 18;
-    --surface: 21 30 26;
-    --line: 37 48 41;
-    --line-strong: 53 68 59;
-    --ink: 232 237 234;
-    --ink-muted: 156 168 161;
-    --ink-subtle: 110 122 116;
-
-    --brand-soft: 22 40 29;
-    --brand-ring: 46 92 62;
-    --brand-strong: 127 211 160;
-
-    --positive-soft: 20 40 28;
-    --positive-strong: 111 203 146;
+    /* Same four steps inverted. On dark, an inset reads as lighter than its
+       card — darker just looks like a hole. */
+    --canvas: 10 14 12;
+    --canvas-sunken: 41 53 45;
+    --surface: 30 40 34;
+    --surface-raised: 41 53 45;
+    --line: 64 81 70;
+    --line-strong: 96 119 104;
+    --ink: 232 238 234;
+    --ink-muted: 158 172 163;
+    --ink-subtle: 117 131 122;
+    --brand-soft: 20 41 29;
+    --brand-ring: 45 94 63;
+    --brand-strong: 134 216 165;
+    --brand-grad-a: 16 61 38;
+    --brand-grad-b: 34 118 69;
+    --brand-grad-c: 74 176 122;
+    --positive-soft: 19 41 28;
+    --positive-strong: 116 206 150;
     --caution-soft: 42 33 19;
     --caution-strong: 228 180 95;
     --critical-soft: 44 23 23;
@@ -68,8 +85,7 @@
     @apply font-semibold tracking-tight text-ink;
   }
 
-  /* Focus was invisible across the app. One ring, applied once, so keyboard
-     users can see where they are without every control opting in. */
+  /* One focus ring for the whole app, so no control has to opt in. */
   :focus-visible {
     @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-canvas;
   }
@@ -82,6 +98,190 @@
   .dark {
     color-scheme: dark;
   }
+
+  /* Styled on the element so the app's many bare inputs get a ground, hover
+     and focus. Being `base`, a utility class on any input still wins. */
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']),
+  select,
+  textarea {
+    @apply rounded-control border border-line-strong bg-surface text-ink;
+    @apply transition-colors duration-fast ease-standard;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):hover,
+  select:hover,
+  textarea:hover {
+    @apply border-ink-subtle;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):focus,
+  select:focus,
+  textarea:focus {
+    @apply border-brand-500 outline-none;
+  }
+
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    @apply cursor-not-allowed bg-canvas-sunken text-ink-subtle;
+  }
+
+  /* Replaces the OS arrow with our chevron. Two files because a background
+     image cannot read `currentColor`. */
+  select:not([multiple]):not([size]) {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237B8981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.625rem center;
+    background-size: 1rem 1rem;
+  }
+
+  .dark select:not([multiple]):not([size]) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2375837A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* The open list is OS-drawn; this only helps where the browser honours it. */
+  select option {
+    @apply bg-surface text-ink;
+  }
+
+  ::placeholder {
+    @apply text-ink-subtle;
+  }
+
+  /* Checkboxes and radios were the browser's blue on a green app. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: #3db166;
+  }
+
+  /* The default scrollbar ignores the theme. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--line-strong)) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--line-strong));
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--ink-subtle));
+  }
+}
+
+@layer components {
+  /* The house gradient: primary action, crest block, sign-in panel. */
+  .bg-brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      rgb(var(--brand-grad-a)) 0%,
+      rgb(var(--brand-grad-b)) 52%,
+      rgb(var(--brand-grad-c)) 100%
+    );
+  }
+
+  /* Same ramp at low opacity, for a tinted ground under dark text. */
+  .bg-brand-wash {
+    background-image: linear-gradient(
+      135deg,
+      rgb(var(--brand-grad-b) / 0.12) 0%,
+      rgb(var(--brand-grad-c) / 0.07) 100%
+    );
+  }
+
+  /* Display numerals and one headline per screen only. */
+  .text-brand-gradient {
+    background-image: linear-gradient(
+      120deg,
+      rgb(var(--brand-grad-a)) 0%,
+      rgb(var(--brand-grad-b)) 55%,
+      rgb(var(--brand-grad-c)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Sticky chrome that content scrolls beneath: the top bar and the footer. */
+  .surface-glass {
+    background-color: rgb(var(--surface) / 0.78);
+    backdrop-filter: saturate(160%) blur(12px);
+    -webkit-backdrop-filter: saturate(160%) blur(12px);
+  }
+
+  /* One treatment for every data table. Alignment and width utilities on a
+     given cell still win over this. */
+  .data-table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .data-table thead th {
+    @apply whitespace-nowrap border-b border-line bg-canvas-sunken px-3 py-2.5 text-left align-bottom;
+    @apply text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle;
+  }
+
+  .data-table tbody th,
+  .data-table tbody td {
+    @apply px-3 py-3 align-top;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .data-table tbody th {
+    @apply text-left font-medium text-ink;
+  }
+
+  .data-table tbody tr {
+    @apply border-b border-line transition-colors duration-fast ease-standard;
+  }
+
+  .data-table tbody tr:last-child {
+    @apply border-b-0;
+  }
+
+  .data-table tbody tr:hover {
+    @apply bg-brand-50/50;
+  }
+
+  /* Wide tables must scroll inside their own frame; the page itself never does. */
+  .table-scroll {
+    @apply -mx-px overflow-x-auto;
+  }
+
+  /* Brand edge for the one panel on a screen that should be found first. */
+  .card-accent {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-accent::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 3px;
+    background-image: linear-gradient(
+      90deg,
+      rgb(var(--brand-grad-a)),
+      rgb(var(--brand-grad-b)) 50%,
+      rgb(var(--brand-grad-c))
+    );
+  }
 }
 
 @layer utilities {
@@ -89,5 +289,10 @@
   .text-projector {
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
+  }
+
+  /* Figures line up column-wise in tables and stat tiles. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
   }
 }
