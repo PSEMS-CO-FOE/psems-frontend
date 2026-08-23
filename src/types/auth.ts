@@ -1,4 +1,5 @@
 export type Role =
+  | 'SUPER_ADMIN'
   | 'SYSTEM_ADMIN'
   | 'COURSE_COORDINATOR'
   | 'LECTURER'
