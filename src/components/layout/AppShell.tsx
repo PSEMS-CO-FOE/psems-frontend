@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
+import { SiteFooter } from './SiteFooter';
 import { useAuthStore } from '@/stores/authStore';
 import { useLogout } from '@/hooks/useLogout';
 import { NotificationsBell } from '@/components/NotificationsBell';
@@ -232,6 +233,8 @@ export function AppShell({ roleLabel, homeTo, nav }: AppShellProps) {
           >
             <Outlet />
           </main>
+
+          <SiteFooter />
         </div>
       </div>
     </ShellTitleProvider>

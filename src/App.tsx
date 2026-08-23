@@ -9,6 +9,7 @@ import { GuestScoringPage } from '@/pages/guest/GuestScoringPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { EditProfilePage } from '@/pages/profile/EditProfilePage';
 import { DirectoryPage } from '@/pages/profile/DirectoryPage';
+import { GuidePage } from '@/pages/guide/GuidePage';
 import { RoleShell } from '@/components/layout/RoleShell';
 import { DiscoverCoursesPage } from '@/pages/lecturer/DiscoverCoursesPage';
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
@@ -91,6 +92,7 @@ export default function App() {
         }
       >
         <Route path="/directory" element={<DirectoryPage />} />
+        <Route path="/guide" element={<GuidePage />} />
         <Route path="/profile/edit" element={<EditProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
       </Route>
