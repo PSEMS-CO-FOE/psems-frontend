@@ -28,49 +28,49 @@ function StageTable({ stages }: { stages: (StageBreakdown | StudentBreakdown)[] 
   );
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[34rem] text-sm">
+    <div className="table-scroll">
+      <table className="data-table min-w-[34rem]">
         <thead>
-          <tr className="border-b border-line text-left text-xs text-ink-muted">
-            <th scope="col" className="py-2 pr-4 font-medium">Stage</th>
-            <th scope="col" className="py-2 pr-4 text-right font-medium">Score</th>
+          <tr>
+            <th scope="col">Stage</th>
+            <th scope="col" className="text-right">Score</th>
             {anyIndividual && (
               <>
-                <th scope="col" className="py-2 pr-4 text-right font-medium">Group work</th>
-                <th scope="col" className="py-2 pr-4 text-right font-medium">Your own</th>
+                <th scope="col" className="text-right">Group work</th>
+                <th scope="col" className="text-right">Your own</th>
               </>
             )}
-            <th scope="col" className="py-2 pr-4 text-right font-medium">Weight</th>
-            <th scope="col" className="py-2 text-right font-medium">Contributes</th>
+            <th scope="col" className="text-right">Weight</th>
+            <th scope="col" className="text-right">Contributes</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody>
           {stages.map((stage) => {
             const individual = isStudentBreakdown(stage) ? stage : null;
             return (
-              <tr key={stage.stageId} className="[font-variant-numeric:tabular-nums]">
-                <th scope="row" className="py-2.5 pr-4 text-left font-medium text-ink">
+              <tr key={stage.stageId}>
+                <th scope="row">
                   {stage.stageName}
                 </th>
-                <td className="py-2.5 pr-4 text-right font-semibold text-ink">
+                <td className="text-right font-semibold text-ink">
                   {stage.stageScorePercent}%
                 </td>
                 {anyIndividual && (
                   <>
-                    <td className="py-2.5 pr-4 text-right text-ink-muted">
+                    <td className="text-right text-ink-muted">
                       {individual?.individualComponentPercent !== null && individual
                         ? `${individual.groupComponentPercent}%`
                         : '—'}
                     </td>
-                    <td className="py-2.5 pr-4 text-right text-ink-muted">
+                    <td className="text-right text-ink-muted">
                       {individual?.individualComponentPercent !== null && individual
                         ? `${individual.individualComponentPercent}%`
                         : '—'}
                     </td>
                   </>
                 )}
-                <td className="py-2.5 pr-4 text-right text-ink-muted">{stage.weight}%</td>
-                <td className="py-2.5 text-right text-ink-muted">
+                <td className="text-right text-ink-muted">{stage.weight}%</td>
+                <td className="text-right text-ink-muted">
                   {stage.weightedContribution}
                 </td>
               </tr>

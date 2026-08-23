@@ -18,34 +18,34 @@ const WORKING_LABEL: Record<RosterRow['working'], string> = {
 // marks. The roster is the only place that shows they exist.
 function RosterTable({ rows, targetGroupSize }: { rows: RosterRow[]; targetGroupSize: number | null }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[36rem] text-sm">
+    <div className="table-scroll">
+      <table className="data-table min-w-[36rem]">
         <thead>
-          <tr className="border-b border-line text-left text-xs text-ink-muted">
-            <th scope="col" className="py-2 pr-4 font-medium">Index</th>
-            <th scope="col" className="py-2 pr-4 font-medium">Name</th>
-            <th scope="col" className="py-2 pr-4 font-medium">Doing</th>
-            <th scope="col" className="py-2 font-medium">Group</th>
+          <tr>
+            <th scope="col">Index</th>
+            <th scope="col">Name</th>
+            <th scope="col">Doing</th>
+            <th scope="col">Group</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody>
           {rows.map((row) => (
             <tr key={row.studentId}>
-              <td className="py-2 pr-4 font-mono text-xs text-ink">{row.indexNumber}</td>
-              <td className="py-2 pr-4 text-ink">{row.name}</td>
-              <td className="py-2 pr-4">
+              <td className="font-mono text-xs text-ink">{row.indexNumber}</td>
+              <td className="text-ink">{row.name}</td>
+              <td>
                 <Badge tone={row.working === 'NOT_STARTED' ? 'caution' : 'neutral'}>
                   {WORKING_LABEL[row.working]}
                 </Badge>
               </td>
-              <td className="py-2 text-ink-muted">
+              <td className="text-ink-muted">
                 {row.group ? (
                   <>
                     {row.group.name}{' '}
                     <span className="text-ink-subtle">({row.group.size})</span>
                     {/* Advisory: the batch rarely divides evenly. */}
                     {row.offTarget && targetGroupSize !== null && (
-                      <span className="ml-1 text-xs text-amber-700">not {targetGroupSize}</span>
+                      <span className="ml-1 text-xs font-medium text-caution-700">not {targetGroupSize}</span>
                     )}
                   </>
                 ) : (
