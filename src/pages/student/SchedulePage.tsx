@@ -44,7 +44,7 @@ function SessionCard({ session }: { session: EvaluationSession }) {
   const start = session.scheduledStart;
 
   return (
-    <Card className="transition-shadow duration-fast ease-standard hover:shadow-raised">
+    <Card interactive>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-ink">{session.stage.name}</h3>
@@ -159,7 +159,7 @@ export function SchedulePage() {
 
       {upcoming.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          <h2 className="text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
             Upcoming
           </h2>
           {upcoming.map((s) => (
@@ -170,7 +170,7 @@ export function SchedulePage() {
 
       {undated.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          <h2 className="text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
             Not yet timetabled
           </h2>
           {undated.map((s) => (
@@ -181,7 +181,7 @@ export function SchedulePage() {
 
       {past.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          <h2 className="text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
             Completed
           </h2>
           {past.map((s) => (

@@ -90,7 +90,7 @@ export function AvailabilityPage() {
           disabled={!dirty || submit.isPending}>
           {submit.isPending ? '…' : 'Save availability'}
         </Button>
-        {dirty && <span className="text-xs text-amber-600">Unsaved changes</span>}
+        {dirty && <span className="text-xs text-caution-700">Unsaved changes</span>}
         {!dirty && submit.isSuccess && <span className="text-xs text-positive-700">Saved.</span>}
       </div>
     </Card>

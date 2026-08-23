@@ -19,7 +19,7 @@ export function ScheduleSheetPanel({ cpiId }: { cpiId: string }) {
   return (
     <div className="border-t pt-3">
       <div className="flex items-center gap-2">
-        <button onClick={() => setOpen((v) => !v)} className="text-xs text-brand-700 hover:underline">
+        <button onClick={() => setOpen((v) => !v)} className="rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors duration-fast ease-standard hover:border-brand-400">
           {open ? 'Hide printable schedule' : 'Printable schedule'}
         </button>
         {open && data && (
@@ -41,7 +41,7 @@ export function ScheduleSheetPanel({ cpiId }: { cpiId: string }) {
             </p>
             {data.venue && <p className="text-xs text-ink-muted">Venue: {data.venue}</p>}
             {data.unscheduled > 0 && (
-              <p className="text-xs text-amber-700">{data.unscheduled} session(s) still have no time set.</p>
+              <p className="text-xs text-caution-700">{data.unscheduled} session(s) still have no time set.</p>
             )}
           </div>
 

@@ -20,7 +20,7 @@ function SegmentLog({ cpiId, sessionId, open }: { cpiId: string; sessionId: stri
   if (!data || data.segments.length === 0) return null;
 
   return (
-    <div className="mb-2 rounded-control border border-line bg-canvas p-2">
+    <div className="mb-2 rounded-control border border-line bg-canvas-sunken p-2">
       <p className="text-xs font-medium text-ink-muted">Presentation timing</p>
       <ul className="mt-1 space-y-0.5">
         {data.segments.map((segment) => (
@@ -73,7 +73,7 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
         <span className="text-sm font-medium text-ink">
           {session.group.name} · {session.stage.name}
         </span>
-        <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
+        <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
       </button>
 
       {open && (
@@ -128,7 +128,7 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
                   <p className="text-xs font-medium text-ink">Overall comments</p>
                   <ul className="mt-1 space-y-1">
                     {review.overallComments.map((oc) => (
-                      <li key={oc.panelistId} className="rounded-control bg-canvas px-2 py-1 text-xs text-ink">
+                      <li key={oc.panelistId} className="rounded-control bg-canvas-sunken px-2 py-1 text-xs text-ink">
                         <span className="font-medium">{oc.name}</span>{' '}
                         <span className="text-ink-subtle">· {roleLabel(oc.role)}</span>
                         <br />
@@ -144,7 +144,7 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
               {review.readiness && review.readiness.roles.length > 0 && (
                 <p
                   className={`mb-2 rounded-control px-2 py-1 text-xs ${
-                    review.readiness.allRequirementsMet ? 'bg-positive-50 text-positive-700' : 'bg-amber-50 text-amber-800'
+                    review.readiness.allRequirementsMet ? 'bg-positive-50 text-positive-700' : 'bg-caution-50 text-caution-700'
                   }`}
                 >
                   {review.readiness.roles
@@ -167,17 +167,18 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
                     {approve.isPending ? '…' : 'Approve & finalize'}
                   </Button>
                   {session.status !== 'SCHEDULED' && (
-                    <button
+                    <Button
                       onClick={() => {
                         const why = window.prompt('Why are you reopening this evaluation?');
                         if (why?.trim()) reopen.mutate(why.trim());
                       }}
                       disabled={reopen.isPending}
-                      className="rounded-control border border-line-strong px-3 py-1 text-xs font-medium text-ink hover:bg-canvas disabled:opacity-50"
+                      variant="secondary"
+                      size="sm"
                       title="Puts marking back in play. Refused once marks have been aggregated."
                     >
                       Reopen
-                    </button>
+                    </Button>
                   )}
                   {closeScoring.isError && (
                     <span className="text-xs text-critical-700">{getApiErrorMessage(closeScoring.error)}</span>
