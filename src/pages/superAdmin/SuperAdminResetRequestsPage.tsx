@@ -18,6 +18,7 @@ export function SuperAdminResetRequestsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Password requests"
+        eyebrow="Account management"
         description="Anyone locked out can ask for a reset from the sign-in page. Resetting the account closes its request."
       />
 

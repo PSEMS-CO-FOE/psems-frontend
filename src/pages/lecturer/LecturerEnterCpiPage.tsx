@@ -32,7 +32,7 @@ function SupervisorInvitesCard() {
         {invites?.map((inv) => (
           <li
             key={inv.cpiId}
-            className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-canvas px-3 py-2 text-xs"
+            className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-canvas-sunken px-3 py-2 text-xs"
           >
             <span className="text-ink">
               <span className="font-medium">{inv.courseInstance.name}</span>{' '}
@@ -94,7 +94,7 @@ function AssignedCpisCard() {
           <li key={cpi.id}>
             <button
               onClick={() => navigate(`/lecturer/cpi/${cpi.id}/sessions`)}
-              className="flex w-full items-center justify-between rounded-control border border-line bg-canvas px-3 py-2 text-left hover:bg-canvas"
+              className="flex w-full items-center justify-between rounded-control border border-line bg-canvas-sunken px-3 py-2 text-left hover:bg-brand-50"
             >
               <span>
                 <span className="text-sm font-medium text-ink">{cpi.name}</span>
@@ -116,6 +116,7 @@ export function LecturerEnterCpiPage() {
     <div className="space-y-6">
       <PageHeader
         title="My courses"
+        eyebrow="Supervisor & evaluator"
         description="Courses you supervise or evaluate on, and any invitations waiting on you."
       />
       <SupervisorInvitesCard />

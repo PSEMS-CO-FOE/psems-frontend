@@ -8,9 +8,9 @@ import { Button, Card, Notice, PageHeader } from '@/components/ui';
 
 // registrationNumber may be left blank; mark sheets print it beside the index
 // number and show a dash without it.
-const SAMPLE_CSV = `email,fullName,studentId,registrationNumber,batch,department,year
-alice.demo@psems.dev,Alice Demo,STU9001,2022/E/001,22ENG,Computer Engineering,4
-bob.demo@psems.dev,Bob Demo,STU9002,,22ENG,Computer Engineering,3
+const SAMPLE_CSV = `email,fullName,studentIndex,registrationNumber,batch,department
+alice.demo@psems.dev,Alice Demo,22ENG082,EN108960,22ENG,Computer Engineering
+bob.demo@psems.dev,Bob Demo,22ENG083,,22ENG,Computer Engineering
 `;
 
 function StatusPill({ status }: { status: string }) {
@@ -53,18 +53,24 @@ export function StudentProvisioningPage() {
     <div className="space-y-6">
       <PageHeader
         title="Student provisioning"
+        eyebrow="System administration"
         description="Create student accounts in bulk from a CSV. Each one is emailed a temporary password and must change it at first sign-in."
       />
 
       <Card title="Upload a CSV">
         <p className="text-xs text-ink-muted">
           Upload a CSV with header{' '}
-          <code className="rounded-control bg-canvas px-1">
-            email,fullName,studentId,registrationNumber,batch,department,year
+          <code className="rounded-control bg-canvas-sunken px-1">
+            email,fullName,studentIndex,registrationNumber,batch,department
           </code>
-          . The batch decides which courses a student sees, so it is required. The registration number
-          may be blank, but mark sheets carry it beside the index number. Each student gets a temp
-          password emailed to them.{' '}
+          . <strong className="font-semibold text-ink">studentIndex</strong> is the index number
+          (e.g. 22ENG082) and{' '}
+          <strong className="font-semibold text-ink">registrationNumber</strong> is the registration
+          number (e.g. EN108960) — two different identifiers, and mark sheets carry both. Files that
+          still head the index column{' '}
+          <code className="rounded-control bg-canvas-sunken px-1">studentId</code> are accepted
+          unchanged. The batch decides which courses a student sees, so it is required. The
+          registration number may be blank. Each student gets a temp password emailed to them.{' '}
           <button onClick={downloadSample} className="text-brand-700 underline">
             Download sample
           </button>
@@ -145,7 +151,7 @@ export function StudentProvisioningPage() {
             {batch.data.queued} queued
           </p>
 
-          <ul className="mt-3 divide-y">
+          <ul className="mt-3 divide-y divide-line">
             {batch.data.students.map((s) => (
               <li key={s.email} className="flex items-center justify-between py-2">
                 <span className="text-xs text-ink">{s.email}</span>

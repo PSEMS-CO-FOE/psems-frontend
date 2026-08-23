@@ -52,18 +52,11 @@ export function LecturerCpiLayout() {
       <PageHeader
         back={{ to: '/lecturer', label: 'My courses' }}
         title={cpi?.name ?? 'Course'}
-        meta={
-          cpi && (
-            <>
-              <Badge tone="brand">{cpi.projectType}</Badge>
-              <Badge>{cpi.department}</Badge>
-              <Badge>{cpi.academicYear}</Badge>
-            </>
-          )
-        }
+        eyebrow={cpi && `${cpi.department} · ${cpi.academicYear}`}
+        meta={cpi && <Badge tone="brand">{cpi.projectType}</Badge>}
       />
 
-      <TabNav items={tabs} className="border-b border-line pb-3" />
+      <TabNav items={tabs} />
 
       <Outlet />
     </div>

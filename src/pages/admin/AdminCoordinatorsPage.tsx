@@ -12,6 +12,7 @@ export function AdminCoordinatorsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Coordinators"
+        eyebrow="System administration"
         description="Promote an approved lecturer so they can create and run courses."
       />
 

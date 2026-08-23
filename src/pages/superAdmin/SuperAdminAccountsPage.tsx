@@ -44,6 +44,7 @@ export function SuperAdminAccountsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Accounts"
+        eyebrow="Account management"
         description="Every account in the system. Suspending keeps the person's record intact; deleting is refused once they have taken part in anything."
       />
 

@@ -28,7 +28,7 @@ function CourseCard({ course }: { course: OpenCourse }) {
           </p>
         </div>
         {course.requestStatus ? (
-          <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">
+          <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">
             {STATUS_LABEL[course.requestStatus]}
           </span>
         ) : (
@@ -70,6 +70,7 @@ export function DiscoverCoursesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Find courses"
+        eyebrow="Supervisor & evaluator"
         description="Courses you are not on. Asking to supervise sends a request to the coordinator; if they approve it, you get an invitation to accept."
       />
       {isLoading && <SkeletonText />}

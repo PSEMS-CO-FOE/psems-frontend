@@ -20,7 +20,7 @@ function PersonCard({ profile }: { profile: UserProfile }) {
   const isStudent = profile.user.role === 'STUDENT';
 
   return (
-    <Card className="transition-shadow duration-fast ease-standard hover:shadow-raised">
+    <Card interactive>
       <div className="flex items-start gap-3">
         <Avatar name={name} />
 
@@ -94,6 +94,7 @@ export function DirectoryPage() {
     <div className="space-y-6">
       <PageHeader
         title="Directory"
+        eyebrow="Faculty of Engineering"
         description="Everyone with a profile. Filter by research area to find a supervisor who works on what you want to build."
         meta={
           people && (
@@ -107,7 +108,7 @@ export function DirectoryPage() {
 
       <Card className="space-y-4">
         <label className="block">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          <span className="text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
             Search
           </span>
           <div className="relative mt-2 max-w-md">
@@ -134,7 +135,7 @@ export function DirectoryPage() {
 
         {areas && areas.length > 0 && (
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+            <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
               Research area
             </p>
             <ul className="mt-2 flex flex-wrap gap-1.5">

@@ -43,7 +43,7 @@ function LecturerCsvUpload() {
           {/* Rows that were skipped or malformed are reported per row, so a
               partly-bad file still provisions everyone it can. */}
           {provision.data.skipped.map((sk) => (
-            <p key={sk.row} className="text-amber-700">
+            <p key={sk.row} className="text-caution-700">
               Row {sk.row} ({sk.email}): {sk.reason}
             </p>
           ))}
@@ -63,6 +63,7 @@ export function LecturerApprovalPage() {
     <div className="space-y-6">
       <PageHeader
         title="Lecturer approvals"
+        eyebrow="System administration"
         description="Approve the accounts lecturers create before they can be given a role on a course."
       />
       <LecturerCsvUpload />
@@ -108,7 +109,7 @@ function PendingLecturerQueue() {
         </Notice>
       )}
 
-      <ul className="divide-y rounded-card border border-line bg-surface">
+      <ul className="divide-y divide-line rounded-card border border-line bg-surface">
         {lecturers.map((lecturer) => {
           const isThisRowPending =
             decision.isPending && decision.variables?.lecturerId === lecturer.id;
