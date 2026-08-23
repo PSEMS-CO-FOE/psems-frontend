@@ -6,6 +6,8 @@ import { useChangePassword } from '@/features/auth/useChangePassword';
 import { useAuthStore } from '@/stores/authStore';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { Button, Notice } from '@/components/ui';
+import { SiteFooter } from '@/components/layout/SiteFooter';
+import crest from '@/assets/crest.png';
 
 // Two shapes: the forced first-login change omits currentPassword (the backend
 // skips that check when forcePasswordChange is set); a later voluntary change
@@ -66,21 +68,39 @@ export function ChangePasswordPage() {
     });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4 pb-[calc(var(--footer-h)+2.5rem)] pt-10">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-sm rounded-card bg-surface p-8 shadow"
+        className="w-full max-w-md overflow-hidden rounded-card border border-line bg-surface shadow-raised"
         noValidate
       >
-        <h1 className="text-xl font-bold text-ink">Change your password</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          {forced
-            ? 'Set a new password to finish signing in.'
-            : 'Enter your current password and choose a new one.'}
-        </p>
+        <div className="relative overflow-hidden bg-brand-gradient px-8 py-7 text-white">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-14 -top-16 h-44 w-44 rounded-full bg-white/10"
+          />
+          <div className="relative flex items-center gap-3">
+            <img
+              src={crest}
+              alt=""
+              className="h-10 w-10 shrink-0 rounded-lg bg-white/95 object-contain p-1 shadow-card"
+            />
+            <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-white/70">
+              Account security
+            </p>
+          </div>
+          <h1 className="relative mt-4 text-title font-semibold text-white">Change your password</h1>
+          <p className="relative mt-2 text-sm leading-relaxed text-white/80">
+            {forced
+              ? 'Set a new password to finish signing in.'
+              : 'Enter your current password and choose a new one.'}
+          </p>
+        </div>
+
+      <div className="p-8">
 
         {changePassword.isError && (
-          <Notice tone="critical" className="mt-4">
+          <Notice tone="critical" className="mb-4">
             {getApiErrorMessage(changePassword.error, 'Could not change password')}
           </Notice>
         )}
@@ -89,13 +109,13 @@ export function ChangePasswordPage() {
             first-login reset (the login just proved the current password). */}
         {!forced && (
           <>
-            <label className="mt-4 block text-sm font-medium text-ink">
+            <label className="mt-5 block text-sm font-medium text-ink">
               Current password
               <input
                 type="password"
                 autoComplete="current-password"
                 {...register('currentPassword')}
-                className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                className="mt-1.5 h-10 w-full rounded-control border border-line-strong bg-surface px-3 text-sm text-ink shadow-card transition-colors duration-fast ease-standard hover:border-ink-subtle focus:border-brand-500 focus:outline-none"
               />
             </label>
             {errors.currentPassword && (
@@ -104,37 +124,38 @@ export function ChangePasswordPage() {
           </>
         )}
 
-        <label className="mt-4 block text-sm font-medium text-ink">
+        <label className="mt-5 block text-sm font-medium text-ink">
           New password
           <input
             type="password"
             autoComplete="new-password"
             {...register('newPassword')}
-            className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+            className="mt-1.5 h-10 w-full rounded-control border border-line-strong bg-surface px-3 text-sm text-ink shadow-card transition-colors duration-fast ease-standard hover:border-ink-subtle focus:border-brand-500 focus:outline-none"
           />
         </label>
 
-        <ul className="mt-2 space-y-1">
+        <ul className="mt-3 grid gap-1.5 rounded-control bg-canvas-sunken p-3 sm:grid-cols-2">
           {RULES.map((rule) => {
             const ok = rule.test(newPasswordValue);
             return (
               <li
                 key={rule.label}
-                className={`text-xs ${ok ? 'text-positive-700' : 'text-ink-subtle'}`}
+                className={`flex items-center gap-1.5 text-xs ${ok ? 'font-medium text-positive-700' : 'text-ink-subtle'}`}
               >
-                {ok ? '✓' : '○'} {rule.label}
+                <span aria-hidden="true">{ok ? '✓' : '○'}</span>
+                {rule.label}
               </li>
             );
           })}
         </ul>
 
-        <label className="mt-4 block text-sm font-medium text-ink">
+        <label className="mt-5 block text-sm font-medium text-ink">
           Confirm new password
           <input
             type="password"
             autoComplete="new-password"
             {...register('confirmNewPassword')}
-            className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+            className="mt-1.5 h-10 w-full rounded-control border border-line-strong bg-surface px-3 text-sm text-ink shadow-card transition-colors duration-fast ease-standard hover:border-ink-subtle focus:border-brand-500 focus:outline-none"
           />
         </label>
         {errors.confirmNewPassword && (
@@ -146,7 +167,10 @@ export function ChangePasswordPage() {
           disabled={changePassword.isPending}>
           {changePassword.isPending ? 'Saving…' : 'Change password'}
         </Button>
+      </div>
       </form>
+
+      <SiteFooter />
     </div>
   );
 }

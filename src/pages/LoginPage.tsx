@@ -58,7 +58,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={login.isPending}
-          className="group flex w-full items-center justify-center gap-2 rounded-control bg-brand-600 px-4 py-3.5 text-sm font-semibold text-white shadow-card transition duration-fast ease-standard hover:bg-brand-700 hover:shadow-raised active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+          className="group flex w-full items-center justify-center gap-2 rounded-control bg-brand-gradient px-4 py-3.5 text-sm font-semibold text-white shadow-brand transition-all duration-fast ease-standard hover:shadow-brand-lg hover:brightness-105 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
         >
           {login.isPending ? 'Signing in…' : 'Sign in'}
           <svg
@@ -77,13 +77,13 @@ export function LoginPage() {
 
         <div className="flex items-center gap-3 pt-1">
           <span className="h-px flex-1 bg-line" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-subtle">or</span>
+          <span className="text-[11px] font-semibold uppercase tracking-eyebrow text-ink-subtle">or</span>
           <span className="h-px flex-1 bg-line" />
         </div>
 
         {/* There is no SSO, and a reset goes through a person rather than an
             emailed link, so the paths that do exist are stated plainly here. */}
-        <div className="rounded-control border border-line bg-surface px-4 py-3.5 text-center text-xs leading-relaxed text-ink-muted shadow-card">
+        <div className="rounded-control border border-line bg-canvas-sunken px-4 py-3.5 text-center text-xs leading-relaxed text-ink-muted">
           Lecturers can{' '}
           <Link
             to="/register"

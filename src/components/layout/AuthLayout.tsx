@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import crest from '@/assets/crest.png';
+import { SiteFooter } from './SiteFooter';
 
 /**
  * The signed-out split: the university on the left, the form on the right.
@@ -19,17 +20,21 @@ export function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-brand-50 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)]">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-brand-800 via-brand-600 to-brand-500 px-14 py-12 lg:flex lg:flex-col">
+    <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)]">
+      <section className="relative hidden overflow-hidden bg-brand-gradient px-14 py-12 lg:flex lg:flex-col">
         {/* Concentric rings, echoing the crest without competing with it. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 motion-safe:animate-drift">
           <div className="absolute -right-24 -top-40 h-[34rem] w-[34rem] rounded-full border border-white/10" />
           <div className="absolute -left-56 -bottom-20 h-[42rem] w-[42rem] rounded-full border border-white/10" />
-          <div className="absolute -left-40 bottom-0 h-[28rem] w-[28rem] rounded-full bg-white/[0.04]" />
+          <div className="absolute -left-40 bottom-0 h-[28rem] w-[28rem] rounded-full bg-white/[0.05]" />
         </div>
 
-        <div className="relative flex items-center gap-3 motion-safe:animate-fade-up">
-          <img src={crest} alt="" className="h-12 w-12 shrink-0 object-contain" />
+        <div className="relative flex items-center gap-3.5 motion-safe:animate-fade-up">
+          <img
+            src={crest}
+            alt=""
+            className="h-12 w-12 shrink-0 rounded-xl bg-white/95 object-contain p-1.5 shadow-card"
+          />
           <span>
             <span className="block text-sm font-semibold text-white">
               University of Sri Jayewardenepura
@@ -40,7 +45,7 @@ export function AuthLayout({
 
         <div className="relative mt-auto">
           <p
-            className="text-xs font-semibold uppercase tracking-[0.28em] text-white/60 motion-safe:animate-fade-up"
+            className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/60 motion-safe:animate-fade-up"
             style={{ animationDelay: '120ms' }}
           >
             Intelligent PSEMS
@@ -97,26 +102,34 @@ export function AuthLayout({
         </p>
       </section>
 
-      <section className="flex min-h-screen items-center justify-center px-6 py-12 sm:px-12">
+      <section className="flex min-h-screen items-center justify-center bg-surface px-6 pb-[calc(var(--footer-h)+3rem)] pt-12 sm:px-12">
         <div className="w-full max-w-sm motion-safe:animate-slide-in">
           {/* The crest again, only where the green panel is not on screen. */}
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <img src={crest} alt="" className="h-10 w-10 shrink-0 object-contain" />
+            <img
+              src={crest}
+              alt=""
+              className="h-11 w-11 shrink-0 rounded-xl bg-brand-50 object-contain p-1.5 ring-1 ring-brand-200"
+            />
             <span>
               <span className="block text-sm font-semibold text-ink">PSEMS</span>
               <span className="block text-xs text-ink-subtle">Faculty of Engineering — USJ</span>
             </span>
           </div>
 
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">
+          <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-brand-700">
             {eyebrow}
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">{title}</h2>
-          <p className="mt-2 text-sm text-ink-muted">{description}</p>
+          <h2 className="mt-3 text-display font-semibold text-ink">{title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-ink-muted">{description}</p>
 
           <div className="mt-8">{children}</div>
         </div>
       </section>
+
+      {/* The guide and the faculty site are reachable before signing in too —
+          somebody who cannot get in is exactly who needs them. */}
+      <SiteFooter />
     </div>
   );
 }
