@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { HomeRedirect } from '@/routes/HomeRedirect';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { GuestScoringPage } from '@/pages/guest/GuestScoringPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { EditProfilePage } from '@/pages/profile/EditProfilePage';
@@ -52,6 +53,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/guest" element={<GuestScoringPage />} />
       {/* Outside ProtectedRoute: this opens in a new window with no token, so it
           gets its own using the refresh cookie. */}

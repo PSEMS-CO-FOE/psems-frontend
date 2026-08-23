@@ -81,8 +81,8 @@ export function LoginPage() {
           <span className="h-px flex-1 bg-line" />
         </div>
 
-        {/* There is no SSO and no self-service reset, so this is where the two
-            paths that do exist are stated plainly instead. */}
+        {/* There is no SSO, and a reset goes through a person rather than an
+            emailed link, so the paths that do exist are stated plainly here. */}
         <div className="rounded-control border border-line bg-surface px-4 py-3.5 text-center text-xs leading-relaxed text-ink-muted shadow-card">
           Lecturers can{' '}
           <Link
@@ -95,8 +95,14 @@ export function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-ink-subtle">
-          Forgotten your password? Ask your course coordinator or the system administrator to
-          reissue it.
+          Forgotten your password?{' '}
+          <Link
+            to="/forgot-password"
+            className="font-semibold text-brand-700 underline-offset-2 hover:underline"
+          >
+            Ask an administrator to reset it
+          </Link>
+          .
         </p>
       </form>
     </AuthLayout>
