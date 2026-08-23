@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useDebounced } from '@/lib/useDebounced';
 import { Link } from 'react-router-dom';
 import { useProfileSearch, useResearchAreas, type UserProfile } from '@/features/profiles/useProfiles';
 import { personName } from '@/lib/name';
@@ -73,13 +74,8 @@ function PersonCard({ profile }: { profile: UserProfile }) {
 export function DirectoryPage() {
   const [area, setArea] = useState('');
   const [q, setQ] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
-
   // Typing fired a request per keystroke against a table that grows every year.
-  useEffect(() => {
-    const id = window.setTimeout(() => setDebouncedQ(q.trim()), 250);
-    return () => window.clearTimeout(id);
-  }, [q]);
+  const debouncedQ = useDebounced(q);
 
   const { data: areas } = useResearchAreas();
   const {

@@ -7,6 +7,12 @@ import type { Role } from '@/types/auth';
  * from — duplicating these arrays in each layout is how they drift apart.
  */
 export const roleNav: Record<Role, ShellNavItem[]> = {
+  SUPER_ADMIN: [
+    { to: '/super-admin', label: 'Administrators', icon: 'shield', end: true },
+    { to: '/super-admin/accounts', label: 'Accounts', icon: 'people' },
+    { to: '/super-admin/reset-requests', label: 'Password requests', icon: 'discover' },
+    { to: '/super-admin/audit', label: 'Audit log', icon: 'courses' },
+  ],
   STUDENT: [
     { to: '/student', label: 'My courses', icon: 'courses', end: true },
     { to: '/directory', label: 'Find a supervisor', icon: 'people' },
@@ -29,6 +35,7 @@ export const roleNav: Record<Role, ShellNavItem[]> = {
 };
 
 export const roleLabel: Record<Role, string> = {
+  SUPER_ADMIN: 'Super admin',
   STUDENT: 'Student',
   LECTURER: 'Lecturer',
   COURSE_COORDINATOR: 'Coordinator',
@@ -36,6 +43,7 @@ export const roleLabel: Record<Role, string> = {
 };
 
 export const roleHome: Record<Role, string> = {
+  SUPER_ADMIN: '/super-admin',
   STUDENT: '/student',
   LECTURER: '/lecturer',
   COURSE_COORDINATOR: '/coordinator',

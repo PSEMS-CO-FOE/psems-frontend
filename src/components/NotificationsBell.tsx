@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNotifications, useMarkNotificationRead } from '@/features/notifications/useNotifications';
 import { cn } from '@/lib/cn';
 
@@ -6,11 +6,33 @@ export function NotificationsBell() {
   const { data: notifications } = useNotifications();
   const markRead = useMarkNotificationRead();
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // A popover that only closes by pressing the control that opened it is a trap:
+  // the reader has already moved on and clicked something else. Pointer-down
+  // rather than click, so it closes before the click lands underneath.
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false);
+    }
+
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
 
   const unread = notifications?.filter((n) => !n.readAt).length ?? 0;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}

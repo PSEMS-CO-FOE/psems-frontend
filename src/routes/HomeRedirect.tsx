@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import type { Role } from '@/types/auth';
 
 const HOME_BY_ROLE: Record<Role, string> = {
+  SUPER_ADMIN: '/super-admin',
   SYSTEM_ADMIN: '/admin',
   COURSE_COORDINATOR: '/coordinator',
   LECTURER: '/lecturer',

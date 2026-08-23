@@ -4,13 +4,20 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { HomeRedirect } from '@/routes/HomeRedirect';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { GuestScoringPage } from '@/pages/guest/GuestScoringPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { EditProfilePage } from '@/pages/profile/EditProfilePage';
 import { DirectoryPage } from '@/pages/profile/DirectoryPage';
+import { GuidePage } from '@/pages/guide/GuidePage';
 import { RoleShell } from '@/components/layout/RoleShell';
 import { DiscoverCoursesPage } from '@/pages/lecturer/DiscoverCoursesPage';
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
+import { SuperAdminLayout } from '@/pages/superAdmin/SuperAdminLayout';
+import { SuperAdminAdminsPage } from '@/pages/superAdmin/SuperAdminAdminsPage';
+import { SuperAdminAccountsPage } from '@/pages/superAdmin/SuperAdminAccountsPage';
+import { SuperAdminResetRequestsPage } from '@/pages/superAdmin/SuperAdminResetRequestsPage';
+import { SuperAdminAuditPage } from '@/pages/superAdmin/SuperAdminAuditPage';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { LecturerApprovalPage } from '@/pages/admin/LecturerApprovalPage';
 import { StudentProvisioningPage } from '@/pages/admin/StudentProvisioningPage';
@@ -52,6 +59,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/guest" element={<GuestScoringPage />} />
       {/* Outside ProtectedRoute: this opens in a new window with no token, so it
           gets its own using the refresh cookie. */}
@@ -89,8 +97,26 @@ export default function App() {
         }
       >
         <Route path="/directory" element={<DirectoryPage />} />
+        <Route path="/guide" element={<GuidePage />} />
         <Route path="/profile/edit" element={<EditProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
+      </Route>
+
+      {/* The Super Admin tier is separate from System Admin, not above it: it
+          manages accounts and holds none of the course powers, so it gets its
+          own section rather than extra tabs on the admin one. */}
+      <Route
+        path="/super-admin"
+        element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+            <SuperAdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<SuperAdminAdminsPage />} />
+        <Route path="accounts" element={<SuperAdminAccountsPage />} />
+        <Route path="reset-requests" element={<SuperAdminResetRequestsPage />} />
+        <Route path="audit" element={<SuperAdminAuditPage />} />
       </Route>
 
       <Route
