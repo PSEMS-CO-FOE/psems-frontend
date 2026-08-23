@@ -10,14 +10,34 @@ export interface CardProps {
   className?: string;
   /** Drops the inner padding for tables and grids that manage their own. */
   flush?: boolean;
+  /** A brand edge along the top. For the one panel on a screen that should be
+   *  found first — a second accented card cancels out the first. */
+  accent?: boolean;
+  /** Lifts on hover. Only for a card that is itself a link or a button. */
+  interactive?: boolean;
 }
 
-export function Card({ title, description, actions, children, className, flush }: CardProps) {
+export function Card({
+  title,
+  description,
+  actions,
+  children,
+  className,
+  flush,
+  accent,
+  interactive,
+}: CardProps) {
   const hasHeader = title != null || description != null || actions != null;
 
   return (
     <section
-      className={cn('rounded-card border border-line bg-surface shadow-card', className)}
+      className={cn(
+        'rounded-card border border-line bg-surface shadow-raised',
+        accent && 'card-accent',
+        interactive &&
+          'transition-all duration-base ease-standard hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-raised',
+        className,
+      )}
     >
       {hasHeader && (
         <header
@@ -27,7 +47,9 @@ export function Card({ title, description, actions, children, className, flush }
           )}
         >
           <div className="min-w-0">
-            {title != null && <h3 className="text-sm font-semibold text-ink">{title}</h3>}
+            {title != null && (
+              <h3 className="text-sm font-semibold tracking-tight text-ink">{title}</h3>
+            )}
             {description != null && (
               <p className="mt-1 text-xs leading-relaxed text-ink-muted">{description}</p>
             )}

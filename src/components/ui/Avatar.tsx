@@ -2,7 +2,7 @@ import { cn } from '@/lib/cn';
 import { initialsFrom } from '@/lib/name';
 
 const sizes = {
-  sm: 'h-8 w-8 text-xs',
+  sm: 'h-9 w-9 text-xs',
   md: 'h-11 w-11 text-sm',
   lg: 'h-16 w-16 text-lg',
 } as const;
@@ -20,7 +20,7 @@ export function Avatar({
     <span
       aria-hidden="true"
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-full bg-brand-600 font-semibold text-white',
+        'flex shrink-0 items-center justify-center rounded-full bg-brand-gradient font-semibold tracking-wide text-white shadow-brand ring-2 ring-surface',
         sizes[size],
         className,
       )}

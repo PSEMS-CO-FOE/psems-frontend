@@ -27,32 +27,46 @@ export function StatTile({ label, value, caption, delta, icon, className }: Stat
   return (
     <div
       className={cn(
-        'rounded-card border border-line bg-surface px-5 py-4 shadow-card',
+        'group relative flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface px-5 py-4 shadow-card',
+        'transition-all duration-base ease-standard hover:border-brand-200 hover:shadow-raised',
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium text-ink-muted">{label}</p>
+      {/* A wash in the corner, so the number is not floating on plain white. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-brand-wash transition-transform duration-slow ease-standard group-hover:scale-125"
+      />
+
+      <div className="relative flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
+          {label}
+        </p>
         {icon && (
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200">
             {icon}
           </span>
         )}
       </div>
-      <p className="mt-2 text-3xl font-semibold tracking-tight text-ink [font-variant-numeric:tabular-nums]">
+
+      <p className="relative mt-2.5 text-3xl font-semibold leading-none tracking-tight text-ink tnum">
         {value}
       </p>
-      {caption != null && <p className="mt-1 text-xs text-ink-muted">{caption}</p>}
+      {caption != null && <p className="relative mt-2 text-xs text-ink-muted">{caption}</p>}
+      {/* The spacer carries `mt-auto`, not the pill — two margin classes on one
+          element would collide. */}
       {delta && (
-        <span
-          className={cn(
-            'mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-            deltaTone[delta.direction],
-          )}
-        >
-          <span aria-hidden="true">{deltaGlyph[delta.direction]}</span>
-          {delta.label}
-        </span>
+        <div className="relative mt-auto pt-3">
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-xs font-medium',
+              deltaTone[delta.direction],
+            )}
+          >
+            <span aria-hidden="true">{deltaGlyph[delta.direction]}</span>
+            {delta.label}
+          </span>
+        </div>
       )}
     </div>
   );
