@@ -38,8 +38,11 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
 
   const overrunning = !!current && display > current.targetSeconds;
 
+  // No running order means no presentation, so no clock and no projector window.
+  if (data && data.segments.length === 0) return null;
+
   return (
-    <div className="mt-3 rounded-control border border-line bg-canvas p-3">
+    <div className="mt-3 rounded-control border border-line bg-canvas-sunken p-3">
       <div className="flex flex-wrap items-center gap-3">
         <span
           className={`font-mono text-lg tabular-nums ${overrunning ? 'text-critical-700' : 'text-ink'}`}
@@ -75,13 +78,14 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
             Pause
           </Button>
         )}
-        <button
+        <Button
           onClick={() => control.mutate('previous')}
           disabled={control.isPending || !data?.segments.length}
-          className="rounded-control border border-line-strong px-3 py-1 text-xs text-ink-muted hover:bg-canvas disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
           Previous
-        </button>
+        </Button>
         <Button variant="neutral" size="sm"
           onClick={() => control.mutate('next')}
           disabled={control.isPending || !data?.segments.length}>
@@ -92,19 +96,21 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
           disabled={control.isPending}>
           Stop &amp; save
         </Button>
-        <button
+        <Button
           onClick={() => control.mutate('reset')}
           disabled={control.isPending}
-          className="rounded-control border border-line-strong px-3 py-1 text-xs text-ink-muted hover:bg-canvas disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
           Reset
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => window.open(`/timer/${cpiId}/${session.id}`, '_blank', 'noopener,width=1280,height=800')}
-          className="rounded-control border border-line-strong px-3 py-1 text-xs text-ink-muted hover:bg-canvas"
+          variant="secondary"
+          size="sm"
         >
           Open timer window
-        </button>
+        </Button>
       </div>
 
       {data && data.segments.length > 0 && (
@@ -298,7 +304,7 @@ function SessionScorer({
           {session.isOverdue && (
             <Badge tone="critical">overdue</Badge>
           )}
-          <span className="rounded-control bg-canvas px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
+          <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
         </div>
       </div>
 
@@ -312,7 +318,7 @@ function SessionScorer({
       <PresentationTimer cpiId={cpiId} session={session} />
 
       {openVisibility && (
-        <p className="mt-2 rounded-control bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-2 rounded-control bg-caution-50 px-3 py-2 text-xs text-caution-700">
           This evaluation is open: everyone on the panel can see each other&rsquo;s marks.
         </p>
       )}
@@ -321,7 +327,7 @@ function SessionScorer({
         <JoinOpenPanel cpiId={cpiId} sessionId={session.id} openRoles={openRoles} />
       )}
       {!seated && openRoles.length === 0 && (
-        <p className="mt-2 rounded-control bg-canvas px-3 py-2 text-xs text-ink-muted">
+        <p className="mt-2 rounded-control bg-canvas-sunken px-3 py-2 text-xs text-ink-muted">
           You are not on this panel, so you cannot mark here. Ask the coordinator to seat you.
         </p>
       )}
@@ -347,20 +353,20 @@ function SessionScorer({
                 onChange={(e) => setField(key, 'score', e.target.value)}
                 disabled={locked}
                 placeholder={`0–${field.criterion.maxScore}`}
-                className="w-20 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+                className="w-20 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas-sunken"
               />
               <input
                 value={values[key]?.comment ?? ''}
                 onChange={(e) => setField(key, 'comment', e.target.value)}
                 disabled={locked}
                 placeholder="comment (optional)"
-                className="flex-1 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+                className="flex-1 rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas-sunken"
               />
             </div>
           );
         })}
         {criteria.some((c) => c.level === 'INDIVIDUAL') && members.length === 0 && (
-          <p className="text-xs text-amber-700">
+          <p className="text-xs text-caution-700">
             This stage is scored per student, but the group has no accepted members.
           </p>
         )}
@@ -376,7 +382,7 @@ function SessionScorer({
           disabled={locked}
           rows={3}
           placeholder="Your overall assessment of this evaluation"
-          className="mt-1 w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas"
+          className="mt-1 w-full rounded-control border border-line-strong px-2 py-1 text-xs disabled:bg-canvas-sunken"
         />
       </div>
 
