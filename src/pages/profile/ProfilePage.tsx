@@ -212,9 +212,14 @@ export function ProfilePage() {
         back={{ label: 'Back' }}
         actions={
           isMe && (
-            <LinkButton to="/profile/edit" variant="secondary" size="sm">
-              Edit my profile
-            </LinkButton>
+            <div className="flex flex-wrap gap-2">
+              <LinkButton to="/change-password" variant="secondary" size="sm">
+                Change password
+              </LinkButton>
+              <LinkButton to="/profile/edit" variant="secondary" size="sm">
+                Edit my profile
+              </LinkButton>
+            </div>
           )
         }
       />
