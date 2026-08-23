@@ -132,7 +132,7 @@ export const guideSections: GuideSection[] = [
       },
       {
         title: 'Upload students',
-        body: 'A CSV with the header email, fullName, studentId, registrationNumber, batch, department, year. Batch is required and decides which courses each student sees. Each student receives a temporary password and must change it at first sign-in.',
+        body: 'A CSV with the header email, fullName, studentIndex, registrationNumber, batch, department. studentIndex is the index number (22ENG082) and registrationNumber is the registration number (EN108960) — two different identifiers, and mark sheets carry both. A file that still calls the index column studentId is accepted unchanged. Batch is required and decides which courses each student sees; it is fixed for life, unlike year of study, which is why no year is asked for. Each student receives a temporary password and must change it at first sign-in.',
       },
       {
         title: 'Appoint coordinators',
