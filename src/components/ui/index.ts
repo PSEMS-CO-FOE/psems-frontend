@@ -12,3 +12,6 @@ export { StatTile, StatRow, type StatTileProps } from './StatTile';
 export { Segmented, type SegmentedOption } from './Segmented';
 export { Icon, type IconName } from './Icon';
 export { Avatar } from './Avatar';
+export { Disclosure, type DisclosureProps } from './Disclosure';
+export { Meter, type MeterProps } from './Meter';
+export { InfoTip, type InfoTipProps } from './InfoTip';
