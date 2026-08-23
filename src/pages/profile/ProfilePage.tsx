@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   useProfile,
@@ -6,6 +6,7 @@ import {
   type SupervisedProject,
   type UserProfile,
 } from '@/features/profiles/useProfiles';
+import { profileShape, type ProfileShape } from '@/features/profiles/profileShape';
 import { useAuthStore } from '@/stores/authStore';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
@@ -25,22 +26,33 @@ type TabKey = 'about' | 'research' | 'projects';
 
 function AboutTab({ profile }: { profile: UserProfile | null }) {
   return (
-    <div className="space-y-2 text-sm text-ink">
-      {profile?.about && <p className="whitespace-pre-wrap">{profile.about}</p>}
+    <div className="space-y-4">
+      {profile?.about && (
+        <p className="max-w-prose whitespace-pre-wrap text-sm leading-7 text-ink">{profile.about}</p>
+      )}
       {profile?.contactEmail && (
         <p className="text-xs text-ink-muted">
           Contact:{' '}
-          <a className="text-brand-700 hover:underline" href={`mailto:${profile.contactEmail}`}>
+          <a
+            className="font-medium text-brand-700 underline-offset-2 hover:underline"
+            href={`mailto:${profile.contactEmail}`}
+          >
             {profile.contactEmail}
           </a>
         </p>
       )}
       {profile?.links && Object.keys(profile.links).length > 0 && (
-        <ul className="text-xs">
+        <ul className="flex flex-wrap gap-2">
           {Object.entries(profile.links).map(([label, url]) => (
             <li key={label}>
-              <a className="text-brand-700 hover:underline" href={url} target="_blank" rel="noreferrer">
+              <a
+                className="inline-flex items-center gap-1.5 rounded-pill bg-canvas-sunken px-3 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-line transition-colors duration-fast ease-standard hover:ring-brand-200"
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+              >
                 {label}
+                <span aria-hidden="true">↗</span>
               </a>
             </li>
           ))}
@@ -53,16 +65,18 @@ function AboutTab({ profile }: { profile: UserProfile | null }) {
 // Same two collections for everyone; only the words change. A student's
 // competition entry and a lecturer's paper are both a ResearchOutput, so the
 // model does not need to know which kind of person it belongs to.
-function ResearchTab({ profile, isStudent }: { profile: UserProfile | null; isStudent: boolean }) {
+function ResearchTab({ profile, shape }: { profile: UserProfile | null; shape: ProfileShape }) {
   const interests = profile?.interests ?? [];
   const outputs = profile?.outputs ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {interests.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-ink">{isStudent ? 'Skills and interests' : 'Areas'}</p>
-          <div className="mt-1 flex flex-wrap gap-1">
+          <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
+            {shape.interestsLabel}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {interests.map((i) => (
               <Badge key={i.id} tone="info">
                 {i.area}
@@ -73,23 +87,31 @@ function ResearchTab({ profile, isStudent }: { profile: UserProfile | null; isSt
       )}
       {outputs.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-ink">
-            {isStudent ? 'Work and achievements' : 'Publications and projects'}
+          <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
+            {shape.outputsLabel}
           </p>
-          <ul className="mt-1 space-y-1">
+          <ul className="mt-2 divide-y divide-line">
             {outputs.map((o) => (
-              <li key={o.id} className="text-sm text-ink">
-                {o.url ? (
-                  <a className="text-brand-700 hover:underline" href={o.url} target="_blank" rel="noreferrer">
-                    {o.title}
-                  </a>
-                ) : (
-                  o.title
+              <li key={o.id} className="py-2.5 first:pt-0 last:pb-0">
+                <p className="text-sm font-medium text-ink">
+                  {o.url ? (
+                    <a
+                      className="text-brand-700 underline-offset-2 hover:underline"
+                      href={o.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {o.title}
+                    </a>
+                  ) : (
+                    o.title
+                  )}
+                </p>
+                {(o.venue || o.year) && (
+                  <p className="mt-0.5 text-xs text-ink-subtle">
+                    {[o.venue, o.year].filter(Boolean).join(' · ')}
+                  </p>
                 )}
-                <span className="text-xs text-ink-subtle">
-                  {o.venue ? ` · ${o.venue}` : ''}
-                  {o.year ? ` · ${o.year}` : ''}
-                </span>
               </li>
             ))}
           </ul>
@@ -99,21 +121,43 @@ function ResearchTab({ profile, isStudent }: { profile: UserProfile | null; isSt
   );
 }
 
+/** One row of the projects list. Both directions share the frame; only the
+ *  third line differs — who did the work, or who supervised it. */
+function ProjectRow({
+  title,
+  course,
+  academicYear,
+  projectType,
+  detail,
+}: {
+  title: string;
+  course: string;
+  academicYear: string;
+  projectType: string;
+  detail: ReactNode;
+}) {
+  return (
+    <li className="border-l-2 border-line py-1 pl-4 transition-colors duration-fast ease-standard hover:border-brand-400">
+      <p className="text-sm font-medium text-ink">{title}</p>
+      <p className="mt-0.5 text-xs text-ink-muted">
+        {course} · {academicYear} · {projectType}
+      </p>
+      <p className="mt-0.5 text-xs text-ink-muted">{detail}</p>
+    </li>
+  );
+}
+
 // Derived from allocations rather than stored, so it can never drift from what
 // actually happened.
 function SupervisedTab({ projects }: { projects: SupervisedProject[] }) {
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-4">
       {projects.map((p, i) => (
-        <li key={i} className="border-b border-line pb-2 last:border-b-0">
-          <p className="text-sm font-medium text-ink">{p.title}</p>
-          <p className="text-xs text-ink-muted">
-            {p.course} · {p.academicYear} · {p.projectType}
-          </p>
-          <p className="mt-0.5 text-xs text-ink-muted">
-            {p.students.map((s) => `${s.fullName ?? s.studentId} (${s.studentId})`).join(', ')}
-          </p>
-        </li>
+        <ProjectRow
+          key={i}
+          {...p}
+          detail={p.students.map((s) => `${s.fullName ?? s.studentId} (${s.studentId})`).join(', ')}
+        />
       ))}
     </ul>
   );
@@ -121,25 +165,28 @@ function SupervisedTab({ projects }: { projects: SupervisedProject[] }) {
 
 function OwnProjectsTab({ projects }: { projects: OwnProject[] }) {
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-4">
       {projects.map((p, i) => (
-        <li key={i} className="border-b border-line pb-2 last:border-b-0">
-          <p className="text-sm font-medium text-ink">{p.title}</p>
-          <p className="text-xs text-ink-muted">
-            {p.course} · {p.academicYear} · {p.projectType}
-          </p>
-          <p className="mt-0.5 text-xs text-ink-muted">
-            {p.groupName}
-            {p.supervisor && (
-              <>
-                {' · supervised by '}
-                <Link to={`/profile/${p.supervisor.id}`} className="text-brand-700 hover:underline">
-                  {p.supervisor.fullName ?? p.supervisor.email}
-                </Link>
-              </>
-            )}
-          </p>
-        </li>
+        <ProjectRow
+          key={i}
+          {...p}
+          detail={
+            <>
+              {p.groupName}
+              {p.supervisor && (
+                <>
+                  {' · supervised by '}
+                  <Link
+                    to={`/profile/${p.supervisor.id}`}
+                    className="font-medium text-brand-700 underline-offset-2 hover:underline"
+                  >
+                    {p.supervisor.fullName ?? p.supervisor.email}
+                  </Link>
+                </>
+              )}
+            </>
+          }
+        />
       ))}
     </ul>
   );
@@ -170,7 +217,7 @@ export function ProfilePage() {
   if (!data) return null;
 
   const profile = data.profile;
-  const isStudent = data.user.role === 'STUDENT';
+  const shape = profileShape(data.user.role);
   const isMe = data.user.id === myUserId;
   const name = personName(data.user);
 
@@ -179,8 +226,17 @@ export function ProfilePage() {
     profile?.contactEmail ||
     (profile?.links && Object.keys(profile.links).length)
   );
-  const hasResearch = (profile?.interests.length ?? 0) > 0 || (profile?.outputs.length ?? 0) > 0;
-  const projects = isStudent ? data.ownProjects : data.supervisedProjects;
+  // An administrator holds neither, and the shape says so — so the tab is not
+  // merely empty for them, it does not exist.
+  const hasResearch =
+    shape.interestsLabel != null &&
+    ((profile?.interests.length ?? 0) > 0 || (profile?.outputs.length ?? 0) > 0);
+  const projects =
+    shape.projectsSource === 'own'
+      ? data.ownProjects
+      : shape.projectsSource === 'supervised'
+        ? data.supervisedProjects
+        : [];
 
   // Tabs come from the person, not from a fixed list. A student used to be shown
   // "Research" and "Projects supervised" — two tabs that could only ever be
@@ -190,12 +246,12 @@ export function ProfilePage() {
       { value: 'about' as const, label: 'About', show: hasAbout },
       {
         value: 'research' as const,
-        label: isStudent ? 'Skills and interests' : 'Research',
+        label: shape.interestsLabel ?? 'Research',
         show: hasResearch,
       },
       {
         value: 'projects' as const,
-        label: isStudent ? 'Projects done' : 'Projects supervised',
+        label: shape.projectsLabel ?? 'Projects',
         show: projects.length > 0,
       },
     ] satisfies { value: TabKey; label: string; show: boolean }[]
@@ -209,6 +265,7 @@ export function ProfilePage() {
           past project and from search, so history is the honest way back. */}
       <PageHeader
         title={name}
+        eyebrow={shape.roleLabel}
         back={{ label: 'Back' }}
         actions={
           isMe && (
@@ -216,7 +273,7 @@ export function ProfilePage() {
               <LinkButton to="/change-password" variant="secondary" size="sm">
                 Change password
               </LinkButton>
-              <LinkButton to="/profile/edit" variant="secondary" size="sm">
+              <LinkButton to="/profile/edit" variant="primary" size="sm">
                 Edit my profile
               </LinkButton>
             </div>
@@ -224,19 +281,23 @@ export function ProfilePage() {
         }
       />
 
-      <Card>
-        <div className="flex flex-wrap items-start gap-4">
-          <Avatar name={name} size="lg" />
+      {/* The identity card carries the brand band; everything below is plain. */}
+      <Card flush className="overflow-hidden">
+        <div aria-hidden="true" className="h-20 bg-brand-gradient" />
+        <div className="flex flex-wrap items-end gap-4 px-5 pb-5 sm:px-6">
+          <Avatar name={name} size="lg" className="-mt-8 ring-4" />
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 pt-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-semibold tracking-tight text-ink">{name}</h2>
-              <Badge tone={isStudent ? 'info' : 'brand'}>{isStudent ? 'Student' : 'Lecturer'}</Badge>
+              <Badge tone={shape.badgeTone}>{shape.roleLabel}</Badge>
             </div>
 
-            {profile?.headline && <p className="mt-1 text-sm text-ink-muted">{profile.headline}</p>}
+            {profile?.headline && (
+              <p className="mt-1 max-w-prose text-sm text-ink-muted">{profile.headline}</p>
+            )}
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-muted">
+            <dl className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-ink-muted">
               {profile?.designation && (
                 <div>
                   <dt className="sr-only">Designation</dt>
@@ -254,7 +315,7 @@ export function ProfilePage() {
                 <dd>
                   <a
                     href={`mailto:${data.user.email}`}
-                    className="text-brand-700 underline-offset-2 hover:underline"
+                    className="font-medium text-brand-700 underline-offset-2 hover:underline"
                   >
                     {data.user.email}
                   </a>
@@ -270,7 +331,9 @@ export function ProfilePage() {
           title="This profile is empty"
           hint={
             isMe
-              ? 'Add an About, your interests and anything you have worked on — students and colleagues read this.'
+              ? shape.kind === 'administrator'
+                ? 'Add a contact address and which office you sit in — this is what people see when they need an administrator.'
+                : 'Add an About, your interests and anything you have worked on — students and colleagues read this.'
               : 'Nothing has been filled in yet.'
           }
           action={
@@ -295,9 +358,9 @@ export function ProfilePage() {
 
           <Card>
             {active === 'about' && <AboutTab profile={profile} />}
-            {active === 'research' && <ResearchTab profile={profile} isStudent={isStudent} />}
+            {active === 'research' && <ResearchTab profile={profile} shape={shape} />}
             {active === 'projects' &&
-              (isStudent ? (
+              (shape.projectsSource === 'own' ? (
                 <OwnProjectsTab projects={data.ownProjects} />
               ) : (
                 <SupervisedTab projects={data.supervisedProjects} />
