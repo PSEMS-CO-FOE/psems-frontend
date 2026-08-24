@@ -53,7 +53,14 @@ export interface SeekingIdea {
 export type SelectionState =
   | { role: 'STUDENT'; groupInterest: InterestExpression[]; willingSupervisors: InterestExpression[]; selection: ProjectSelection | null }
   | { role: 'COORDINATOR'; selections: ProjectSelection[]; interestExpressions: InterestExpression[] }
-  | { role: 'SUPERVISOR'; willingByMe: InterestExpression[]; pendingSelections: ProjectSelection[]; seekingIdeas: SeekingIdea[] };
+  | {
+      role: 'SUPERVISOR';
+      willingByMe: InterestExpression[];
+      pendingSelections: ProjectSelection[];
+      seekingIdeas: SeekingIdea[];
+      // Groups that registered interest in one of this supervisor's ideas.
+      interestInMyIdeas: InterestExpression[];
+    };
 
 function selectionKey(cpiId: string) {
   return ['selection', cpiId] as const;
