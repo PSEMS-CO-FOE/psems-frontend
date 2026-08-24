@@ -80,8 +80,39 @@ export function SupervisorSelectionPage() {
     );
   }
 
+  const liveInterest = data.interestInMyIdeas.filter((e) => !e.withdrawnAt);
+
   return (
     <div className="space-y-4">
+      {/* Interest is the step before a selection, so it comes first. */}
+      <Card>
+        <h2 className="text-sm font-semibold text-ink">Groups interested in your ideas</h2>
+        <p className="mt-1 text-xs text-ink-muted">
+          Registering interest is not a commitment on either side. A group has to make a formal
+          selection before it reaches you to accept.
+        </p>
+        {liveInterest.length === 0 ? (
+          <EmptyState
+            density="compact"
+            title="No interest yet"
+            hint="Groups that register interest in one of your ideas appear here."
+          />
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {liveInterest.map((e) => (
+              <li
+                key={e.id}
+                className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-control border border-line bg-canvas-sunken px-3 py-2 text-xs"
+              >
+                <span className="font-medium text-ink">{e.group?.name ?? 'A group'}</span>
+                <span className="text-ink-subtle">is interested in</span>
+                <span className="font-medium text-ink">{e.idea.title}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
       {/* Pending selections awaiting this supervisor's confirmation */}
       <Card>
         <h2 className="text-sm font-semibold text-ink">Selections awaiting your response</h2>

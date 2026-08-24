@@ -10,7 +10,7 @@ import {
 } from '@/features/selection/useSelection';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
-import { Button, Card, EmptyState, Notice } from '@/components/ui';
+import { Button, Card, EmptyState, Notice, Select } from '@/components/ui';
 import { PolicyNote } from '@/components/PolicyNote';
 
 export function SelectionPage() {
@@ -77,109 +77,123 @@ export function SelectionPage() {
         )}
       </Card>
 
-      {/* Select a project */}
+      {/* One idea picker, not two. The page had a "Select a project" card and an
+          "Interest" card, each with its own dropdown over the same ideas — and
+          both bound to the same state, so they always showed the same value. */}
       {!state.selection && (
-        <Card title="Select a project">
-          {select.isError && (
-            <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(select.error)}</p>
-          )}
-          <select
-            value={ideaId}
-            onChange={(e) => setIdeaId(e.target.value)}
-            className="mt-2 w-full rounded-control border border-line-strong px-2 py-1 text-sm"
-          >
-            <option value="">Choose an idea…</option>
-            {ideaOptions.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.title} ({i.authorType})
-              </option>
-            ))}
-          </select>
-          {/* Only needed when selecting your OWN idea in Supervisor-Led mode:
-              pick from supervisors who marked willing on it. */}
-          {state.willingSupervisors.length > 0 && (
-            <select
-              value={supervisorUserId}
-              onChange={(e) => setSupervisorUserId(e.target.value)}
-              className="mt-2 w-full rounded-control border border-line-strong px-2 py-1 text-xs"
+        <Card
+          title="Choose a project"
+          description="Register interest first if you want to signal to a supervisor. Selecting is the formal step, and it needs confirming before it is yours."
+        >
+          <div className="space-y-3">
+            <Select
+              label="Idea"
+              value={ideaId}
+              onChange={(e) => setIdeaId(e.target.value)}
             >
-              <option value="">Choose a willing supervisor (for your own idea)…</option>
-              {state.willingSupervisors
-                .filter((w) => w.supervisor)
-                .map((w) => (
-                  <option key={w.id} value={w.supervisor!.user.id}>
-                    {personName(w.supervisor!.user)} — {w.idea.title}
-                  </option>
-                ))}
-            </select>
-          )}
-          <Button variant="primary" className="mt-2"
-            onClick={() =>
-              select.mutate({ ideaId, supervisorUserId: supervisorUserId || undefined })
-            }
-            disabled={!ideaId || select.isPending}>
-            {select.isPending ? '…' : 'Select project'}
-          </Button>
+              <option value="">Choose an idea…</option>
+              {ideaOptions.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.title} ({i.authorType})
+                </option>
+              ))}
+            </Select>
+
+            {/* Only when selecting your OWN idea: pick from supervisors who
+                marked willing on it. */}
+            {state.willingSupervisors.length > 0 && (
+              <Select
+                label="Willing supervisor"
+                hint="Only needed when the idea is your group's own."
+                value={supervisorUserId}
+                onChange={(e) => setSupervisorUserId(e.target.value)}
+              >
+                <option value="">Choose a willing supervisor…</option>
+                {state.willingSupervisors
+                  .filter((w) => w.supervisor)
+                  .map((w) => (
+                    <option key={w.id} value={w.supervisor!.user.id}>
+                      {personName(w.supervisor!.user)} — {w.idea.title}
+                    </option>
+                  ))}
+              </Select>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+              <Button
+                variant="secondary"
+                onClick={() => interest.mutate(ideaId)}
+                disabled={!ideaId || interest.isPending}
+              >
+                Register interest
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => seeking.mutate(ideaId)}
+                disabled={!ideaId || seeking.isPending}
+              >
+                Seek a supervisor for our idea
+              </Button>
+              <Button
+                variant="primary"
+                className="ml-auto"
+                onClick={() =>
+                  select.mutate({ ideaId, supervisorUserId: supervisorUserId || undefined })
+                }
+                disabled={!ideaId || select.isPending}
+              >
+                {select.isPending ? 'Selecting…' : 'Select this project'}
+              </Button>
+            </div>
+
+            {(select.isError || interest.isError || seeking.isError) && (
+              <Notice tone="critical" size="xs">
+                {getApiErrorMessage(select.error || interest.error || seeking.error)}
+              </Notice>
+            )}
+          </div>
         </Card>
       )}
 
-      {/* Supervisor-Led EOI actions */}
-      <Card>
-        <h3 className="text-sm font-semibold text-ink">
-          Interest (Supervisor-Led){' '}
-          <span className="font-normal text-ink-subtle">— express interest / seek a supervisor</span>
-        </h3>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <select
-            value={ideaId}
-            onChange={(e) => setIdeaId(e.target.value)}
-            className="rounded-control border border-line-strong px-2 py-1 text-xs"
-          >
-            <option value="">Choose an idea…</option>
-            {ideaOptions.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.title} ({i.authorType})
-              </option>
-            ))}
-          </select>
-          <Button variant="neutral" size="sm"
-            onClick={() => interest.mutate(ideaId)}
-            disabled={!ideaId || interest.isPending}>
-            Express interest
-          </Button>
-          <Button variant="neutral" size="sm"
-            onClick={() => seeking.mutate(ideaId)}
-            disabled={!ideaId || seeking.isPending}>
-            Seek supervisor (own idea)
-          </Button>
-        </div>
-        {(interest.isError || seeking.isError) && (
-          <p className="mt-2 text-xs text-critical-700">
-            {getApiErrorMessage(interest.error || seeking.error)}
-          </p>
-        )}
-
-        {state.groupInterest.length > 0 && (
-          <ul className="mt-3 space-y-1">
-            {state.groupInterest.filter((e) => !e.withdrawnAt).map((e) => (
-              <li key={e.id} className="flex items-center gap-2 text-xs text-ink-muted">
-                <span>
-                  {e.type === 'SEEKING_SUPERVISOR' ? 'Seeking a supervisor for' : 'Interested in'} — {e.idea.title}
-                </span>
-                {/* Withdrawing frees a slot against the course's interest cap. */}
-                <button
-                  onClick={() => withdraw.mutate({ ideaId: e.idea.id, type: e.type })}
-                  disabled={withdraw.isPending}
-                  className="rounded-control border border-critical-500/35 bg-critical-50 px-2 py-1 text-xs font-medium text-critical-700 transition-colors duration-fast ease-standard hover:border-critical-500/60 disabled:opacity-50"
+      {/* Interest already registered. Shown even after a selection exists, since
+          it is a record of what the group did. */}
+      {state.groupInterest.filter((e) => !e.withdrawnAt).length > 0 && (
+        <Card title="Interest your group registered">
+          <ul className="space-y-2">
+            {state.groupInterest
+              .filter((e) => !e.withdrawnAt)
+              .map((e) => (
+                <li
+                  key={e.id}
+                  className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-canvas-sunken px-3 py-2 text-xs"
                 >
-                  withdraw
-                </button>
-              </li>
-            ))}
+                  <span className="text-ink-muted">
+                    {e.type === 'SEEKING_SUPERVISOR' ? 'Seeking a supervisor for' : 'Interested in'}
+                  </span>
+                  <span className="font-medium text-ink">{e.idea.title}</span>
+                  {/* Withdrawing frees a slot against the course's interest cap. */}
+                  {!state.selection && (
+                    <Button
+                      variant="danger-quiet"
+                      size="sm"
+                      className="ml-auto"
+                      onClick={() => withdraw.mutate({ ideaId: e.idea.id, type: e.type })}
+                      disabled={withdraw.isPending}
+                    >
+                      Withdraw
+                    </Button>
+                  )}
+                </li>
+              ))}
           </ul>
-        )}
-        {withdraw.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(withdraw.error)}</p>}
-      </Card>
+          {withdraw.isError && (
+            <Notice tone="critical" size="xs" className="mt-2">
+              {getApiErrorMessage(withdraw.error)}
+            </Notice>
+          )}
+        </Card>
+      )}
+
     </div>
   );
 }

@@ -16,7 +16,9 @@ export function useLogout() {
     } finally {
       reset();
       queryClient.clear(); // drop all cached server data for the previous user
-      navigate('/login', { replace: true });
+      // `state: null` clears the remembered page, so the next person to sign in
+      // on this tab does not land on the previous account's screen.
+      navigate('/login', { replace: true, state: null });
     }
   };
 }

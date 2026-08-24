@@ -2,7 +2,27 @@ import { useMutation } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '@/lib/apiClient';
 import { useAuthStore } from '@/stores/authStore';
-import type { LoginResponse } from '@/types/auth';
+import type { LoginResponse, Role } from '@/types/auth';
+
+// Which role each section belongs to. `ProtectedRoute` remembers the page a
+// visitor was sent away from, but the person who signs in next is not always
+// the person who was sent away — so a remembered page is only followed when it
+// belongs to the role that just signed in. Anything else goes to their own home.
+const SECTION_ROLE: { prefix: string; role: Role }[] = [
+  { prefix: '/super-admin', role: 'SUPER_ADMIN' },
+  { prefix: '/admin', role: 'SYSTEM_ADMIN' },
+  { prefix: '/coordinator', role: 'COURSE_COORDINATOR' },
+  { prefix: '/lecturer', role: 'LECTURER' },
+  { prefix: '/student', role: 'STUDENT' },
+];
+
+function reachableBy(path: string | undefined, role: Role): boolean {
+  if (!path) return false;
+  const section = SECTION_ROLE.find((s) => path === s.prefix || path.startsWith(`${s.prefix}/`));
+  // Shared routes (profile, directory, guide) belong to no section and are
+  // reachable by everyone.
+  return section ? section.role === role : true;
+}
 
 interface LoginArgs {
   email: string;
@@ -36,7 +56,7 @@ export function useLogin() {
       }
 
       const from = (location.state as LocationState | null)?.from?.pathname;
-      navigate(from ?? '/', { replace: true });
+      navigate(reachableBy(from, data.user.role) ? from! : '/', { replace: true });
     },
   });
 }
