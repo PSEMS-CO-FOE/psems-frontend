@@ -1,7 +1,13 @@
-import { useApprovedLecturers, useAssignCoordinator } from '@/features/lecturers/useLecturers';
+import {
+  useApprovedLecturers,
+  useAssignCoordinator,
+  type ApprovedLecturer,
+} from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
-import { Button, Card, EmptyState, Notice, PageHeader, SkeletonCard } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Notice, PageHeader, SkeletonCard } from '@/components/ui';
+
+const isCoordinator = (lecturer: ApprovedLecturer) => lecturer.role === 'COURSE_COORDINATOR';
 
 // System Admin promotes an approved lecturer to Course Coordinator.
 export function AdminCoordinatorsPage() {
@@ -43,17 +49,24 @@ export function AdminCoordinatorsPage() {
             {lecturers.map((l) => (
               <li key={l.userId} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <span className="min-w-0 text-sm">
-                  <span className="block truncate font-medium text-ink">{personName(l)}</span>
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="truncate font-medium text-ink">{personName(l)}</span>
+                    {isCoordinator(l) && <Badge tone="brand">Coordinator</Badge>}
+                  </span>
                   <span className="block truncate text-xs text-ink-subtle">{l.email}</span>
                 </span>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => assign.mutate(l.userId)}
-                  disabled={assign.isPending}
-                >
-                  Make coordinator
-                </Button>
+                {isCoordinator(l) ? (
+                  <span className="text-xs text-ink-subtle">Already a coordinator</span>
+                ) : (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => assign.mutate(l.userId)}
+                    disabled={assign.isPending}
+                  >
+                    Make coordinator
+                  </Button>
+                )}
               </li>
             ))}
           </ul>

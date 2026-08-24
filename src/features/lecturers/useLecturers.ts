@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
+import type { Role } from '@/types/auth';
 
 // An approved lecturer, as returned by GET /lecturers/approved — keyed by
 // userId (what the assignment endpoints take).
@@ -7,6 +8,8 @@ export interface ApprovedLecturer {
   userId: string;
   email: string;
   fullName: string | null;
+  // COURSE_COORDINATOR once promoted, so a screen can say so.
+  role: Role;
 }
 
 // Public self-registration — no auth. Account lands PENDING until approved.
