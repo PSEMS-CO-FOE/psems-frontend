@@ -7,6 +7,7 @@ import {
   useMarkWilling,
   useWithdrawInterest,
   useRespondSelection,
+  useAcceptInterestedGroup,
 } from '@/features/selection/useSelection';
 import { useRequestIdeaRevision } from '@/features/ideas/useIdeas';
 import type { SeekingIdea } from '@/features/selection/useSelection';
@@ -58,6 +59,7 @@ export function SupervisorSelectionPage() {
   const { cpiId = '' } = useParams();
   const { data, isLoading, isError, error } = useSelectionState(cpiId);
   const respond = useRespondSelection(cpiId);
+  const acceptGroup = useAcceptInterestedGroup(cpiId);
   const withdraw = useWithdrawInterest(cpiId);
   const lecturerInterest = useLecturerInterest(cpiId);
   const coSupervision = useCoSupervisionInterest(cpiId);
@@ -88,9 +90,14 @@ export function SupervisorSelectionPage() {
       <Card>
         <h2 className="text-sm font-semibold text-ink">Groups interested in your ideas</h2>
         <p className="mt-1 text-xs text-ink-muted">
-          Registering interest is not a commitment on either side. A group has to make a formal
-          selection before it reaches you to accept.
+          Several groups usually want the same project. Choose the one you want to take — the others
+          keep their interest and stay free to be picked for another idea.
         </p>
+        {acceptGroup.isError && (
+          <Notice tone="critical" size="xs" className="mt-3">
+            {getApiErrorMessage(acceptGroup.error)}
+          </Notice>
+        )}
         {liveInterest.length === 0 ? (
           <EmptyState
             density="compact"
@@ -107,6 +114,17 @@ export function SupervisorSelectionPage() {
                 <span className="font-medium text-ink">{e.group?.name ?? 'A group'}</span>
                 <span className="text-ink-subtle">is interested in</span>
                 <span className="font-medium text-ink">{e.idea.title}</span>
+                {e.group && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="ml-auto"
+                    onClick={() => acceptGroup.mutate({ ideaId: e.idea.id, groupId: e.group!.id })}
+                    disabled={acceptGroup.isPending}
+                  >
+                    Take this group
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
@@ -117,7 +135,11 @@ export function SupervisorSelectionPage() {
       <Card>
         <h2 className="text-sm font-semibold text-ink">Selections awaiting your response</h2>
         {data.pendingSelections.length === 0 && (
-          <EmptyState density="compact" title="Nothing waiting on you" hint="Groups that register interest in one of your ideas appear here to accept or decline." />
+          <EmptyState
+            density="compact"
+            title="Nothing waiting on you"
+            hint="A group that formally selects one of your ideas appears here, with Accept and Decline. Interest on its own does not reach this list."
+          />
         )}
         <ul className="mt-2 space-y-2">
           {data.pendingSelections.map((sel) => (
@@ -156,7 +178,11 @@ export function SupervisorSelectionPage() {
           Groups flagged these as needing a supervisor. Marking willing lets the group pick you.
         </p>
         {data.seekingIdeas.length === 0 && (
-          <EmptyState density="compact" title="No ideas seeking a supervisor" hint="Student ideas without a supervisor appear here while the selection phase is open." />
+          <EmptyState
+            density="compact"
+            title="No ideas seeking a supervisor"
+            hint="A group that posts its own idea appears here until a supervisor takes it on. Nothing has been posted yet, or every idea already has someone."
+          />
         )}
         <ul className="mt-2 space-y-2">
           {data.seekingIdeas.map((s) => (
