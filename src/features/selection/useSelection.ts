@@ -66,6 +66,18 @@ function selectionKey(cpiId: string) {
   return ['selection', cpiId] as const;
 }
 
+// A supervisor awards their idea to one of the groups that registered interest.
+export function useAcceptInterestedGroup(cpiId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { ideaId: string; groupId: string }) => {
+      const res = await api.post(`/courses/${cpiId}/selection/accept-interest`, args);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['selection', cpiId] }),
+  });
+}
+
 export function useSelectionState(cpiId: string) {
   return useQuery({
     queryKey: selectionKey(cpiId),
