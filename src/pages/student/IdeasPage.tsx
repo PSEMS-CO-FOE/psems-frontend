@@ -4,6 +4,7 @@ import { useIdeas, usePostIdea, useUpdateIdea, type Idea } from '@/features/idea
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName, shortName } from '@/lib/name';
 import { Button, Card, EmptyState, Notice, SkeletonText } from '@/components/ui';
+import { IdeaAssistPanel } from '@/features/ml/IdeaAssistPanel';
 import { PolicyNote } from '@/components/PolicyNote';
 
 function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
@@ -147,6 +148,8 @@ export function IdeasPage() {
           {postIdea.isPending ? 'Posting…' : 'Post idea'}
         </Button>
       </Card>
+
+      <IdeaAssistPanel title={title} description={description} />
 
       <div>
         <h2 className="mb-2 text-sm font-semibold text-ink">Ideas you can see</h2>
