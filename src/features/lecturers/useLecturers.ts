@@ -47,6 +47,18 @@ export function useAssignCoordinator() {
   });
 }
 
+// Undoes an accidental promotion.
+export function useRevokeCoordinator() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await api.post(`/users/${userId}/revoke-coordinator`);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lecturers', 'approved'] }),
+  });
+}
+
 // `id` is the lecturer-row id (what approve/reject take), not the user id.
 export interface PendingLecturer {
   id: string;

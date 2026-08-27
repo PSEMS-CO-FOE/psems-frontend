@@ -59,7 +59,10 @@ export type SelectionState =
       pendingSelections: ProjectSelection[];
       seekingIdeas: SeekingIdea[];
       // Groups that registered interest in one of this supervisor's ideas.
-      interestInMyIdeas: InterestExpression[];
+      // `placedOn` is set when that group already has a project.
+      interestInMyIdeas: (InterestExpression & {
+        placedOn: { ideaId: string; title: string } | null;
+      })[];
     };
 
 function selectionKey(cpiId: string) {

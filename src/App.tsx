@@ -155,10 +155,12 @@ export default function App() {
           <Route path="marks" element={<CpiMarksPage />} />
         </Route>
       </Route>
+      {/* A coordinator keeps supervising and evaluating — those roles live on the
+          course, not on the account — so this section stays open to them. */}
       <Route
         path="/lecturer"
         element={
-          <ProtectedRoute allowedRoles={['LECTURER']}>
+          <ProtectedRoute allowedRoles={['LECTURER', 'COURSE_COORDINATOR']}>
             <LecturerLayout />
           </ProtectedRoute>
         }

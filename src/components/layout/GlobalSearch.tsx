@@ -117,11 +117,9 @@ export function GlobalSearch() {
           }}
           onFocus={() => setOpen(true)}
           placeholder="Search courses, people"
-          className="h-10 w-full rounded-pill border border-line bg-canvas-sunken pl-9 pr-16 text-sm text-ink placeholder:text-ink-subtle transition-colors duration-fast ease-standard hover:border-line-strong focus:border-brand-500 focus:bg-surface"
+          className="h-10 w-full rounded-pill border border-line bg-canvas-sunken pl-9 pr-3 text-sm text-ink placeholder:text-ink-subtle transition-colors duration-fast ease-standard hover:border-line-strong focus:border-brand-500 focus:bg-surface"
         />
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md border border-line bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-ink-subtle shadow-card">
-          Ctrl K
-        </kbd>
+
       </label>
 
       {active && (

@@ -14,7 +14,7 @@ import {
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 import { ScheduleSheetPanel } from './ScheduleSheetPanel';
-import { Badge, Button, Card, EmptyState, StatRow, StatTile } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Notice, StatRow, StatTile } from '@/components/ui';
 
 const CONFLICT_LABELS: Record<ScheduleConflict['kind'], string> = {
   PANELIST_DOUBLE_BOOKED: 'Panelist double-booked',
@@ -420,7 +420,7 @@ export function CpiScheduling({ cpiId }: { cpiId: string }) {
   const overdue = sessions?.filter((s) => s.isOverdue).length ?? 0;
 
   return (
-    <Card title="Scheduling" className="space-y-3">
+    <div className="space-y-5">
       <StatRow>
         <StatTile label="Sessions" value={total} caption={total === 0 ? 'None generated yet' : 'One per group and stage'} />
         <StatTile
@@ -438,27 +438,39 @@ export function CpiScheduling({ cpiId }: { cpiId: string }) {
 
       <AvailabilityTemplatePanel cpiId={cpiId} />
 
-      <div className="border-t pt-3">
-        <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm"
-            onClick={() => generate.mutate()}
-            disabled={generate.isPending}>
-            {generate.isPending ? '…' : 'Generate sessions'}
+      <Card
+        title="Sessions"
+        description="One per group and stage. Generate them, then give each a time and a room."
+        actions={
+          <Button onClick={() => generate.mutate()} disabled={generate.isPending}>
+            {generate.isPending ? 'Generating…' : 'Generate sessions'}
           </Button>
-          {generate.isError && <span className="text-xs text-critical-700">{getApiErrorMessage(generate.error)}</span>}
-        </div>
+        }
+      >
+        {generate.isError && (
+          <Notice tone="critical" size="xs" className="mb-3">
+            {getApiErrorMessage(generate.error)}
+          </Notice>
+        )}
 
-        <ul className="mt-2 divide-y divide-line">
+        <ul className="divide-y divide-line">
           {sessions?.map((s) => (
             <SessionRow key={s.id} cpiId={cpiId} session={s} />
           ))}
-          {sessions && sessions.length === 0 && <li><EmptyState density="compact" title="No sessions yet" hint="Generate sessions to create one shell per group and stage, then give each a time." /></li>}
+          {sessions && sessions.length === 0 && (
+            <li>
+              <EmptyState
+                title="No sessions yet"
+                hint="Generate sessions to create one per group and stage, then give each a time."
+              />
+            </li>
+          )}
         </ul>
-      </div>
+      </Card>
 
       {sessions && sessions.length > 0 && <BlockLayout cpiId={cpiId} sessions={sessions} />}
 
       <ScheduleSheetPanel cpiId={cpiId} />
-    </Card>
+    </div>
   );
 }

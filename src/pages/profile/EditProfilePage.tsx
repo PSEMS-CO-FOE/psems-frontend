@@ -57,7 +57,7 @@ export function EditProfilePage() {
       headline: headline.trim() || null,
       about: about.trim() || null,
       department: department.trim() || null,
-      designation: designation.trim() || null,
+      ...(shape.designationLabel ? { designation: designation.trim() || null } : {}),
       contactEmail: contactEmail.trim() || null,
     };
 
@@ -112,12 +112,15 @@ export function EditProfilePage() {
             onChange={(e) => setDepartment(e.target.value)}
             placeholder="Electrical and Electronic Engineering"
           />
-          <Field
-            label={shape.kind === 'administrator' ? 'Office or role' : 'Designation'}
-            value={designation}
-            onChange={(e) => setDesignation(e.target.value)}
-            placeholder={shape.kind === 'administrator' ? 'Faculty office' : 'Senior Lecturer'}
-          />
+          {/* A student has no job title, so they are not asked for one. */}
+          {shape.designationLabel && (
+            <Field
+              label={shape.designationLabel}
+              value={designation}
+              onChange={(e) => setDesignation(e.target.value)}
+              placeholder={shape.kind === 'administrator' ? 'Faculty office' : 'Senior Lecturer'}
+            />
+          )}
           <Field
             label="Contact email"
             type="email"
