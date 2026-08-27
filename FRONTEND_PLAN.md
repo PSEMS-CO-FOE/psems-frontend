@@ -147,3 +147,36 @@ Two consequences worth stating, so nobody is surprised later:
 - **No component library.** Tailwind plus a handful of local primitives is enough at this size; adding MUI or shadcn now means re-learning 44 pages.
 - **No rewrite.** Every page keeps its logic. This is presentation, structure and consistency.
 - **No new features.** The two exceptions are things already built and unreachable: the supervisor directory, and the crest.
+
+---
+
+## After the plan — the 2026-08-25 interface pass
+
+All five phases were done. Running the system in production with real people showed the
+polish had gone on evenly rather than where it was needed, so a second pass landed:
+
+- **Grounds and separation.** The canvas was two percent off white, so a white card on it had
+  no edge and every panel ran into the next. Four grounds now sit far enough apart to be told
+  apart at a glance, on a **sage** tint rather than a green wash — a green page left nothing
+  for the green to mean, and flat grey had no relationship to the brand and clashed with the
+  white rail. Measured: page-to-card **1.30:1** light, **1.28:1** dark.
+- **The evaluation screen.** About fifteen hundred lines of controls on one scroll. Now three
+  areas, one stage open at a time, one area of that stage at a time, with weights shown as
+  meters beside the fields that set them and stages reorderable.
+- **New primitives** — `Disclosure`, `Meter`, `InfoTip`. The fold pattern had been written by
+  hand twice and had already drifted.
+- **Real bugs the pass surfaced**, each fixed at the root rather than the call site: every
+  "Remove" in the app was invisible because two `text-*` classes collided and Tailwind's output
+  order picked the grey one; `divide-y` with no colour fell back to a grey that ignored the
+  theme, so the default border colour now points at the token; `Card`'s `space-y` was applied to
+  its outer section while children render inside a padded div, so Scheduling and Marks stacked
+  flush.
+- **Role-aware profiles.** An administrator is no longer asked for research areas, and a student
+  is no longer asked for a designation.
+- **A guide that cannot drift.** The text behind each consequential button lives in
+  `pages/guide/guideActions.ts` and drives both the in-app reference and the round "i" beside
+  the control.
+
+**Still open:** none of this has been verified signed in by the person who wrote it — passwords
+are not typed into forms in that workflow — so it rests on typecheck, lint, build, tests and DOM
+measurement in a throwaway harness. A click-through by a real user is the outstanding step.

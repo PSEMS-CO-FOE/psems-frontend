@@ -139,6 +139,14 @@ Students must never see other groups' ideas or marks, evaluators must never see 
 
 ## Current phase
 
+**Search, roles and the packed coordinator screens (2026-08-25, uncommitted).** `tsc -b` + `vite build` + lint + `npm test` clean (**62 tests / 11 files**); backend **142 tests / 18 suites**.
+
+- **A promoted lecturer lost every course they supervised.** `/lecturer` was gated to `allowedRoles={['LECTURER']}` and the coordinator rail had no link to it, so promotion made all of it unreachable. The backend never lost anything — supervision lives on the course, not the account. The section now admits `COURSE_COORDINATOR` and the rail carries **Supervising**.
+- **Scheduling and Marks were flush against each other.** Both wrapped everything in `<Card className="space-y-3">` — but `Card` renders its children inside a padded `<div>`, so the spacing applied to nothing, and the tiles, panels and buttons stacked with no gap. It also nested cards inside a card. Both are now the page's own `space-y-5` stack with real `Card`s as siblings.
+- **The Ctrl+K badge is gone** from the search field. The shortcut still works; the badge was clutter.
+- **A student is no longer asked for a Designation.** `profileShape` carries `designationLabel` — null for a student, "Designation" for an academic, "Office or role" for an administrator — and the editor omits the field from the payload when it never showed it.
+- **Admin → Coordinators gained Remove the role**, and the supervisor's interest list replaces **Take this group** with "You took this group" or "Already on <project>" once that group is placed.
+
 **Evaluation screen, timer window and colour system COMPLETE as of 2026-08-23 (uncommitted).** `tsc -b` + `vite build` + lint + `npm test` clean (**59 tests / 10 suites**, unchanged). Follows the visual-refresh pass below.
 
 - **The evaluation page was ~1,500 lines of controls on one scroll.** It is three areas now — **Rubric / Live settings / Panels** — chosen with a `Segmented`, each carrying a count so the switcher says what is behind it. They answer different questions at different points in the course.
