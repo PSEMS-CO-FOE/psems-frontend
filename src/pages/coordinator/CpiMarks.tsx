@@ -12,7 +12,7 @@ import {
   type MarkPublication,
 } from '@/features/marks/useMarks';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Button, Card, EmptyState, SkeletonText, StatRow, StatTile } from '@/components/ui';
+import { Button, Card, EmptyState, Notice, SkeletonText, StatRow, StatTile } from '@/components/ui';
 
 // Marks and comments publish separately, per stage or for the whole course, and
 // either can be turned off again.
@@ -243,7 +243,7 @@ export function CpiMarks({ cpiId }: { cpiId: string }) {
   const stageCount = stages?.length ?? 0;
 
   return (
-    <Card title="Marks" className="space-y-3">
+    <div className="space-y-5">
       <StatRow>
         <StatTile label="Groups" value={groupCount} caption={groupCount === 0 ? 'Not aggregated yet' : 'With aggregated marks'} />
         <StatTile label="Students" value={studentCount} caption="Carrying an individual mark" />
@@ -259,17 +259,20 @@ export function CpiMarks({ cpiId }: { cpiId: string }) {
         />
       </StatRow>
 
-      <div className="flex items-center gap-2">
-        <Button variant="primary" size="sm"
-          onClick={() => aggregate.mutate()}
-          disabled={aggregate.isPending}>
-          {aggregate.isPending ? '…' : 'Aggregate'}
-        </Button>
-        {aggregate.isError && <span className="text-xs text-critical-700">{getApiErrorMessage(aggregate.error)}</span>}
-      </div>
-
-      <div className="rounded-control border p-3">
-        <p className="text-xs font-medium text-ink-muted">What students can see</p>
+      <Card
+        title="What students can see"
+        description="A stage's own setting wins; otherwise the whole-course setting applies."
+        actions={
+          <Button onClick={() => aggregate.mutate()} disabled={aggregate.isPending}>
+            {aggregate.isPending ? 'Aggregating…' : 'Aggregate'}
+          </Button>
+        }
+      >
+        {aggregate.isError && (
+          <Notice tone="critical" size="xs" className="mb-3">
+            {getApiErrorMessage(aggregate.error)}
+          </Notice>
+        )}
         <PublishRow cpiId={cpiId} stageId={null} label="Whole course" publication={publicationFor(null)} />
         {stages?.map((stage) => (
           <PublishRow
@@ -280,19 +283,16 @@ export function CpiMarks({ cpiId }: { cpiId: string }) {
             publication={publicationFor(stage.id)}
           />
         ))}
-        <p className="mt-1 text-xs text-ink-subtle">
-          A stage&rsquo;s own setting wins; otherwise the whole-course setting applies.
-        </p>
-      </div>
+      </Card>
 
-      <div className="rounded-control border p-3">
-        <p className="mb-1 text-xs font-medium text-ink-muted">Grade bands</p>
+      <Card title="Grade bands">
         <GradeBandsPanel cpiId={cpiId} gradingEnabled={marks?.gradingEnabled ?? false} />
-      </div>
+      </Card>
 
-      <ul className="space-y-2">
+      <Card title="Marks by group" flush>
+      <ul className="divide-y divide-line">
         {marks?.groups.map((group) => (
-          <li key={group.groupId} className="text-xs">
+          <li key={group.groupId} className="px-5 py-3 text-xs">
             <p className="font-medium text-ink">
               {group.groupName} — overall {group.overall}
               {group.grade && <span className="ml-1 text-ink-muted">({group.grade})</span>}
@@ -313,10 +313,19 @@ export function CpiMarks({ cpiId }: { cpiId: string }) {
             )}
           </li>
         ))}
-        {marks && marks.groups.length === 0 && <li><EmptyState density="compact" title="No marks yet" hint="Press Aggregate once every panel has finished scoring." /></li>}
+        {marks && marks.groups.length === 0 && (
+          <li className="px-5 py-4">
+            <EmptyState
+              density="compact"
+              title="No marks yet"
+              hint="Press Aggregate once every panel has finished scoring."
+            />
+          </li>
+        )}
       </ul>
+      </Card>
 
       <MarkSheetPanel cpiId={cpiId} />
-    </Card>
+    </div>
   );
 }
