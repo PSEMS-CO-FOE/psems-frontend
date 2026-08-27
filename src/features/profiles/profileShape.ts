@@ -21,6 +21,8 @@ export interface ProfileShape {
   projectsLabel: string | null;
   /** Which side of the derived project lists this person appears on. */
   projectsSource: 'own' | 'supervised' | null;
+  /** Job title. A student has none, so the field is not shown to them. */
+  designationLabel: string | null;
   /** The line under the editor's heading, explaining who reads this. */
   editorNote: string;
   /** Placeholder for the headline field, so the example fits the person. */
@@ -37,6 +39,7 @@ const student: ProfileShape = {
   outputsHint: 'Competition entries, side projects, anything you have built or won.',
   projectsLabel: 'Projects done',
   projectsSource: 'own',
+  designationLabel: null,
   editorNote:
     'Anyone signed in can read this. Listing what you are good at and interested in is how supervisors and teammates find you.',
   headlinePlaceholder: 'Final year, interested in embedded systems',
@@ -52,6 +55,7 @@ const academic = (roleLabel: string): ProfileShape => ({
   outputsHint: 'Papers, funded projects and grants.',
   projectsLabel: 'Projects supervised',
   projectsSource: 'supervised',
+  designationLabel: 'Designation',
   editorNote:
     'Anyone signed in can read this. Students use it when choosing a supervisor, so research areas are worth filling in — they are what the directory filters on.',
   headlinePlaceholder: 'Senior Lecturer, Networks',
@@ -67,6 +71,7 @@ const administrator = (roleLabel: string): ProfileShape => ({
   outputsHint: '',
   projectsLabel: null,
   projectsSource: null,
+  designationLabel: 'Office or role',
   editorNote:
     'This is how people reach you when something needs an administrator. Keep the office and contact address current — they are the only parts anyone reads.',
   headlinePlaceholder: 'Systems administrator, Faculty office',
