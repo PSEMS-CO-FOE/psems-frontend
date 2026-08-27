@@ -1,16 +1,28 @@
+import { useEffect } from 'react';
 import { AppShell } from './AppShell';
-import { roleHome, roleLabel, roleNav } from './roleNav';
+import { roleLabel, workspacesFor, type WorkspaceId } from './workspaces';
 import { useAuthStore } from '@/stores/authStore';
 
-/**
- * The shell for routes that belong to no single role — the directory and
- * profiles, which a student, lecturer, coordinator and admin all reach. The rail
- * comes from whoever is signed in, so the reader keeps the navigation of the
- * section they came from instead of landing on a bare page with no way back.
- */
-export function RoleShell() {
-  const role = useAuthStore((s) => s.user?.role);
-  if (!role) return null;
+const LAST_WORKSPACE_KEY = 'psems-workspace';
 
-  return <AppShell roleLabel={roleLabel[role]} homeTo={roleHome[role]} nav={roleNav[role]} />;
+/**
+ * The shell every section renders. It supplies the rail for the workspace the
+ * route belongs to, and for routes that belong to no single one — the directory
+ * and profiles — the workspace the reader was last in, so they keep the
+ * navigation of the section they came from instead of landing with no way back.
+ */
+export function RoleShell({ workspace }: { workspace?: WorkspaceId }) {
+  const role = useAuthStore((s) => s.user?.role);
+  const workspaces = role ? workspacesFor(role) : [];
+
+  const remembered = workspace ?? localStorage.getItem(LAST_WORKSPACE_KEY);
+  const current = workspaces.find((w) => w.id === remembered) ?? workspaces[0];
+
+  useEffect(() => {
+    if (current) localStorage.setItem(LAST_WORKSPACE_KEY, current.id);
+  }, [current]);
+
+  if (!role || !current) return null;
+
+  return <AppShell roleLabel={roleLabel[role]} workspaces={workspaces} currentId={current.id} />;
 }

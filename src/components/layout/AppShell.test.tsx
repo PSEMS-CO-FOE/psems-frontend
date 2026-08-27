@@ -4,11 +4,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { AppShell } from './AppShell';
+import { workspacesFor } from './workspaces';
 import { PageHeader } from '@/components/ui';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 
-function renderShell(page = <p>page body</p>) {
+function renderShell(page = <p>page body</p>, role: 'LECTURER' | 'COURSE_COORDINATOR' = 'LECTURER') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -19,11 +20,8 @@ function renderShell(page = <p>page body</p>) {
             element={
               <AppShell
                 roleLabel="Lecturer"
-                homeTo="/lecturer"
-                nav={[
-                  { to: '/lecturer', label: 'My courses', icon: 'courses', end: true },
-                  { to: '/lecturer/discover', label: 'Find courses', icon: 'discover' },
-                ]}
+                workspaces={workspacesFor(role)}
+                currentId="supervising"
               />
             }
           >
@@ -58,6 +56,7 @@ describe('AppShell', () => {
     renderShell();
     expect(screen.getAllByRole('link', { name: 'My courses' })).toHaveLength(2);
     expect(screen.getAllByRole('link', { name: 'Find courses' })).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: 'Directory' })).toHaveLength(2);
   });
 
   it('marks the current route as the active nav item', () => {
@@ -123,6 +122,40 @@ describe('AppShell', () => {
       await user.click(toggle());
       expect(useThemeStore.getState().preference).toBe('system');
       expect(localStorage.getItem('psems-theme')).toBe('system');
+    });
+  });
+
+  describe('workspace switcher', () => {
+    it('stays out of the way of a reader who holds one workspace', () => {
+      renderShell();
+      expect(screen.queryByRole('navigation', { name: 'Workspace' })).not.toBeInTheDocument();
+    });
+
+    // A promoted lecturer keeps supervising, so both hats need to be on screen
+    // and the one they are not wearing has to lead somewhere.
+    it('offers a coordinator both hats and marks the one in use', () => {
+      renderShell(<p>page body</p>, 'COURSE_COORDINATOR');
+
+      const [rail] = screen.getAllByRole('navigation', { name: 'Workspace' });
+      const supervising = within(rail).getByRole('link', { name: 'Switch to Supervising' });
+      const coordinating = within(rail).getByRole('link', { name: 'Switch to Coordinating' });
+
+      expect(supervising).toHaveAttribute('aria-current', 'page');
+      expect(coordinating).not.toHaveAttribute('aria-current');
+      expect(coordinating).toHaveAttribute('href', '/coordinator');
+    });
+
+    it('keeps the switcher reachable once the rail is collapsed', async () => {
+      const user = userEvent.setup();
+      renderShell(<p>page body</p>, 'COURSE_COORDINATOR');
+
+      await user.click(screen.getByRole('button', { name: 'Collapse the sidebar' }));
+
+      const [rail] = screen.getAllByRole('navigation', { name: 'Workspace' });
+      expect(within(rail).getByRole('link', { name: 'Switch to Coordinating' })).toHaveAttribute(
+        'href',
+        '/coordinator',
+      );
     });
   });
 });

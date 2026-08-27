@@ -72,6 +72,7 @@ Design tokens and a small set of primitives. No behaviour changes; almost entire
 - ~~Replace the hand-copied card divs and the ad-hoc button classes~~ — 45 cards and 69 buttons, all now from the primitives.
 - ~~Put the crest into `src/assets/` and into the app header~~ — and `public/crest.png` as the favicon.
 - Added beyond the original list: one `AppShell` behind all four role layouts (the plan had not noticed they were four copies of the same header), and an app-wide `:focus-visible` ring.
+- Added beyond the original list: a **workspace switcher**. The plan assumed one role means one rail, which a lecturer promoted to coordinator breaks — they hold both hats and need to move between them. The nav is now keyed to a workspace, not a role.
 
 The count in the table above had drifted by the time the work started: 52 occurrences of the card class, not 40.
 

@@ -168,6 +168,18 @@ export const guideActionGroups: GuideActionGroup[] = [
     ],
   },
   {
+    title: 'Moving around',
+    actions: [
+      {
+        label: 'Coordinating / Supervising',
+        where: 'Top of the sidebar, for a coordinator who also supervises',
+        does: 'Switches between the two hats. Coordinating runs the course — phases, rubrics, scheduling and marks. Supervising is your own ideas, the groups you take on and the panels you sit on. Being made a coordinator never ends a supervision, so both stay yours.',
+        undoable: 'Nothing to undo — switch back at any time. The app reopens in whichever one you used last.',
+        roles: ['COURSE_COORDINATOR'],
+      },
+    ],
+  },
+  {
     title: 'Accounts',
     actions: [
       {

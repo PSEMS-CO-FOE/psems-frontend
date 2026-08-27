@@ -1,12 +1,5 @@
-import { AppShell } from '@/components/layout/AppShell';
-import { roleHome, roleLabel, roleNav } from '@/components/layout/roleNav';
+import { RoleShell } from '@/components/layout/RoleShell';
 
 export function SuperAdminLayout() {
-  return (
-    <AppShell
-      roleLabel={roleLabel.SUPER_ADMIN}
-      homeTo={roleHome.SUPER_ADMIN}
-      nav={roleNav.SUPER_ADMIN}
-    />
-  );
+  return <RoleShell workspace="platform" />;
 }
