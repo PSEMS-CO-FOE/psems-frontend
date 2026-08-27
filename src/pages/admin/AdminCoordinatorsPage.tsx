@@ -1,6 +1,7 @@
 import {
   useApprovedLecturers,
   useAssignCoordinator,
+  useRevokeCoordinator,
   type ApprovedLecturer,
 } from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage } from '@/lib/apiError';
@@ -13,6 +14,7 @@ const isCoordinator = (lecturer: ApprovedLecturer) => lecturer.role === 'COURSE_
 export function AdminCoordinatorsPage() {
   const { data: lecturers, isLoading, isError, error } = useApprovedLecturers();
   const assign = useAssignCoordinator();
+  const revoke = useRevokeCoordinator();
 
   return (
     <div className="space-y-6">
@@ -36,6 +38,8 @@ export function AdminCoordinatorsPage() {
       )}
 
       {assign.isError && <Notice tone="critical">{getApiErrorMessage(assign.error)}</Notice>}
+      {revoke.isError && <Notice tone="critical">{getApiErrorMessage(revoke.error)}</Notice>}
+      {revoke.isSuccess && <Notice tone="positive">Coordinator role removed.</Notice>}
       {assign.isSuccess && (
         <Notice tone="positive">Lecturer promoted to Course Coordinator.</Notice>
       )}
@@ -56,7 +60,14 @@ export function AdminCoordinatorsPage() {
                   <span className="block truncate text-xs text-ink-subtle">{l.email}</span>
                 </span>
                 {isCoordinator(l) ? (
-                  <span className="text-xs text-ink-subtle">Already a coordinator</span>
+                  <Button
+                    variant="danger-quiet"
+                    size="sm"
+                    onClick={() => revoke.mutate(l.userId)}
+                    disabled={revoke.isPending}
+                  >
+                    Remove the role
+                  </Button>
                 ) : (
                   <Button
                     variant="primary"
