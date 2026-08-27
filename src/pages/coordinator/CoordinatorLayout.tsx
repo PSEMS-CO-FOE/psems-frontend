@@ -1,12 +1,5 @@
-import { AppShell } from '@/components/layout/AppShell';
-import { roleHome, roleLabel, roleNav } from '@/components/layout/roleNav';
+import { RoleShell } from '@/components/layout/RoleShell';
 
 export function CoordinatorLayout() {
-  return (
-    <AppShell
-      roleLabel={roleLabel.COURSE_COORDINATOR}
-      homeTo={roleHome.COURSE_COORDINATOR}
-      nav={roleNav.COURSE_COORDINATOR}
-    />
-  );
+  return <RoleShell workspace="coordinating" />;
 }

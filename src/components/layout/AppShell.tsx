@@ -4,28 +4,22 @@ import { SiteFooter } from './SiteFooter';
 import { useAuthStore } from '@/stores/authStore';
 import { useLogout } from '@/hooks/useLogout';
 import { NotificationsBell } from '@/components/NotificationsBell';
-import { Avatar, Icon, type IconName } from '@/components/ui';
+import { Avatar, Icon } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import crest from '@/assets/crest.png';
 import { useShellTitle } from './shellTitle';
 import { ShellTitleProvider } from './ShellTitleProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { GlobalSearch } from './GlobalSearch';
-
-export interface ShellNavItem {
-  to: string;
-  label: string;
-  icon: IconName;
-  /** Only match the exact path — for the section's own index route. */
-  end?: boolean;
-}
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import type { Workspace, WorkspaceId } from './workspaces';
 
 export interface AppShellProps {
-  /** Shown under the wordmark, e.g. "Coordinator". */
+  /** Who the reader is, e.g. "Coordinator" — not what they are doing. */
   roleLabel: string;
-  /** Where the wordmark links to. */
-  homeTo: string;
-  nav: ShellNavItem[];
+  /** Every hat the reader holds. More than one puts a switcher in the rail. */
+  workspaces: Workspace[];
+  currentId: WorkspaceId;
 }
 
 const COLLAPSE_KEY = 'psems-sidebar-collapsed';
@@ -99,7 +93,9 @@ function TopBar({
   );
 }
 
-export function AppShell({ roleLabel, homeTo, nav }: AppShellProps) {
+export function AppShell({ roleLabel, workspaces, currentId }: AppShellProps) {
+  const current = workspaces.find((w) => w.id === currentId) ?? workspaces[0];
+  const { home: homeTo, nav } = current;
   const user = useAuthStore((s) => s.user);
   const logout = useLogout();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1');
@@ -158,6 +154,19 @@ export function AppShell({ roleLabel, homeTo, nav }: AppShellProps) {
               </span>
             )}
           </Link>
+
+          <div className={cn('border-b border-line py-3', collapsed ? 'px-2' : 'px-3')}>
+            {!collapsed && workspaces.length > 1 && (
+              <p className="px-1 pb-2 text-[10px] font-semibold uppercase tracking-eyebrow text-ink-subtle">
+                Working as
+              </p>
+            )}
+            <WorkspaceSwitcher
+              workspaces={workspaces}
+              currentId={current.id}
+              variant={collapsed ? 'collapsed' : 'rail'}
+            />
+          </div>
 
           <nav className={cn('flex-1 space-y-1 overflow-y-auto py-4', collapsed ? 'px-2' : 'px-3')}>
             {!collapsed && (
@@ -248,28 +257,35 @@ export function AppShell({ roleLabel, homeTo, nav }: AppShellProps) {
             onToggleRail={() => setCollapsed((v) => !v)}
           />
 
-          {/* Below lg the rail is hidden, so the same links run along the top
-              rather than becoming unreachable. */}
-          <nav className="flex gap-1.5 overflow-x-auto border-b border-line bg-surface px-4 py-2.5 sm:px-6 lg:hidden">
-            {nav.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-1.5 whitespace-nowrap rounded-pill px-3.5 py-1.5 text-sm font-medium transition-colors duration-fast ease-standard',
-                    isActive
-                      ? 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200'
-                      : 'text-ink-muted hover:bg-line/40 hover:text-ink',
-                  )
-                }
-              >
-                <Icon name={item.icon} />
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+          {/* Below lg the rail is hidden, so the switcher and the same links
+              run along the top rather than becoming unreachable. */}
+          <div className="border-b border-line bg-surface lg:hidden">
+            {workspaces.length > 1 && (
+              <div className="border-b border-line px-4 py-2.5 sm:px-6">
+                <WorkspaceSwitcher workspaces={workspaces} currentId={current.id} variant="bar" />
+              </div>
+            )}
+            <nav className="flex gap-1.5 overflow-x-auto px-4 py-2.5 sm:px-6">
+              {nav.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-1.5 whitespace-nowrap rounded-pill px-3.5 py-1.5 text-sm font-medium transition-colors duration-fast ease-standard',
+                      isActive
+                        ? 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200'
+                        : 'text-ink-muted hover:bg-line/40 hover:text-ink',
+                    )
+                  }
+                >
+                  <Icon name={item.icon} />
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
 
           <main
             className={cn(
