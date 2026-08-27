@@ -24,6 +24,9 @@ export const roleNav: Record<Role, ShellNavItem[]> = {
   ],
   COURSE_COORDINATOR: [
     { to: '/coordinator', label: 'My courses', icon: 'courses', end: true },
+    // Promotion does not end a supervision. Without this the courses they
+    // supervise are reachable from nowhere.
+    { to: '/lecturer', label: 'Supervising', icon: 'discover', end: true },
     { to: '/directory', label: 'Directory', icon: 'people' },
   ],
   SYSTEM_ADMIN: [
