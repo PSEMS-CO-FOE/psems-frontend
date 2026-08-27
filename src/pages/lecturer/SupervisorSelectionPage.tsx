@@ -114,16 +114,24 @@ export function SupervisorSelectionPage() {
                 <span className="font-medium text-ink">{e.group?.name ?? 'A group'}</span>
                 <span className="text-ink-subtle">is interested in</span>
                 <span className="font-medium text-ink">{e.idea.title}</span>
-                {e.group && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="ml-auto"
-                    onClick={() => acceptGroup.mutate({ ideaId: e.idea.id, groupId: e.group!.id })}
-                    disabled={acceptGroup.isPending}
-                  >
-                    Take this group
-                  </Button>
+                {e.placedOn ? (
+                  <span className="ml-auto text-ink-subtle">
+                    {e.placedOn.ideaId === e.idea.id
+                      ? 'You took this group'
+                      : `Already on ${e.placedOn.title}`}
+                  </span>
+                ) : (
+                  e.group && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="ml-auto"
+                      onClick={() => acceptGroup.mutate({ ideaId: e.idea.id, groupId: e.group!.id })}
+                      disabled={acceptGroup.isPending}
+                    >
+                      Take this group
+                    </Button>
+                  )
                 )}
               </li>
             ))}
