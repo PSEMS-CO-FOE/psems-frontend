@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useDebounced } from '@/lib/useDebounced';
 import { Link } from 'react-router-dom';
 import { useProfileSearch, useResearchAreas, type UserProfile } from '@/features/profiles/useProfiles';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
+import { profileShape } from '@/features/profiles/profileShape';
 import { getApiErrorMessage } from '@/lib/apiError';
 import {
   Avatar,
@@ -17,12 +18,14 @@ import { cn } from '@/lib/cn';
 
 function PersonCard({ profile }: { profile: UserProfile }) {
   const name = personName(profile.user);
-  const isStudent = profile.user.role === 'STUDENT';
+  // Every role has its own label and tone already. The card used to ask only
+  // "is this a student?", which billed administrators as lecturers.
+  const shape = profileShape(profile.user.role);
 
   return (
     <Card interactive>
       <div className="flex items-start gap-3">
-        <Avatar name={name} />
+        <Avatar name={name} role={profile.user.role} />
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -30,11 +33,12 @@ function PersonCard({ profile }: { profile: UserProfile }) {
                 own filters, and nesting those in an anchor breaks both. */}
             <Link
               to={`/profile/${profile.userId}`}
+              title={name}
               className="truncate text-sm font-semibold text-ink underline-offset-2 hover:text-brand-700 hover:underline"
             >
-              {name}
+              {shortName(name)}
             </Link>
-            <Badge tone={isStudent ? 'info' : 'brand'}>{isStudent ? 'Student' : 'Lecturer'}</Badge>
+            <Badge tone={shape.badgeTone}>{shape.roleLabel}</Badge>
           </div>
 
           {profile.headline && (
