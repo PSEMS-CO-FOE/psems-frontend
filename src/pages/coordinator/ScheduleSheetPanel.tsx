@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useScheduleSheet } from '@/features/scheduling/useScheduling';
+import { downloadScheduleSheet } from '@/features/scheduling/scheduleSheetPdf';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { Button, SkeletonText } from '@/components/ui';
 
@@ -14,21 +15,41 @@ function formatSlot(start: string | null, end: string | null) {
 
 export function ScheduleSheetPanel({ cpiId }: { cpiId: string }) {
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   const { data, isLoading, isError, error } = useScheduleSheet(cpiId, open);
+
+  const save = async () => {
+    if (!data) return;
+    setSaving(true);
+    setFailed(false);
+    try {
+      await downloadScheduleSheet(data);
+    } catch {
+      setFailed(true);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="border-t pt-3">
       <div className="flex items-center gap-2">
         <button onClick={() => setOpen((v) => !v)} className="rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition-colors duration-fast ease-standard hover:border-brand-400">
-          {open ? 'Hide printable schedule' : 'Printable schedule'}
+          {open ? 'Hide the schedule' : 'Schedule sheet'}
         </button>
         {open && data && (
-          <Button variant="neutral" size="sm"
-            onClick={() => window.print()}>
-            Print
+          <Button variant="primary" size="sm" onClick={save} disabled={saving}>
+            {saving ? 'Preparing…' : 'Download PDF'}
           </Button>
         )}
       </div>
+
+      {failed && (
+        <p className="mt-2 text-xs text-critical-700">
+          The PDF could not be built. Try again, or reload the page.
+        </p>
+      )}
 
       {open && isLoading && <SkeletonText className="mt-2" />}
       {open && isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(error)}</p>}
