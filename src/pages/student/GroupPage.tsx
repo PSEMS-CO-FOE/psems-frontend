@@ -11,7 +11,7 @@ import {
 } from '@/features/groups/useGroups';
 import { useCpiPolicy } from '@/features/policy/usePolicy';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
 import { Button, Card, Notice } from '@/components/ui';
 
 export function GroupPage() {
@@ -90,7 +90,7 @@ function MyGroupCard({
         {group.members.map((m) => (
           <li key={m.id} className="flex items-center justify-between py-2 text-xs">
             <span className="text-ink">
-              {personName(m.student.user)}{' '}
+              {shortName(personName(m.student.user))}{' '}
               <span className="text-ink-subtle">({m.student.studentId})</span>
             </span>
             <span className="text-ink-subtle">{m.status}</span>

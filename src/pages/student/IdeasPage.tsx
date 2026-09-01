@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useIdeas, usePostIdea, useUpdateIdea, type Idea } from '@/features/ideas/useIdeas';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
 import { Button, Card, EmptyState, Notice, SkeletonText } from '@/components/ui';
 import { PolicyNote } from '@/components/PolicyNote';
 
@@ -29,7 +29,7 @@ function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
       </div>
       <p className="mt-1 text-xs text-ink-muted">{idea.description}</p>
       <p className="mt-2 text-xs text-ink-subtle">
-        by {personName(idea.author)}
+        by {shortName(personName(idea.author))}
         {idea.group && ` · ${idea.group.name}`}
         {idea.approvalStatus && ` · ${idea.approvalStatus.replace('_', ' ')}`}
       </p>

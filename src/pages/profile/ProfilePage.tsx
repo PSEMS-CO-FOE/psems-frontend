@@ -285,7 +285,7 @@ export function ProfilePage() {
       <Card flush className="overflow-hidden">
         <div aria-hidden="true" className="h-20 bg-brand-gradient" />
         <div className="flex flex-wrap items-end gap-4 px-5 pb-5 sm:px-6">
-          <Avatar name={name} size="lg" className="-mt-8 ring-4" />
+          <Avatar name={name} role={data.user.role} size="lg" className="-mt-8 ring-4" />
 
           <div className="min-w-0 flex-1 pt-1">
             <div className="flex flex-wrap items-center gap-2">

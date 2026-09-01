@@ -11,7 +11,7 @@ export { TabNav, type TabItem, type TabStatus } from './TabNav';
 export { StatTile, StatRow, type StatTileProps } from './StatTile';
 export { Segmented, type SegmentedOption } from './Segmented';
 export { Icon, type IconName } from './Icon';
-export { Avatar } from './Avatar';
+export { Avatar, type AvatarTone } from './Avatar';
 export { Disclosure, type DisclosureProps } from './Disclosure';
 export { Meter, type MeterProps } from './Meter';
 export { InfoTip, type InfoTipProps } from './InfoTip';

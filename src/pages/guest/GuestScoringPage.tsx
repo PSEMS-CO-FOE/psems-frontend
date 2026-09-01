@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useGuestWorkspace, useSubmitGuestScores, type GuestSession } from '@/features/panel/useGuest';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Badge, Button, Card, EmptyState, Notice, SkeletonCard } from '@/components/ui';
+import { Avatar, Badge, Button, Card, EmptyState, Notice, SkeletonCard } from '@/components/ui';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import crest from '@/assets/crest.png';
 
@@ -160,14 +160,21 @@ export function GuestScoringPage() {
     return (
       <>
         <Card accent>
-          <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-brand-700">
-            Guest evaluator
-          </p>
-          <h1 className="mt-1.5 text-title font-semibold text-ink">{data.courseInstance.name}</h1>
-          <p className="mt-2 text-sm text-ink-muted">
-            Welcome, {data.guest.fullName}
-            {data.guest.organization && ` · ${data.guest.organization}`}
-          </p>
+          <div className="flex items-start gap-3">
+            <Avatar name={data.guest.fullName} tone="guest" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-brand-700">
+                Guest evaluator
+              </p>
+              <h1 className="mt-1.5 text-title font-semibold text-ink">
+                {data.courseInstance.name}
+              </h1>
+              <p className="mt-2 text-sm text-ink-muted">
+                Welcome, {data.guest.fullName}
+                {data.guest.organization && ` · ${data.guest.organization}`}
+              </p>
+            </div>
+          </div>
           <p className="mt-3 border-t border-line pt-3 text-xs text-ink-subtle">
             This link works until {new Date(data.expiresAt).toLocaleDateString()} and covers only
             the evaluations below.

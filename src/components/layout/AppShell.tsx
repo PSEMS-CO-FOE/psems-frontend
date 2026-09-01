@@ -209,7 +209,7 @@ export function AppShell({ roleLabel, workspaces, currentId }: AppShellProps) {
                 collapsed ? 'justify-center px-0' : 'px-2.5',
               )}
             >
-              <Avatar name={user?.email} size="sm" />
+              <Avatar name={user?.email} role={user?.role} size="sm" />
               {!collapsed && (
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-semibold text-ink" title={user?.email}>

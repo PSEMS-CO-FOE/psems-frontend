@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import { useProfileSearch } from '@/features/profiles/useProfiles';
+import { personName, shortName } from '@/lib/name';
 
 interface CourseHit {
   id: string;
@@ -164,7 +165,7 @@ export function GlobalSearch() {
                       className="block w-full px-4 py-2.5 text-left transition-colors duration-fast ease-standard hover:bg-brand-50"
                     >
                       <span className="block truncate text-sm font-medium text-ink">
-                        {p.user.fullName ?? p.user.email}
+                        {shortName(personName(p.user))}
                       </span>
                       {p.headline && (
                         <span className="block truncate text-xs text-ink-muted">{p.headline}</span>
