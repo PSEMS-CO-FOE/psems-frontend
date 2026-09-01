@@ -24,6 +24,17 @@
     --brand-grad-a: 26 92 55;
     --brand-grad-b: 45 145 82;
     --brand-grad-c: 82 190 139;
+    /* Profile art. Who someone is should be readable before their name is:
+       green academic, blue student, violet outside guest, slate administrator. */
+    --student-grad-a: 29 71 133;
+    --student-grad-b: 59 114 196;
+    --student-grad-c: 114 168 233;
+    --guest-grad-a: 72 45 112;
+    --guest-grad-b: 124 91 175;
+    --guest-grad-c: 173 147 217;
+    --admin-grad-a: 51 63 57;
+    --admin-grad-b: 82 99 89;
+    --admin-grad-c: 130 148 137;
     --positive-soft: 236 249 240;
     --positive-strong: 32 105 60;
     --caution-soft: 254 247 236;
@@ -59,6 +70,15 @@
     --brand-grad-a: 16 61 38;
     --brand-grad-b: 34 118 69;
     --brand-grad-c: 74 176 122;
+    --student-grad-a: 21 54 103;
+    --student-grad-b: 45 92 162;
+    --student-grad-c: 99 152 217;
+    --guest-grad-a: 54 34 88;
+    --guest-grad-b: 103 75 149;
+    --guest-grad-c: 155 131 202;
+    --admin-grad-a: 38 48 43;
+    --admin-grad-b: 68 83 74;
+    --admin-grad-c: 116 134 124;
     --positive-soft: 19 41 28;
     --positive-strong: 116 206 150;
     --caution-soft: 42 33 19;
@@ -187,6 +207,40 @@
 
 @layer components {
   /* The house gradient: primary action, crest block, sign-in panel. */
+  /* One gradient, four palettes. The glow follows the tone, so a tone is a
+     single class rather than a background and a matching shadow to keep in step. */
+  .avatar-art {
+    background-image: linear-gradient(
+      135deg,
+      rgb(var(--art-a)) 0%,
+      rgb(var(--art-b)) 52%,
+      rgb(var(--art-c)) 100%
+    );
+    box-shadow:
+      0 6px 16px -6px rgb(var(--art-b) / 0.45),
+      0 2px 5px -2px rgb(var(--art-b) / 0.28);
+  }
+  .art-academic {
+    --art-a: var(--brand-grad-a);
+    --art-b: var(--brand-grad-b);
+    --art-c: var(--brand-grad-c);
+  }
+  .art-student {
+    --art-a: var(--student-grad-a);
+    --art-b: var(--student-grad-b);
+    --art-c: var(--student-grad-c);
+  }
+  .art-guest {
+    --art-a: var(--guest-grad-a);
+    --art-b: var(--guest-grad-b);
+    --art-c: var(--guest-grad-c);
+  }
+  .art-admin {
+    --art-a: var(--admin-grad-a);
+    --art-b: var(--admin-grad-b);
+    --art-c: var(--admin-grad-c);
+  }
+
   .bg-brand-gradient {
     background-image: linear-gradient(
       135deg,
