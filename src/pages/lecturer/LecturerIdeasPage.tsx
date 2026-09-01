@@ -10,7 +10,7 @@ import {
 } from '@/features/ideas/useIdeas';
 import { useApprovedLecturers } from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
 import { Button, Card, EmptyState, Notice, SkeletonText } from '@/components/ui';
 import { PolicyNote } from '@/components/PolicyNote';
 
@@ -40,7 +40,7 @@ function SupervisorChips({ cpiId, idea }: { cpiId: string; idea: Idea }) {
             }`}
           >
             <span>
-              {personName(sup.lecturer.user)}
+              {shortName(personName(sup.lecturer.user))}
               {sup.isPrimary ? ' · supervisor' : ' · co-supervisor'}
               {sup.invitationStatus === 'PENDING' && ' (not yet accepted)'}
               {sup.invitationStatus === 'DECLINED' && ' (declined)'}
@@ -205,7 +205,7 @@ export function LecturerIdeasPage() {
                 </div>
                 <p className="mt-1 text-xs text-ink-muted">{idea.description}</p>
                 <p className="mt-2 text-xs text-ink-subtle">
-                  by {personName(idea.author)}
+                  by {shortName(personName(idea.author))}
                   {idea.group && ` · ${idea.group.name}`}
                 </p>
 

@@ -9,7 +9,7 @@ import {
   useWithdrawInterest,
 } from '@/features/selection/useSelection';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
 import { Button, Card, EmptyState, Notice, Select } from '@/components/ui';
 import { PolicyNote } from '@/components/PolicyNote';
 
@@ -113,7 +113,7 @@ export function SelectionPage() {
                   .filter((w) => w.supervisor)
                   .map((w) => (
                     <option key={w.id} value={w.supervisor!.user.id}>
-                      {personName(w.supervisor!.user)} — {w.idea.title}
+                      {shortName(personName(w.supervisor!.user))} — {w.idea.title}
                     </option>
                   ))}
               </Select>

@@ -12,7 +12,7 @@ import {
   type ScheduleConflict,
 } from '@/features/scheduling/useScheduling';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
 import { ScheduleSheetPanel } from './ScheduleSheetPanel';
 import { Badge, Button, Card, EmptyState, Notice, StatRow, StatTile } from '@/components/ui';
 
@@ -154,7 +154,7 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
           <AvailabilityGrid template={template} values={new Map()} readOnly summary={summary} />
           {data && data.outstanding.length > 0 && (
             <p className="text-xs text-caution-700">
-              Still to answer: {data.outstanding.map((l) => personName(l.user)).join(', ')}
+              Still to answer: {data.outstanding.map((l) => shortName(personName(l.user))).join(', ')}
             </p>
           )}
         </div>

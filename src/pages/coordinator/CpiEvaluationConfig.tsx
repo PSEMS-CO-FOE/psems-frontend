@@ -10,7 +10,7 @@ import {
 import { PANEL_ROLES, roleLabel, type MarkCounting, type PanelRole } from '@/features/panel/usePanel';
 import { useCpiDetail } from '@/features/courses/useCpiDetail';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
 import { Badge, Button, Card, Disclosure, InfoTip, Meter, Notice, Segmented } from '@/components/ui';
 
 type EditCriterion = { name: string; description: string; weight: number; maxScore: number; level: CriterionLevel };
@@ -951,7 +951,7 @@ function SavedRubric({
                 </p>
                 <p className="mt-1.5 text-sm text-ink">
                   {stage.evaluators.length
-                    ? stage.evaluators.map((e) => personName(e.cpiEvaluator.lecturer.user)).join(', ')
+                    ? stage.evaluators.map((e) => shortName(personName(e.cpiEvaluator.lecturer.user))).join(', ')
                     : 'Nobody assigned yet.'}
                 </p>
 

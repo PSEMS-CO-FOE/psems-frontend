@@ -17,8 +17,8 @@ import {
   type PanelRole,
 } from '@/features/panel/usePanel';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { personName } from '@/lib/name';
-import { Button, EmptyState, InfoTip, SkeletonCard } from '@/components/ui';
+import { personName, shortName } from '@/lib/name';
+import { Avatar, Button, EmptyState, InfoTip, SkeletonCard } from '@/components/ui';
 
 const COUNTING_LABEL: Record<MarkCounting, string> = {
   COUNTED: 'counts',
@@ -56,7 +56,7 @@ function SessionPanelCard({ cpiId, session }: { cpiId: string; session: Evaluati
                 {panel.panelists.map((p) => (
                   <li key={p.id} className="flex flex-wrap items-center gap-1 text-xs text-ink">
                     <span className="min-w-40">
-                      {p.user ? personName(p.user) : p.guest?.fullName}
+                      {p.user ? shortName(personName(p.user)) : shortName(p.guest?.fullName)}
                       {p.guest && <span className="ml-1 rounded-control bg-info-50 px-1 text-info-700">guest</span>}
                     </span>
                     <select
@@ -253,9 +253,10 @@ function GuestInviter({ cpiId, sessions }: { cpiId: string; sessions: Evaluation
       {guests && guests.length > 0 && (
         <ul className="mt-3 space-y-1">
           {guests.map((g) => (
-            <li key={g.id} className="flex flex-wrap items-center gap-1 text-xs text-ink">
-              <span className="min-w-40">
-                {g.fullName}
+            <li key={g.id} className="flex flex-wrap items-center gap-1.5 text-xs text-ink">
+              <Avatar name={g.fullName} tone="guest" size="sm" className="h-7 w-7 text-[10px]" />
+              <span className="min-w-40" title={g.fullName}>
+                {shortName(g.fullName)}
                 {g.organization && <span className="text-ink-subtle"> · {g.organization}</span>}
               </span>
               <span className="text-ink-subtle">{g.panelSeats.length} session(s)</span>

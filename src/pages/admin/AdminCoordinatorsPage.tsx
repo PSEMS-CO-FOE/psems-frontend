@@ -5,7 +5,7 @@ import {
   type ApprovedLecturer,
 } from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
 import { Badge, Button, Card, EmptyState, Notice, PageHeader, SkeletonCard } from '@/components/ui';
 
 const isCoordinator = (lecturer: ApprovedLecturer) => lecturer.role === 'COURSE_COORDINATOR';
@@ -54,7 +54,9 @@ export function AdminCoordinatorsPage() {
               <li key={l.userId} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <span className="min-w-0 text-sm">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="truncate font-medium text-ink">{personName(l)}</span>
+                    <span className="truncate font-medium text-ink" title={personName(l)}>
+                      {shortName(personName(l))}
+                    </span>
                     {isCoordinator(l) && <Badge tone="brand">Coordinator</Badge>}
                   </span>
                   <span className="block truncate text-xs text-ink-subtle">{l.email}</span>

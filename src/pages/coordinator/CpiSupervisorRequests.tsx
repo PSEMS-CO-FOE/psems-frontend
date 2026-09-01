@@ -3,7 +3,7 @@ import {
   useSupervisorRequests,
 } from '@/features/courses/useSupervisorRequests';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { personName } from '@/lib/name';
+import { personName, shortName } from '@/lib/name';
 import { Button, Card, EmptyState, SkeletonText } from '@/components/ui';
 
 // Lecturers who found this course themselves and asked to join. Approving sends
@@ -28,7 +28,9 @@ export function CpiSupervisorRequests({ cpiId }: { cpiId: string }) {
       <ul className="mt-2 space-y-2">
         {pending.map((r) => (
           <li key={r.id} className="rounded-control border border-line p-2">
-            <p className="text-xs font-medium text-ink">{personName(r.lecturer.user)}</p>
+            <p className="text-xs font-medium text-ink" title={personName(r.lecturer.user)}>
+              {shortName(personName(r.lecturer.user))}
+            </p>
             {r.note && <p className="mt-0.5 text-xs text-ink-muted">{r.note}</p>}
             <div className="mt-1 flex gap-2">
               <Button variant="success" size="sm"
