@@ -11,6 +11,13 @@ import type { CpiMode } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 import { Button, Card, EmptyState, InfoTip, SkeletonText } from '@/components/ui';
+import { downloadAllocationSheet } from '@/features/allocation/allocationPdf';
+import { DownloadPdfButton } from '@/features/pdf/DownloadPdfButton';
+import { useCpiSummary } from '@/features/courses/useCourses';
+
+// The stored enum is not what a coordinator needs to read.
+const allocationSource = (source: 'FROM_SELECTION' | 'COORDINATOR_OVERRIDE') =>
+  source === 'COORDINATOR_OVERRIDE' ? 'set by you' : "from the group's selection";
 
 export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode }) {
   const { data, isLoading } = useAllocationMap(cpiId);
@@ -28,15 +35,30 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
   // before finalize — Supervisor-Led carries mutual selection confirmation.
   const isCoordinatorManaged = mode === 'COORDINATOR_MANAGED';
 
+  const { data: cpi } = useCpiSummary(cpiId);
+
   const anyError = generate.error || override.error || finalize.error || confirm.error || reopen.error;
 
   return (
     <Card>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-base font-semibold tracking-tight text-ink">Allocation</h2>
-        {data?.finalized && (
-          <span className="rounded-control bg-line px-2 py-0.5 text-xs text-ink-muted">Finalized</span>
-        )}
+        <div className="flex items-center gap-2">
+          {data?.finalized && (
+            <span className="rounded-control bg-line px-2 py-0.5 text-xs text-ink-muted">
+              Finalized
+            </span>
+          )}
+          <DownloadPdfButton
+            disabled={!data?.allocations.length || !cpi}
+            onDownload={() =>
+              downloadAllocationSheet(data!, {
+                courseName: cpi?.name ?? 'Course',
+                academicYear: cpi?.academicYear ?? '',
+              })
+            }
+          />
+        </div>
       </div>
 
       {anyError && (
@@ -105,7 +127,7 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
                   <span>
                     {a.group.name} → {a.idea.title}
                     {a.supervisor && ` · ${a.supervisor.user.email}`}
-                    <span className="text-ink-subtle"> · {a.source}</span>
+                    <span className="text-ink-subtle"> · {allocationSource(a.source)}</span>
                   </span>
                   {/* Coordinator-Managed per-pairing review (spec Step 7). */}
                   {isCoordinatorManaged && !data.finalized && (

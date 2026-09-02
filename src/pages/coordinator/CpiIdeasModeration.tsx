@@ -7,7 +7,26 @@ import {
   type Idea,
 } from '@/features/ideas/useIdeas';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, SkeletonText } from '@/components/ui';
+import { personName } from '@/lib/name';
+import { downloadIdeasSheet } from '@/features/ideas/ideasPdf';
+import { DownloadPdfButton } from '@/features/pdf/DownloadPdfButton';
+import { useCpiSummary } from '@/features/courses/useCourses';
+
+// Statuses and author types are stored as enums; nobody should have to read one.
+const AUTHOR_LABEL: Record<string, string> = {
+  COORDINATOR: 'Posted by the coordinator',
+  SUPERVISOR: 'Posted by a supervisor',
+  LECTURER: 'Posted by a lecturer',
+  STUDENT: 'Posted by a student group',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Awaiting approval',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  REVISION_REQUESTED: 'Revision requested',
+};
 
 function StudentIdeaRow({ cpiId, idea }: { cpiId: string; idea: Idea }) {
   const decide = useDecideIdea(cpiId);
@@ -18,13 +37,20 @@ function StudentIdeaRow({ cpiId, idea }: { cpiId: string; idea: Idea }) {
   return (
     <li className="text-xs">
       <div className="flex items-start justify-between gap-2">
-        <div>
+        <div className="min-w-0">
           <p className="font-medium text-ink">{idea.title}</p>
           <p className="text-ink-subtle">
-            {idea.authorType}
+            {AUTHOR_LABEL[idea.authorType] ?? idea.authorType}
+            {` · ${personName(idea.author)}`}
             {idea.group && ` · ${idea.group.name}`}
-            {idea.approvalStatus && ` · ${idea.approvalStatus.replace('_', ' ')}`}
+            {idea.approvalStatus &&
+              ` · ${STATUS_LABEL[idea.approvalStatus] ?? idea.approvalStatus}`}
           </p>
+          {/* The description is what the decision is actually made on. */}
+          <p className="mt-1 whitespace-pre-wrap text-ink-muted">{idea.description}</p>
+          {idea.revisionNote && (
+            <p className="mt-1 text-caution-700">Revision asked for: {idea.revisionNote}</p>
+          )}
         </div>
         {pending && (
           <div className="flex shrink-0 gap-1">
@@ -65,12 +91,26 @@ function StudentIdeaRow({ cpiId, idea }: { cpiId: string; idea: Idea }) {
 
 export function CpiIdeasModeration({ cpiId }: { cpiId: string }) {
   const { data: ideas, isLoading } = useIdeas(cpiId);
+  const { data: cpi } = useCpiSummary(cpiId);
   const postIdea = usePostIdea(cpiId);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
   return (
-    <Card title="Ideas">
+    <Card
+      title="Ideas"
+      actions={
+        <DownloadPdfButton
+          disabled={!ideas?.length || !cpi}
+          onDownload={() =>
+            downloadIdeasSheet(ideas ?? [], {
+              courseName: cpi?.name ?? 'Course',
+              academicYear: cpi?.academicYear ?? '',
+            })
+          }
+        />
+      }
+    >
 
       <div className="mt-3 border-b pb-3">
         <p className="mb-1 text-xs font-medium text-ink-muted">Post a public idea (Coordinator-Managed)</p>
@@ -99,7 +139,7 @@ export function CpiIdeasModeration({ cpiId }: { cpiId: string }) {
         </Button>
       </div>
 
-      {isLoading && <p className="mt-3 text-xs text-ink-muted">Loading ideas…</p>}
+      {isLoading && <SkeletonText className="mt-3" />}
       <ul className="mt-3 space-y-3">
         {ideas?.map((idea) =>
           idea.authorType === 'STUDENT' ? (
@@ -107,7 +147,11 @@ export function CpiIdeasModeration({ cpiId }: { cpiId: string }) {
           ) : (
             <li key={idea.id} className="text-xs">
               <p className="font-medium text-ink">{idea.title}</p>
-              <p className="text-ink-subtle">{idea.authorType}</p>
+              <p className="text-ink-subtle">
+                {AUTHOR_LABEL[idea.authorType] ?? idea.authorType}
+                {` · ${personName(idea.author)}`}
+              </p>
+              <p className="mt-1 whitespace-pre-wrap text-ink-muted">{idea.description}</p>
             </li>
           ),
         )}
