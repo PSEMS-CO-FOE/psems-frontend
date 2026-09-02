@@ -12,6 +12,8 @@ import {
   type MarkPublication,
 } from '@/features/marks/useMarks';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { downloadMarksSheet } from '@/features/marks/marksSheetPdf';
+import { DownloadPdfButton } from '@/features/pdf/DownloadPdfButton';
 import { Button, Card, EmptyState, Notice, SkeletonText, StatRow, StatTile } from '@/components/ui';
 
 // Marks and comments publish separately, per stage or for the whole course, and
@@ -139,13 +141,7 @@ function MarkSheetPanel({ cpiId }: { cpiId: string }) {
               onClick={() => downloadCsv(markSheetFilename(sheet), markSheetToCsv(sheet))}>
               Download CSV
             </Button>
-            <Button
-              onClick={() => window.print()}
-              variant="secondary"
-              size="sm"
-            >
-              Print
-            </Button>
+            <DownloadPdfButton onDownload={() => downloadMarksSheet(sheet)} />
           </>
         )}
       </div>
@@ -261,7 +257,7 @@ export function CpiMarks({ cpiId }: { cpiId: string }) {
 
       <Card
         title="What students can see"
-        description="A stage's own setting wins; otherwise the whole-course setting applies."
+        description="A stage’s own setting wins; otherwise the whole-course setting applies. Ticking the grade without the marks is a normal choice — students then see only their grade, worked out from figures they are never shown."
         actions={
           <Button onClick={() => aggregate.mutate()} disabled={aggregate.isPending}>
             {aggregate.isPending ? 'Aggregating…' : 'Aggregate'}

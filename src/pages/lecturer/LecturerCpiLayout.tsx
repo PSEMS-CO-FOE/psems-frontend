@@ -1,10 +1,11 @@
 import { Navigate, Outlet, useParams } from 'react-router-dom';
 import { useCpiSummary, useLecturerCpis } from '@/features/courses/useCourses';
-import { PageHeader, TabNav, Badge, SkeletonCard, type TabItem } from '@/components/ui';
+import { PageHeader, TabNav, Badge, SkeletonCard, SkeletonText, type TabItem } from '@/components/ui';
 
-// The lecturer's role(s) in this CPI, from their courses list. While it loads
-// (or if the CPI isn't in the list, e.g. a not-yet-accepted invite reached by
-// URL) we don't yet know — callers default to showing everything then.
+// The lecturer's role(s) in this CPI, from their courses list. `known` is false
+// both while it loads and when the CPI isn't in the list at all (a not-yet-
+// accepted invite reached by URL) — which are different situations, so
+// `isLoading` tells them apart.
 function useCpiRoles(cpiId: string) {
   const { data: cpis, isLoading } = useLecturerCpis();
   const entry = cpis?.find((c) => c.id === cpiId);
@@ -30,9 +31,13 @@ export function LecturerCpiIndex() {
 export function LecturerCpiLayout() {
   const { cpiId = '' } = useParams();
   const { data: cpi } = useCpiSummary(cpiId);
-  const { known, isSupervisor, isEvaluator, isHeadJudge } = useCpiRoles(cpiId);
+  const { known, isLoading, isSupervisor, isEvaluator, isHeadJudge } = useCpiRoles(cpiId);
 
-  // Until roles are known, show all tabs so an evaluator is never blocked.
+  // Once the roles are in, show only the tabs this lecturer can use. A CPI that
+  // is not in their list at all still shows everything, so a not-yet-accepted
+  // invite reached by URL is never a dead end — but that is not the same as
+  // still loading, which holds the bar rather than showing every tab and then
+  // taking most of them away.
   const base = `/lecturer/cpi/${cpiId}`;
   const tabs: TabItem[] = (
     [
@@ -56,7 +61,7 @@ export function LecturerCpiLayout() {
         meta={cpi && <Badge tone="brand">{cpi.projectType}</Badge>}
       />
 
-      <TabNav items={tabs} />
+      {isLoading ? <SkeletonText className="h-9" /> : <TabNav items={tabs} />}
 
       <Outlet />
     </div>

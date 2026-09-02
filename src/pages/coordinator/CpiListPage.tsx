@@ -19,6 +19,14 @@ const createCpiSchema = z.object({
 
 type CreateCpiForm = z.infer<typeof createCpiSchema>;
 
+// Matches what the server stores: whitespace out, upper case in. Kept here as
+// well so the field shows the code that will be saved, not the one typed.
+const normalizeBatch = (value: string) => value.trim().replace(/\s+/g, '').toUpperCase();
+
+// The shape nearly every intake uses. Only ever a warning — a special or repeat
+// intake is exactly what a required pattern would wrongly refuse.
+const LOOKS_LIKE_A_BATCH = /^\d{2}ENG$/;
+
 export function CpiListPage() {
   const { data: courses, isLoading, isError, error } = useCourses();
   const { data: batches } = useDepartmentBatches();
@@ -28,6 +36,8 @@ export function CpiListPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateCpiForm>({
     resolver: zodResolver(createCpiSchema),
@@ -38,6 +48,8 @@ export function CpiListPage() {
       batch: '',
     },
   });
+
+  const batchValue = watch('batch');
 
   const onSubmit = (values: CreateCpiForm) =>
     createCpi.mutate(values, { onSuccess: () => reset() });
@@ -127,7 +139,11 @@ export function CpiListPage() {
           <label className="block text-sm text-ink">
             Batch
             <input
-              {...register('batch')}
+              {...register('batch', {
+                // The server normalises too; doing it here as well means the
+                // field shows the code that will actually be stored.
+                onBlur: (e) => setValue('batch', normalizeBatch(e.target.value)),
+              })}
               list="known-batches"
               className="mt-1 w-full rounded-control border border-line-strong px-3 py-2 text-sm uppercase"
               placeholder="22ENG"
@@ -138,8 +154,17 @@ export function CpiListPage() {
               ))}
             </datalist>
             <span className="mt-1 block text-xs text-ink-muted">
-              Only students in this batch will see the course.
+              Two digits then ENG, as on an index number — 22ENG for the 2022 intake, 16ENG for
+              2016. Case does not matter; 22eng is stored as 22ENG. Only students in this batch
+              will see the course.
             </span>
+            {/* A warning, not a block: a special or repeat intake is exactly the
+                case a fixed pattern would refuse. */}
+            {batchValue && !LOOKS_LIKE_A_BATCH.test(normalizeBatch(batchValue)) && (
+              <p className="mt-1 text-xs text-caution-700">
+                Most batches read like 22ENG. Check this is the code you meant.
+              </p>
+            )}
             {errors.batch && <p className="mt-1 text-xs text-critical-700">{errors.batch.message}</p>}
           </label>
 

@@ -1,11 +1,22 @@
 import type { ScheduleSheet } from './useScheduling';
+import {
+  HEADER_FILL,
+  INK,
+  LINE,
+  MARGIN,
+  PAGE as PAGES,
+  TINT_FILL,
+  finishSheet,
+  lastTableY,
+  newSheet,
+  saveSheet,
+  type SheetMeta,
+} from '@/features/pdf/sheet';
 
 type Row = ScheduleSheet['rows'][number];
 
-// Two group tables per band, as on the faculty's own lab sheets. A4 landscape
-// in millimetres.
-const PAGE = { width: 297, height: 210 };
-const MARGIN = { top: 14, bottom: 14, side: 12 };
+// Two group tables per band, as on the faculty's own lab sheets.
+const PAGE = PAGES.landscape;
 const GUTTER = 8;
 const COLUMN = (PAGE.width - MARGIN.side * 2 - GUTTER) / 2;
 const FIXED_COLS = { group: 20, no: 8, index: 26, when: 28 };
@@ -14,10 +25,7 @@ const BODY_PT = 7.5;
 const CELL_PAD = 1.2;
 const BAND_GAP = 5;
 
-const HEADER_FILL: [number, number, number] = [220, 243, 228];
-const GROUP_FILL: [number, number, number] = [240, 247, 242];
-const INK: [number, number, number] = [21, 28, 24];
-const LINE: [number, number, number] = [160, 178, 166];
+const GROUP_FILL = TINT_FILL;
 
 function slot(row: Row): string {
   if (!row.scheduledStart) return 'Not scheduled';
@@ -28,28 +36,25 @@ function slot(row: Row): string {
   return `${date}\n${span}`;
 }
 
-function fileName(sheet: ScheduleSheet, stageName: string | null): string {
-  const parts = [sheet.courseName, stageName ?? 'Schedule', sheet.academicYear];
-  return `${parts.filter(Boolean).join('_').replace(/[^\w.-]+/g, '_')}.pdf`;
-}
-
 /**
  * The schedule as a real document rather than whatever `window.print()` made of
  * the page. Loaded on demand: jsPDF is far larger than the screen that offers it.
  * Split from the save so the layout can be built and inspected without a browser.
  */
 export async function buildScheduleSheetPdf(sheet: ScheduleSheet) {
-  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
-    import('jspdf'),
-    import('jspdf-autotable'),
-  ]);
-
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
   // Every row of a stage shares its name, so the sheet is titled by it when
   // only one stage is on the page.
   const stages = [...new Set(sheet.rows.map((r) => r.stageName))];
   const stageName = stages.length === 1 ? stages[0] : null;
+
+  const meta: SheetMeta = {
+    courseName: sheet.courseName,
+    academicYear: sheet.academicYear,
+    documentName: stageName ?? 'Schedule',
+    subtitle: sheet.venue ? `@ ${sheet.venue}` : null,
+  };
+
+  const { doc, autoTable, startY: top } = await newSheet(meta, 'landscape');
 
   // Continuous across the sheet, as on the template — the backend numbers
   // within a group, which restarts at every table.
@@ -58,27 +63,6 @@ export async function buildScheduleSheetPdf(sheet: ScheduleSheet) {
     row,
     members: row.members.map((m) => ({ ...m, no: ++seq })),
   }));
-
-  const title = () => {
-    doc.setTextColor(...INK);
-    doc.setFont('helvetica', 'bold').setFontSize(12);
-    doc.text(sheet.courseName, PAGE.width / 2, MARGIN.top + 4, { align: 'center' });
-
-    doc.setFontSize(10);
-    let y = MARGIN.top + 10;
-    if (stageName) {
-      doc.text(stageName, PAGE.width / 2, y, { align: 'center' });
-      y += 5;
-    }
-    doc.setFont('helvetica', 'normal').setFontSize(9);
-    const place = sheet.venue ? `@ ${sheet.venue}` : null;
-    const line = [place, sheet.academicYear].filter(Boolean).join('  ·  ');
-    if (line) {
-      doc.text(line, PAGE.width / 2, y, { align: 'center' });
-      y += 5;
-    }
-    return y + 3;
-  };
 
   // A table is measured before it is drawn, so page breaks are decided here
   // rather than by autoTable — which would move a table out from under the
@@ -93,7 +77,6 @@ export async function buildScheduleSheetPdf(sheet: ScheduleSheet) {
     return lineHeight + CELL_PAD * 2 + rows;
   };
 
-  const top = title();
   // Left and right fill independently; a band ends at the taller of the two,
   // which is what keeps the pairs aligned down the page.
   let column: 0 | 1 = 0;
@@ -150,10 +133,7 @@ export async function buildScheduleSheetPdf(sheet: ScheduleSheet) {
           : [[row.groupName, '', '', 'No members', slot(row)]],
     });
 
-    bandBottom = Math.max(
-      bandBottom,
-      (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY,
-    );
+    bandBottom = Math.max(bandBottom, lastTableY(doc));
 
     if (column === 1) {
       bandTop = bandBottom + BAND_GAP;
@@ -163,22 +143,12 @@ export async function buildScheduleSheetPdf(sheet: ScheduleSheet) {
     }
   }
 
-  // Running header and footer, added last so the page count is known.
-  const pages = doc.getNumberOfPages();
-  const printed = new Date().toLocaleDateString();
-  for (let page = 1; page <= pages; page += 1) {
-    doc.setPage(page);
-    doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(120, 134, 126);
-    doc.text(sheet.courseName, MARGIN.side, MARGIN.top - 6);
-    doc.text(stageName ?? 'Schedule', PAGE.width - MARGIN.side, MARGIN.top - 6, { align: 'right' });
-    doc.text(printed, MARGIN.side, PAGE.height - 7);
-    doc.text(`Page ${page} of ${pages}`, PAGE.width - MARGIN.side, PAGE.height - 7, { align: 'right' });
-  }
+  finishSheet(doc, meta, 'landscape');
 
-  return { doc, fileName: fileName(sheet, stageName) };
+  return { doc, meta };
 }
 
 export async function downloadScheduleSheet(sheet: ScheduleSheet): Promise<void> {
-  const { doc, fileName: name } = await buildScheduleSheetPdf(sheet);
-  doc.save(name);
+  const { doc, meta } = await buildScheduleSheetPdf(sheet);
+  saveSheet(doc, meta);
 }

@@ -140,16 +140,22 @@ export function MarksPage() {
       ) : (
         <>
           <StatRow>
-            <StatTile
-              label="Your mark"
-              value={`${me?.overall ?? group.overall}%`}
-              caption="Across every released stage"
-            />
-            <StatTile
-              label="Group mark"
-              value={`${group.overall}%`}
-              caption="The average of the group's members"
-            />
+            {/* A course may release the grade and hold the figures back, which is
+                the usual shape of a final year project. */}
+            {data.marksReleased && (
+              <>
+                <StatTile
+                  label="Your mark"
+                  value={`${me?.overall ?? group.overall}%`}
+                  caption="Across every released stage"
+                />
+                <StatTile
+                  label="Group mark"
+                  value={`${group.overall}%`}
+                  caption="The average of the group's members"
+                />
+              </>
+            )}
             {data.gradingEnabled && (
               <StatTile
                 label="Grade"
@@ -189,6 +195,13 @@ export function MarksPage() {
             <Notice tone="info" size="xs">
               Not released yet: {pending.map((s) => s.stageName).join(', ')}. Your mark above covers
               only the stages that have been released.
+            </Notice>
+          )}
+
+          {!data.marksReleased && (
+            <Notice tone="info">
+              This course releases the grade rather than the marks behind it. Your grade is above;
+              the per-stage figures are not published.
             </Notice>
           )}
 

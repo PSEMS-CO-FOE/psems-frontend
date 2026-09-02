@@ -88,14 +88,14 @@ describe('CourseSettingsPanel', () => {
     expect(screen.getByLabelText(/only the group leader/i)).toBeInTheDocument();
     expect(screen.getByText(/this phase is open/i)).toBeInTheDocument();
     // Selection has closed, so its settings stay folded away.
-    expect(screen.queryByLabelText(/lecturers may ask to supervise/i)).toBeNull();
+    expect(screen.queryByLabelText(/lecturers may ask to join this course/i)).toBeNull();
     expect(screen.getByRole('button', { name: /Selection/ })).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('expands a folded group when its heading is clicked', async () => {
     renderPanel();
     await userEvent.click(screen.getByRole('button', { name: /Selection/ }));
-    expect(screen.getByLabelText(/lecturers may ask to supervise/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/lecturers may ask to join this course/i)).toBeInTheDocument();
   });
 
   it('names what a preset will change before applying it', async () => {

@@ -38,6 +38,19 @@ describe('shortName', () => {
     expect(shortName('Assoc. Prof. Krishanth Mohan')).toBe('Assoc. Prof. K.Mohan');
   });
 
+  // Names are typed by hand, so the title often has no space after it.
+  it('separates a title stuck to the name, and cases it properly', () => {
+    expect(shortName('mr.Krishanth Mohan')).toBe('Mr. K.Mohan');
+    expect(shortName('Ms.akarshani Amarasinghe')).toBe('Ms. A.Amarasinghe');
+    expect(shortName('mr.Krishanth')).toBe('Mr. Krishanth');
+  });
+
+  // Only real titles get a space put after them; a leading initial is left as
+  // part of the given name it is attached to.
+  it('does not treat a leading initial as a title', () => {
+    expect(shortName('A.Wickramasinghe Rajapaksha')).toBe('A.Rajapaksha');
+  });
+
   it('leaves a title plus a lone surname alone, having nothing to initialise', () => {
     expect(shortName('Dr. Wickramasinghearachchige')).toBe('Dr. Wickramasinghearachchige');
   });
