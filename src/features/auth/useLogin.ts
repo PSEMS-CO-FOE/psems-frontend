@@ -16,8 +16,16 @@ const SECTION_ROLE: { prefix: string; role: Role }[] = [
   { prefix: '/student', role: 'STUDENT' },
 ];
 
+// A path segment that identifies one record: a course, a group, a session. The
+// role check alone is not enough — two lecturers both pass it, and the second
+// would land on the first one's course.
+const IDENTIFIES_A_RECORD = /\/(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)(?:\/|$)/i;
+
 function reachableBy(path: string | undefined, role: Role): boolean {
   if (!path) return false;
+  // Remembered only as far as the section. Which course was open belonged to
+  // whoever was signed in then, and that is not necessarily this person.
+  if (IDENTIFIES_A_RECORD.test(path)) return false;
   const section = SECTION_ROLE.find((s) => path === s.prefix || path.startsWith(`${s.prefix}/`));
   // Shared routes (profile, directory, guide) belong to no section and are
   // reachable by everyone.
