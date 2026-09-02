@@ -3,8 +3,23 @@ import { api } from '@/lib/apiClient';
 
 interface AllocationEntry {
   id: string;
-  group: { id: string; name: string };
-  idea: { id: string; title: string; authorType: string };
+  group: {
+    id: string;
+    name: string;
+    members: { student: { studentId: string; user: { fullName: string | null; email: string } } }[];
+  };
+  idea: {
+    id: string;
+    title: string;
+    authorType: string;
+    // The primary supervisor first, then any co-supervisor and where their
+    // invitation got to.
+    supervisors: {
+      isPrimary: boolean;
+      invitationStatus: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+      lecturer: { user: { email: string; fullName: string | null } };
+    }[];
+  };
   supervisor: { user: { email: string; fullName: string | null } } | null;
   source: 'FROM_SELECTION' | 'COORDINATOR_OVERRIDE';
 }
