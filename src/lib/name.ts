@@ -19,6 +19,16 @@ const TITLES = new Set(['dr', 'prof', 'assoc', 'mr', 'mrs', 'ms', 'miss', 'eng',
 
 const isTitle = (part: string) => TITLES.has(part.replace(/\./g, '').toLowerCase());
 
+// Names arrive typed by hand, so a title is often stuck to the name with no
+// space and no capital: "mr.Krishanth" is a title plus a name, not one word.
+function spaceTitles(name: string): string {
+  return name.replace(
+    /^([A-Za-z]+)\.\s*(?=[A-Za-z])/,
+    (whole, word: string) =>
+      isTitle(word) ? `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}. ` : whole,
+  );
+}
+
 /**
  * Shortens a long name to initials plus the last part, the way a Sri Lankan
  * name is usually written down: "Dulina Hansa Nimsara" becomes "D.H.Nimsara".
@@ -27,10 +37,13 @@ const isTitle = (part: string) => TITLES.has(part.replace(/\./g, '').toLowerCase
  */
 export function shortName(nameOrEmail: string | undefined | null, max = 18): string {
   if (!nameOrEmail) return '';
-  const full = nameOrEmail.trim().replace(/\s+/g, ' ');
+  const collapsed = nameOrEmail.trim().replace(/\s+/g, ' ');
 
   // An address is not a name — initialising one makes it unrecognisable.
-  if (!full || full.includes('@') || full.length <= max) return full;
+  if (!collapsed || collapsed.includes('@')) return collapsed;
+
+  const full = spaceTitles(collapsed);
+  if (full.length <= max) return full;
 
   const parts = full.split(' ');
   const titles: string[] = [];

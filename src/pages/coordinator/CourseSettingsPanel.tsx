@@ -52,7 +52,10 @@ const GROUPS: Group[] = [
       { key: 'interestEnabled', label: 'Groups and lecturers may express interest' },
       { key: 'allowInterestWithdrawal', label: 'Interest may be withdrawn while the phase is open' },
       { key: 'studentsSeeOtherGroupIdeas', label: 'Students can see other groups’ ideas' },
-      { key: 'allowSupervisorSelfRequest', label: 'Lecturers may ask to supervise' },
+      {
+        key: 'allowSupervisorSelfRequest',
+        label: 'Lecturers may ask to join this course as a supervisor',
+      },
       {
         key: 'allowLecturerInterestInGroupIdeas',
         label: 'Lecturers may express interest in a group’s idea',
@@ -68,7 +71,6 @@ const GROUPS: Group[] = [
     phases: ['STUDENT_REGISTRATION'],
     toggles: [
       { key: 'allowIndividualParticipation', label: 'Students may take part individually' },
-      { key: 'autoCreateSoloGroup', label: 'Create a solo group automatically' },
     ],
     numbers: [
       {
@@ -91,14 +93,14 @@ const GROUPS: Group[] = [
   },
   {
     title: 'Results',
-    hint: 'What students eventually receive. Grade bands are set on the Marks screen.',
+    hint: 'What students eventually receive. Grade bands are set on the Marks screen. A final year project normally needs only the grade switch — leave both figures below blank.',
     phases: ['FINAL_SUBMISSION'],
-    toggles: [{ key: 'gradingEnabled', label: 'Award grades as well as marks' }],
+    toggles: [{ key: 'gradingEnabled', label: 'Award a grade' }],
     numbers: [
       {
         key: 'passMarkPercent',
         label: 'Pass mark',
-        hint: 'Students below this are shown to you on the mark sheet. PSEMS never tells a student they have been repeated — that decision is yours to make and to communicate.',
+        hint: 'Optional, and for your eyes only: students below it are marked on your sheet. PSEMS never tells a student they have been repeated — that decision is yours to make and to communicate. Leave blank for a final year project.',
         min: 0,
         max: 100,
         suffix: '%',
@@ -106,7 +108,7 @@ const GROUPS: Group[] = [
       {
         key: 'caContributionPercent',
         label: 'Contribution to the module',
-        hint: 'Leave blank when this course is the whole module. Set it when the project is one CA component of a larger module — students then see what their mark contributes.',
+        hint: 'Leave blank when this course is the whole module, which is the usual case for a final year project. Set it only when the project is one CA component of a larger module — students then see what their mark contributes. Setting it below 100 also stops grades being awarded here, because the module’s letter is then decided elsewhere.',
         min: 0,
         max: 100,
         suffix: '%',

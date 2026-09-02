@@ -83,9 +83,16 @@ export function SupervisorSelectionPage() {
   }
 
   const liveInterest = data.interestInMyIdeas.filter((e) => !e.withdrawnAt);
+  const { allocationsFinalized } = data;
 
   return (
     <div className="space-y-4">
+      {allocationsFinalized && (
+        <Notice tone="info">
+          The coordinator has locked the allocations, so choosing is over. What each group is
+          working on is below; ask the coordinator if something needs to change.
+        </Notice>
+      )}
       {/* Interest is the step before a selection, so it comes first. */}
       <Card>
         <h2 className="text-sm font-semibold text-ink">Groups interested in your ideas</h2>
@@ -120,6 +127,8 @@ export function SupervisorSelectionPage() {
                       ? 'You took this group'
                       : `Already on ${e.placedOn.title}`}
                   </span>
+                ) : allocationsFinalized ? (
+                  <span className="ml-auto text-ink-subtle">Not taken</span>
                 ) : (
                   e.group && (
                     <Button
@@ -180,6 +189,7 @@ export function SupervisorSelectionPage() {
       </Card>
 
       {/* Student ideas seeking a supervisor — mark willing */}
+      {!allocationsFinalized && (
       <Card>
         <h2 className="text-sm font-semibold text-ink">Ideas seeking a supervisor</h2>
         <p className="mt-1 text-xs text-ink-muted">
@@ -236,6 +246,8 @@ export function SupervisorSelectionPage() {
           )}
         </div>
       </Card>
+
+      )}
 
       {/* Ideas already marked willing, now withdrawable while the phase is open */}
       {data.willingByMe.filter((w) => !w.withdrawnAt).length > 0 && (
