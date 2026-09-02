@@ -55,6 +55,8 @@ export type SelectionState =
   | { role: 'COORDINATOR'; selections: ProjectSelection[]; interestExpressions: InterestExpression[] }
   | {
       role: 'SUPERVISOR';
+      // Allocations are locked: choosing is over and the server refuses it.
+      allocationsFinalized: boolean;
       willingByMe: InterestExpression[];
       pendingSelections: ProjectSelection[];
       seekingIdeas: SeekingIdea[];
