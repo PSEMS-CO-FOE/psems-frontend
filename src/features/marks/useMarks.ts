@@ -21,7 +21,8 @@ export interface StudentMarks {
   indexNumber: string;
   name: string;
   stages: StudentBreakdown[];
-  overall: number;
+  // Null when the course releases the grade but not the marks behind it.
+  overall: number | null;
   grade: string | null;
   contributionToModule: number | null;
 }
@@ -30,7 +31,8 @@ export interface GroupMarks {
   groupId: string;
   groupName: string;
   stages: StageBreakdown[];
-  overall: number;
+  // Null when the course releases the grade but not the marks behind it.
+  overall: number | null;
   grade: string | null;
   contributionToModule: number | null;
   students: StudentMarks[];
@@ -42,6 +44,8 @@ export interface MarksView {
   // still count, but the module's letter grade is decided elsewhere.
   gradeIsForWholeModule: boolean;
   gradesReleased: boolean;
+  // False when a grade has been released without the figures behind it.
+  marksReleased: boolean;
   caContributionPercent: number | null;
   // Stages a student cannot see yet. Named rather than hidden, so it is clear
   // something is still to come.
