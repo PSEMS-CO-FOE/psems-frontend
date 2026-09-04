@@ -10,14 +10,11 @@ import {
 import type { CpiMode } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
-import { Button, Card, EmptyState, InfoTip, SkeletonText } from '@/components/ui';
+import { allocationSourceLabel } from '@/lib/labels';
+import { Button, Card, EmptyState, InfoTip, SkeletonText, Notice } from '@/components/ui';
 import { downloadAllocationSheet } from '@/features/allocation/allocationPdf';
 import { DownloadPdfButton } from '@/features/pdf/DownloadPdfButton';
 import { useCpiSummary } from '@/features/courses/useCourses';
-
-// The stored enum is not what a coordinator needs to read.
-const allocationSource = (source: 'FROM_SELECTION' | 'COORDINATOR_OVERRIDE') =>
-  source === 'COORDINATOR_OVERRIDE' ? 'set by you' : "from the group's selection";
 
 export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode }) {
   const { data, isLoading } = useAllocationMap(cpiId);
@@ -62,7 +59,7 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
       </div>
 
       {anyError && (
-        <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(anyError)}</p>
+        <Notice tone="critical" size="xs" className="mt-2">{getApiErrorMessage(anyError)}</Notice>
       )}
 
       {/* These are hard to undo, and the labels alone did not say what. */}
@@ -127,7 +124,7 @@ export function CpiAllocation({ cpiId, mode }: { cpiId: string; mode: CpiMode })
                   <span>
                     {a.group.name} → {a.idea.title}
                     {a.supervisor && ` · ${a.supervisor.user.email}`}
-                    <span className="text-ink-subtle"> · {allocationSource(a.source)}</span>
+                    <span className="text-ink-subtle"> · {allocationSourceLabel(a.source)}</span>
                   </span>
                   {/* Coordinator-Managed per-pairing review (spec Step 7). */}
                   {isCoordinatorManaged && !data.finalized && (

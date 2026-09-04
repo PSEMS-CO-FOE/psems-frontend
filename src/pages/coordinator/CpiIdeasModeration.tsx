@@ -7,26 +7,12 @@ import {
   type Idea,
 } from '@/features/ideas/useIdeas';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Button, Card, SkeletonText } from '@/components/ui';
+import { Button, Card, SkeletonText, Notice } from '@/components/ui';
 import { personName } from '@/lib/name';
+import { ideaApprovalLabel, ideaAuthorLabel } from '@/lib/labels';
 import { downloadIdeasSheet } from '@/features/ideas/ideasPdf';
 import { DownloadPdfButton } from '@/features/pdf/DownloadPdfButton';
 import { useCpiSummary } from '@/features/courses/useCourses';
-
-// Statuses and author types are stored as enums; nobody should have to read one.
-const AUTHOR_LABEL: Record<string, string> = {
-  COORDINATOR: 'Posted by the coordinator',
-  SUPERVISOR: 'Posted by a supervisor',
-  LECTURER: 'Posted by a lecturer',
-  STUDENT: 'Posted by a student group',
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: 'Awaiting approval',
-  APPROVED: 'Approved',
-  REJECTED: 'Rejected',
-  REVISION_REQUESTED: 'Revision requested',
-};
 
 function StudentIdeaRow({ cpiId, idea }: { cpiId: string; idea: Idea }) {
   const decide = useDecideIdea(cpiId);
@@ -40,11 +26,11 @@ function StudentIdeaRow({ cpiId, idea }: { cpiId: string; idea: Idea }) {
         <div className="min-w-0">
           <p className="font-medium text-ink">{idea.title}</p>
           <p className="text-ink-subtle">
-            {AUTHOR_LABEL[idea.authorType] ?? idea.authorType}
+            {ideaAuthorLabel(idea.authorType)}
             {` · ${personName(idea.author)}`}
             {idea.group && ` · ${idea.group.name}`}
             {idea.approvalStatus &&
-              ` · ${STATUS_LABEL[idea.approvalStatus] ?? idea.approvalStatus}`}
+              ` · ${ideaApprovalLabel(idea.approvalStatus)}`}
           </p>
           {/* The description is what the decision is actually made on. */}
           <p className="mt-1 whitespace-pre-wrap text-ink-muted">{idea.description}</p>
@@ -83,7 +69,7 @@ function StudentIdeaRow({ cpiId, idea }: { cpiId: string; idea: Idea }) {
         </div>
       )}
       {(decide.isError || requestRevision.isError) && (
-        <p className="mt-1 text-critical-700">{getApiErrorMessage(decide.error || requestRevision.error)}</p>
+        <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(decide.error || requestRevision.error)}</Notice>
       )}
     </li>
   );
@@ -115,7 +101,7 @@ export function CpiIdeasModeration({ cpiId }: { cpiId: string }) {
       <div className="mt-3 border-b pb-3">
         <p className="mb-1 text-xs font-medium text-ink-muted">Post a public idea (Coordinator-Managed)</p>
         {postIdea.isError && (
-          <p className="mb-1 text-xs text-critical-700">{getApiErrorMessage(postIdea.error)}</p>
+          <Notice tone="critical" size="xs" className="mb-1">{getApiErrorMessage(postIdea.error)}</Notice>
         )}
         <input
           value={title}
@@ -148,7 +134,7 @@ export function CpiIdeasModeration({ cpiId }: { cpiId: string }) {
             <li key={idea.id} className="text-xs">
               <p className="font-medium text-ink">{idea.title}</p>
               <p className="text-ink-subtle">
-                {AUTHOR_LABEL[idea.authorType] ?? idea.authorType}
+                {ideaAuthorLabel(idea.authorType)}
                 {` · ${personName(idea.author)}`}
               </p>
               <p className="mt-1 whitespace-pre-wrap text-ink-muted">{idea.description}</p>
