@@ -11,6 +11,7 @@ import {
 import { roleLabel } from '@/features/panel/usePanel';
 import { formatClock, useTimer } from '@/features/scheduling/useTimer';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { sessionStatusLabel } from '@/lib/labels';
 import { Badge, Button, Card, EmptyState, Notice, SectionHeader, SkeletonText } from '@/components/ui';
 
 // How long each part of the presentation actually took, so time management can be
@@ -73,7 +74,7 @@ function SessionReviewCard({ cpiId, session }: { cpiId: string; session: Evaluat
         <span className="text-sm font-medium text-ink">
           {session.group.name} · {session.stage.name}
         </span>
-        <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
+        <Badge tone="neutral">{sessionStatusLabel(session.status)}</Badge>
       </button>
 
       {open && (

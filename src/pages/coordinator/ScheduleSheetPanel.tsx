@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useScheduleSheet } from '@/features/scheduling/useScheduling';
 import { downloadScheduleSheet } from '@/features/scheduling/scheduleSheetPdf';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Button, SkeletonText } from '@/components/ui';
+import { Button, SkeletonText, Notice } from '@/components/ui';
 
 function formatSlot(start: string | null, end: string | null) {
   if (!start || !end) return 'Not scheduled';
@@ -52,7 +52,7 @@ export function ScheduleSheetPanel({ cpiId }: { cpiId: string }) {
       )}
 
       {open && isLoading && <SkeletonText className="mt-2" />}
-      {open && isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(error)}</p>}
+      {open && isError && <Notice tone="critical" size="xs" className="mt-2">{getApiErrorMessage(error)}</Notice>}
 
       {open && data && (
         <div className="mt-2 space-y-3 rounded-control border p-3">

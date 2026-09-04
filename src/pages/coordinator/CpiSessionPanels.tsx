@@ -18,7 +18,7 @@ import {
 } from '@/features/panel/usePanel';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName, shortName } from '@/lib/name';
-import { Avatar, Button, EmptyState, InfoTip, SkeletonCard } from '@/components/ui';
+import { Avatar, Button, EmptyState, InfoTip, SkeletonCard, Notice } from '@/components/ui';
 
 const COUNTING_LABEL: Record<MarkCounting, string> = {
   COUNTED: 'counts',
@@ -148,8 +148,8 @@ function SessionPanelCard({ cpiId, session }: { cpiId: string; session: Evaluati
                   add
                 </Button>
               </div>
-              {add.isError && <p className="text-xs text-critical-700">{getApiErrorMessage(add.error)}</p>}
-              {remove.isError && <p className="text-xs text-critical-700">{getApiErrorMessage(remove.error)}</p>}
+              {add.isError && <Notice tone="critical" size="xs">{getApiErrorMessage(add.error)}</Notice>}
+              {remove.isError && <Notice tone="critical" size="xs">{getApiErrorMessage(remove.error)}</Notice>}
             </>
           )}
         </div>
@@ -241,7 +241,7 @@ function GuestInviter({ cpiId, sessions }: { cpiId: string; sessions: Evaluation
         disabled={!fullName || !email || sessionIds.length === 0 || invite.isPending}>
         {invite.isPending ? '…' : 'Create scoring link'}
       </Button>
-      {invite.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(invite.error)}</p>}
+      {invite.isError && <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(invite.error)}</Notice>}
 
       {issuedLink && (
         <div className="mt-2 rounded-control bg-caution-50 px-2 py-2 text-xs text-caution-700">
@@ -349,7 +349,7 @@ function StagePanelSetter({ cpiId, stageId, stageName }: { cpiId: string; stageI
         </Button>
       </div>
 
-      {apply.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(apply.error)}</p>}
+      {apply.isError && <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(apply.error)}</Notice>}
       {apply.isSuccess && (
         <div className="mt-1 text-xs">
           <p className="text-positive-700">Applied to {apply.data.appliedTo} group(s).</p>

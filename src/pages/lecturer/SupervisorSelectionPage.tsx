@@ -12,24 +12,42 @@ import {
 import { useRequestIdeaRevision } from '@/features/ideas/useIdeas';
 import type { SeekingIdea } from '@/features/selection/useSelection';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { personName } from '@/lib/name';
 import { Button, Card, EmptyState, Notice } from '@/components/ui';
 
 function SeekingIdeaRow({ cpiId, seeking }: { cpiId: string; seeking: SeekingIdea }) {
   const markWilling = useMarkWilling(cpiId);
+  const lecturerInterest = useLecturerInterest(cpiId);
+  const coSupervision = useCoSupervisionInterest(cpiId);
   const requestRevision = useRequestIdeaRevision(cpiId);
   const [note, setNote] = useState('');
 
   return (
     <li className="rounded-control border border-line bg-canvas-sunken px-3 py-2 text-xs">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-ink">
-          <span className="font-medium">{seeking.idea.title}</span>
-          {seeking.group && <span className="text-ink-subtle"> · {seeking.group.name}</span>}
-        </span>
-        <Button variant="primary" size="sm" className="ml-auto"
+      <p className="text-sm font-medium text-ink">{seeking.idea.title}</p>
+      <p className="mt-0.5 text-ink-subtle">
+        {seeking.group ? `${seeking.group.name} · ` : ''}
+        {personName(seeking.idea.author)}
+      </p>
+      {/* The whole idea. Deciding whether to supervise a project from its title
+          alone is not a decision anyone can actually make. */}
+      <p className="mt-1.5 whitespace-pre-wrap text-ink-muted">{seeking.idea.description}</p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-line pt-2">
+        <Button variant="primary" size="sm"
           onClick={() => markWilling.mutate(seeking.ideaId)}
           disabled={markWilling.isPending}>
           Mark willing
+        </Button>
+        <Button variant="secondary" size="sm"
+          onClick={() => lecturerInterest.mutate(seeking.ideaId)}
+          disabled={lecturerInterest.isPending}>
+          I&rsquo;m interested
+        </Button>
+        <Button variant="secondary" size="sm"
+          onClick={() => coSupervision.mutate(seeking.ideaId)}
+          disabled={coSupervision.isPending}>
+          Offer to co-supervise
         </Button>
       </div>
       <div className="mt-1 flex gap-1">
@@ -45,8 +63,12 @@ function SeekingIdeaRow({ cpiId, seeking }: { cpiId: string; seeking: SeekingIde
           Request revision
         </Button>
       </div>
-      {(markWilling.isError || requestRevision.isError) && (
-        <p className="mt-1 text-critical-700">{getApiErrorMessage(markWilling.error || requestRevision.error)}</p>
+      {(markWilling.isError || requestRevision.isError || lecturerInterest.isError || coSupervision.isError) && (
+        <p className="mt-1 text-critical-700">
+          {getApiErrorMessage(
+            markWilling.error || requestRevision.error || lecturerInterest.error || coSupervision.error,
+          )}
+        </p>
       )}
     </li>
   );
@@ -61,9 +83,6 @@ export function SupervisorSelectionPage() {
   const respond = useRespondSelection(cpiId);
   const acceptGroup = useAcceptInterestedGroup(cpiId);
   const withdraw = useWithdrawInterest(cpiId);
-  const lecturerInterest = useLecturerInterest(cpiId);
-  const coSupervision = useCoSupervisionInterest(cpiId);
-  const [interestIdeaId, setInterestIdeaId] = useState('');
 
   if (isLoading) return <p className="text-sm text-ink-muted">Loading selection…</p>;
   if (isError) {
@@ -184,7 +203,7 @@ export function SupervisorSelectionPage() {
           ))}
         </ul>
         {respond.isError && (
-          <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(respond.error)}</p>
+          <Notice tone="critical" size="xs" className="mt-2">{getApiErrorMessage(respond.error)}</Notice>
         )}
       </Card>
 
@@ -208,43 +227,6 @@ export function SupervisorSelectionPage() {
           ))}
         </ul>
 
-        {/* The mirror image of a group expressing interest: a lecturer says they
-            would like to take on a group's idea, or to co-supervise it. */}
-        <div className="mt-3 border-t pt-3">
-          <p className="text-xs font-medium text-ink">Express your own interest</p>
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            <select
-              value={interestIdeaId}
-              onChange={(e) => setInterestIdeaId(e.target.value)}
-              className="rounded-control border border-line-strong px-2 py-1 text-xs"
-            >
-              <option value="">Choose an idea…</option>
-              {data.seekingIdeas.map((s) => (
-                <option key={s.ideaId} value={s.ideaId}>
-                  {s.idea.title}
-                </option>
-              ))}
-            </select>
-            <Button variant="neutral" size="sm"
-              onClick={() => lecturerInterest.mutate(interestIdeaId)}
-              disabled={!interestIdeaId || lecturerInterest.isPending}>
-              I'm interested
-            </Button>
-            <Button
-              onClick={() => coSupervision.mutate(interestIdeaId)}
-              disabled={!interestIdeaId || coSupervision.isPending}
-              variant="secondary"
-              size="sm"
-            >
-              Offer to co-supervise
-            </Button>
-          </div>
-          {(lecturerInterest.isError || coSupervision.isError) && (
-            <p className="mt-1 text-xs text-critical-700">
-              {getApiErrorMessage(lecturerInterest.error || coSupervision.error)}
-            </p>
-          )}
-        </div>
       </Card>
 
       )}
@@ -269,7 +251,7 @@ export function SupervisorSelectionPage() {
                 </li>
               ))}
           </ul>
-          {withdraw.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(withdraw.error)}</p>}
+          {withdraw.isError && <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(withdraw.error)}</Notice>}
         </Card>
       )}
     </div>

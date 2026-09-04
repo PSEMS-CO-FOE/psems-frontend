@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useIdeas, usePostIdea, useUpdateIdea, type Idea } from '@/features/ideas/useIdeas';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { ideaAuthorShort } from '@/lib/labels';
 import { personName, shortName } from '@/lib/name';
-import { Button, Card, EmptyState, Notice, SkeletonText } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Notice, SkeletonText } from '@/components/ui';
 import { PolicyNote } from '@/components/PolicyNote';
 
 function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
@@ -25,7 +26,7 @@ function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
     <li className="rounded-card border border-line bg-surface p-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-ink">{idea.title}</p>
-        <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{idea.authorType}</span>
+        <Badge tone="neutral">{ideaAuthorShort(idea.authorType)}</Badge>
       </div>
       <p className="mt-1 text-xs text-ink-muted">{idea.description}</p>
       <p className="mt-2 text-xs text-ink-subtle">
@@ -35,9 +36,9 @@ function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
       </p>
 
       {idea.approvalStatus === 'REVISION_REQUESTED' && idea.revisionNote && (
-        <p className="mt-2 rounded-control bg-caution-50 px-3 py-2 text-xs text-caution-700">
+        <Notice tone="caution" size="xs" className="mt-2">
           Revision requested: {idea.revisionNote}
-        </p>
+        </Notice>
       )}
 
       {editable && !editing && idea.approvalStatus !== 'APPROVED' && idea.approvalStatus !== 'REJECTED' && (
@@ -79,7 +80,7 @@ function IdeaCard({ cpiId, idea }: { cpiId: string; idea: Idea }) {
             </Button>
           </div>
           {update.isError && (
-            <p className="text-xs text-critical-700">{getApiErrorMessage(update.error)}</p>
+            <Notice tone="critical" size="xs">{getApiErrorMessage(update.error)}</Notice>
           )}
         </div>
       )}

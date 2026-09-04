@@ -91,6 +91,45 @@ export function useDecideJoinRequest(cpiId: string) {
   });
 }
 
+export interface AddableStudent {
+  id: string;
+  studentId: string;
+  registrationNumber: string | null;
+  batch: string;
+  user: { fullName: string | null; email: string };
+  // Set when they already asked and were answered, so a declined request is not
+  // shown as if it were a fresh candidate.
+  existingRequest: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+}
+
+// Students from another batch the coordinator could take on. Searching is done
+// on the server so the whole department is reachable, not just a first page.
+export function useAddableStudents(cpiId: string, q: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...courseKey(cpiId), 'addable-students', q],
+    enabled,
+    queryFn: async () => {
+      const res = await api.get<AddableStudent[]>(`/courses/${cpiId}/addable-students`, {
+        params: q ? { q } : {},
+      });
+      return res.data;
+    },
+  });
+}
+
+// The coordinator starting the enrolment rather than answering a request. The
+// student never has to know to ask.
+export function useAddStudent(cpiId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { studentId: string; note?: string }) => {
+      const res = await api.post(`/courses/${cpiId}/added-students`, args);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: courseKey(cpiId) }),
+  });
+}
+
 // Batches this department already uses, so the same code is not typed two
 // different ways on two different days.
 export function useDepartmentBatches() {

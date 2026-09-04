@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useEvaluationConfig, type SavedStage } from '@/features/evaluations/useEvaluationConfig';
 import { useSubmissions, useSubmitProposal } from '@/features/files/useSubmissions';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Badge, Button, Card, EmptyState, SkeletonText } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, SkeletonText, Notice } from '@/components/ui';
 
 function StageUpload({ cpiId, stage }: { cpiId: string; stage: SavedStage }) {
   const submit = useSubmitProposal(cpiId);
@@ -25,7 +25,7 @@ function StageUpload({ cpiId, stage }: { cpiId: string; stage: SavedStage }) {
         </Button>
       </div>
       {submit.isError && (
-        <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(submit.error)}</p>
+        <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(submit.error)}</Notice>
       )}
     </Card>
   );
