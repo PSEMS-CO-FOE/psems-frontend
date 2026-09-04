@@ -111,3 +111,34 @@ export function useCreateSoloGroup(cpiId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['group', cpiId] }),
   });
 }
+
+// Taking back an invitation nobody has answered. Sending one was always
+// possible and undoing it was not.
+export function useRevokeInvite(cpiId: string, groupId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (memberId: string) => {
+      const res = await api.delete(`/courses/${cpiId}/groups/${groupId}/invites/${memberId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: myGroupKey(cpiId) });
+      queryClient.invalidateQueries({ queryKey: invitesKey(cpiId) });
+    },
+  });
+}
+
+// Undoing the choice of how to take part, while nothing depends on it yet.
+export function useDisbandGroup(cpiId: string, groupId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.delete(`/courses/${cpiId}/groups/${groupId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: myGroupKey(cpiId) });
+      queryClient.invalidateQueries({ queryKey: invitesKey(cpiId) });
+    },
+  });
+}

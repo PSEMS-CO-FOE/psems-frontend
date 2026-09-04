@@ -8,11 +8,14 @@ import {
   useInviteMember,
   useRespondGroupInvite,
   usePendingGroupInvites,
+  useRevokeInvite,
+  useDisbandGroup,
 } from '@/features/groups/useGroups';
 import { useCpiPolicy } from '@/features/policy/usePolicy';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName, shortName } from '@/lib/name';
-import { Button, Card, Notice } from '@/components/ui';
+import { memberStatusLabel } from '@/lib/labels';
+import { Badge, Button, Card, EmptyState, Notice } from '@/components/ui';
 
 export function GroupPage() {
   const { cpiId = '' } = useParams();
@@ -37,9 +40,9 @@ export function GroupPage() {
     return (
       <div className="space-y-4">
         {locked && (
-          <p className="rounded-control bg-caution-50 px-3 py-2 text-xs text-caution-700">
+          <Notice tone="caution" size="xs">
             Registration is closed — the group is locked.
-          </p>
+          </Notice>
         )}
         <MyGroupCard group={group} isLeader={isLeader} cpiId={cpiId} locked={!!locked} />
       </div>
@@ -50,9 +53,10 @@ export function GroupPage() {
   return (
     <div className="space-y-4">
       {locked ? (
-        <p className="rounded-control bg-caution-50 px-3 py-2 text-sm text-caution-700">
-          Registration is closed and you are not in a group.
-        </p>
+        <EmptyState
+          title="Registration is closed and you are not in a group"
+          hint="Ask your coordinator if you still need to take part in this course."
+        />
       ) : (
         <>
           <CreateGroupCard cpiId={cpiId} />
@@ -75,32 +79,63 @@ function MyGroupCard({
   locked: boolean;
 }) {
   const invite = useInviteMember(cpiId, group.id);
+  const revoke = useRevokeInvite(cpiId, group.id);
+  const disband = useDisbandGroup(cpiId, group.id);
   const [email, setEmail] = useState('');
+
+  const accepted = group.members.filter((m) => m.status === 'ACCEPTED');
+  // A group of one is a student working alone. Calling it a group and offering
+  // to invite people is the wrong screen for the choice they actually made.
+  const alone = accepted.length === 1 && isLeader;
+  const canUndo = isLeader && !locked && accepted.length === 1;
 
   return (
     <Card>
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-ink">{group.name}</h2>
-        {isLeader && (
-          <span className="rounded-control bg-info-50 px-2 py-0.5 text-xs text-info-700">You are leader</span>
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-ink">
+          {alone ? 'You are working on your own' : group.name}
+        </h2>
+        {!alone && isLeader && <Badge tone="info">You are leader</Badge>}
       </div>
 
-      <ul className="mt-3 divide-y divide-line">
-        {group.members.map((m) => (
-          <li key={m.id} className="flex items-center justify-between py-2 text-xs">
-            <span className="text-ink">
-              {shortName(personName(m.student.user))}{' '}
-              <span className="text-ink-subtle">({m.student.studentId})</span>
-            </span>
-            <span className="text-ink-subtle">{m.status}</span>
-          </li>
-        ))}
-      </ul>
+      {alone ? (
+        <p className="mt-1 text-xs text-ink-muted">
+          Nobody else is on this project with you. You can still invite someone while registration is
+          open, or go back and join a group instead.
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-line">
+          {group.members.map((m) => (
+            <li key={m.id} className="flex flex-wrap items-center gap-2 py-2 text-xs">
+              <span className="text-ink" title={personName(m.student.user)}>
+                {shortName(personName(m.student.user))}{' '}
+                <span className="text-ink-subtle">({m.student.studentId})</span>
+              </span>
+              <span className="ml-auto text-ink-subtle">
+                {memberStatusLabel(m.status)}
+              </span>
+              {/* A wrong address used to sit here for the rest of the course,
+                  and blocked that student from being invited again. */}
+              {isLeader && !locked && m.status === 'PENDING' && (
+                <Button
+                  variant="danger-quiet"
+                  size="sm"
+                  onClick={() => revoke.mutate(m.id)}
+                  disabled={revoke.isPending}
+                >
+                  Withdraw
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {isLeader && !locked && (
-        <div className="mt-3 border-t pt-3">
-          <p className="mb-1 text-xs font-medium text-ink-muted">Invite a member by email</p>
+        <div className="mt-3 border-t border-line pt-3">
+          <p className="mb-1 text-xs font-medium text-ink-muted">
+            {alone ? 'Change your mind? Invite someone by email' : 'Invite a member by email'}
+          </p>
           <div className="flex gap-2">
             <input
               value={email}
@@ -115,9 +150,33 @@ function MyGroupCard({
             </Button>
           </div>
           {invite.isError && (
-            <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(invite.error)}</p>
+            <Notice tone="critical" size="xs" className="mt-1">
+              {getApiErrorMessage(invite.error)}
+            </Notice>
           )}
         </div>
+      )}
+
+      {/* Both choices are one click, and neither could be taken back. */}
+      {canUndo && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+          <span className="text-xs text-ink-subtle">
+            {alone ? 'Meant to join a group instead?' : 'Started this by mistake?'}
+          </span>
+          <Button
+            variant="danger-quiet"
+            size="sm"
+            onClick={() => disband.mutate()}
+            disabled={disband.isPending}
+          >
+            {alone ? 'Undo working on my own' : 'Undo this group'}
+          </Button>
+        </div>
+      )}
+      {(revoke.isError || disband.isError) && (
+        <Notice tone="critical" size="xs" className="mt-2">
+          {getApiErrorMessage(revoke.error || disband.error)}
+        </Notice>
       )}
     </Card>
   );
@@ -153,7 +212,7 @@ function CreateGroupCard({ cpiId }: { cpiId: string }) {
         </Button>
       </div>
       {create.isError && (
-        <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(create.error)}</p>
+        <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(create.error)}</Notice>
       )}
 
       {/* Some courses let a student carry on alone — including group courses,
@@ -169,7 +228,7 @@ function CreateGroupCard({ cpiId }: { cpiId: string }) {
         >
           {solo.isPending ? '…' : 'Continue without a group'}
         </Button>
-        {solo.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(solo.error)}</p>}
+        {solo.isError && <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(solo.error)}</Notice>}
       </div>
     </Card>
   );
@@ -217,7 +276,7 @@ function RespondInviteCard({ cpiId }: { cpiId: string }) {
       </ul>
 
       {respond.isError && (
-        <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(respond.error)}</p>
+        <Notice tone="critical" size="xs" className="mt-2">{getApiErrorMessage(respond.error)}</Notice>
       )}
     </Card>
   );
