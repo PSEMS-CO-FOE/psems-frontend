@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOpenCourses, useRequestToSupervise, type OpenCourse } from '@/features/courses/useSupervisorRequests';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Button, Card, EmptyState, PageHeader, SkeletonText } from '@/components/ui';
+import { Button, Card, EmptyState, PageHeader, SkeletonText, Notice } from '@/components/ui';
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: 'Request pending',
@@ -55,7 +55,7 @@ function CourseCard({ course }: { course: OpenCourse }) {
           </Button>
         </div>
       )}
-      {request.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(request.error)}</p>}
+      {request.isError && <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(request.error)}</Notice>}
     </Card>
   );
 }

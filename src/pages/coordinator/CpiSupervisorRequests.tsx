@@ -4,7 +4,7 @@ import {
 } from '@/features/courses/useSupervisorRequests';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName, shortName } from '@/lib/name';
-import { Button, Card, EmptyState, SkeletonText } from '@/components/ui';
+import { Button, Card, EmptyState, SkeletonText, Notice } from '@/components/ui';
 
 // Lecturers who found this course themselves and asked to join. Approving sends
 // them an invitation — they still have to accept it.
@@ -19,7 +19,7 @@ export function CpiSupervisorRequests({ cpiId }: { cpiId: string }) {
     <Card title="Requests to supervise" description="Approving creates a supervisor invitation, which the lecturer then accepts.">
 
       {isLoading && <SkeletonText className="mt-2" />}
-      {decide.isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(decide.error)}</p>}
+      {decide.isError && <Notice tone="critical" size="xs" className="mt-2">{getApiErrorMessage(decide.error)}</Notice>}
 
       {pending.length === 0 && !isLoading && (
         <EmptyState density="compact" title="No pending requests" hint="Lecturers who ask to supervise a group on this course appear here." />
