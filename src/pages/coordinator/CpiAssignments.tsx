@@ -10,7 +10,7 @@ import type { CpiMode } from '@/features/courses/types';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { personName } from '@/lib/name';
 import type { UseMutationResult } from '@tanstack/react-query';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, Notice } from '@/components/ui';
 
 // Pick an approved lecturer by name/email (no more raw UUID pasting), then
 // submit their userId to the assignment action.
@@ -76,7 +76,7 @@ function LecturerPicker({
         <p className="mt-1 text-xs text-ink-subtle">{disabledReason}</p>
       )}
       {action.isError && (
-        <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(action.error)}</p>
+        <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(action.error)}</Notice>
       )}
     </div>
   );
@@ -135,7 +135,7 @@ export function CpiAssignments({ cpiId, mode }: { cpiId: string; mode: CpiMode }
             </p>
           )}
           {finalize.isError && (
-            <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(finalize.error)}</p>
+            <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(finalize.error)}</Notice>
           )}
         </div>
       </div>

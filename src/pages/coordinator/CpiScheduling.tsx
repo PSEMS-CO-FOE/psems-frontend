@@ -12,6 +12,7 @@ import {
   type ScheduleConflict,
 } from '@/features/scheduling/useScheduling';
 import { getApiErrorMessage } from '@/lib/apiError';
+import { sessionStatusLabel } from '@/lib/labels';
 import { personName, shortName } from '@/lib/name';
 import { ScheduleSheetPanel } from './ScheduleSheetPanel';
 import { Badge, Button, Card, EmptyState, Notice, StatRow, StatTile } from '@/components/ui';
@@ -141,7 +142,7 @@ function AvailabilityTemplatePanel({ cpiId }: { cpiId: string }) {
             </Button>
           </div>
           {setTemplate.isError && (
-            <p className="text-xs text-critical-700">{getApiErrorMessage(setTemplate.error)}</p>
+            <Notice tone="critical" size="xs">{getApiErrorMessage(setTemplate.error)}</Notice>
           )}
         </div>
       )}
@@ -230,7 +231,8 @@ function SessionRow({ cpiId, session }: { cpiId: string; session: EvaluationSess
     <li className="flex flex-col gap-1 py-2 text-xs">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-ink">
-          {session.group.name} · {session.stage.name} <span className="text-ink-subtle">({session.status})</span>
+          {session.group.name} · {session.stage.name}{' '}
+          <span className="text-ink-subtle">({sessionStatusLabel(session.status)})</span>
         </span>
         {session.isOverdue && (
           <Badge tone="critical">overdue, not yet scored</Badge>
@@ -399,7 +401,7 @@ function BlockLayout({ cpiId, sessions }: { cpiId: string; sessions: EvaluationS
       </div>
 
       {schedule.isError && (
-        <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(schedule.error)}</p>
+        <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(schedule.error)}</Notice>
       )}
       {schedule.isSuccess && (
         <p className="mt-1 text-xs text-ink-muted">

@@ -6,7 +6,11 @@ type SelectionStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
 interface IdeaRef {
   id: string;
   title: string;
+  // A supervisor deciding whether to take a project on needs to read it, not
+  // just see its name.
+  description: string;
   authorType: 'COORDINATOR' | 'SUPERVISOR' | 'STUDENT' | 'LECTURER';
+  author: { fullName: string | null; email: string };
 }
 interface SupervisorRef {
   user: { id: string; email: string; fullName: string | null };

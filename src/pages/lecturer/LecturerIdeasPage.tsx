@@ -11,8 +11,9 @@ import {
 import { useApprovedLecturers } from '@/features/lecturers/useLecturers';
 import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
 import { personName, shortName } from '@/lib/name';
-import { Button, Card, EmptyState, Notice, SkeletonText } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Notice, SkeletonText } from '@/components/ui';
 import { PolicyNote } from '@/components/PolicyNote';
+import { ideaAuthorShort } from '@/lib/labels';
 
 // Supervisor idea announcement (Supervisor-Led mode): an accepted supervisor
 // posts project ideas for groups to express interest in, and sees the CPI's
@@ -59,7 +60,7 @@ function SupervisorChips({ cpiId, idea }: { cpiId: string; idea: Idea }) {
           </li>
         ))}
       </ul>
-      {remove.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(remove.error)}</p>}
+      {remove.isError && <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(remove.error)}</Notice>}
     </>
   );
 }
@@ -201,7 +202,7 @@ export function LecturerIdeasPage() {
               <li key={idea.id} className="rounded-card border border-line bg-surface p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-ink">{idea.title}</p>
-                  <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{idea.authorType}</span>
+                  <Badge tone="neutral">{ideaAuthorShort(idea.authorType)}</Badge>
                 </div>
                 <p className="mt-1 text-xs text-ink-muted">{idea.description}</p>
                 <p className="mt-2 text-xs text-ink-subtle">

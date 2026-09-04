@@ -147,7 +147,7 @@ function MarkSheetPanel({ cpiId }: { cpiId: string }) {
       </div>
 
       {open && isLoading && <SkeletonText className="mt-2" />}
-      {open && isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(error)}</p>}
+      {open && isError && <Notice tone="critical" size="xs" className="mt-2">{getApiErrorMessage(error)}</Notice>}
 
       {open && sheet && (
         <div className="mt-3 table-scroll">

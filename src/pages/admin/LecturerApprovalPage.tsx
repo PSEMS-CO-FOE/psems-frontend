@@ -36,7 +36,7 @@ function LecturerCsvUpload() {
         </Button>
       </div>
 
-      {provision.isError && <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(provision.error)}</p>}
+      {provision.isError && <Notice tone="critical" size="xs" className="mt-2">{getApiErrorMessage(provision.error)}</Notice>}
       {provision.isSuccess && (
         <div className="mt-2 text-xs">
           <p className="text-positive-700">Created {provision.data.created} lecturer(s).</p>
