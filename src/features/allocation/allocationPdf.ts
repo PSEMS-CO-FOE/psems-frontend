@@ -1,5 +1,6 @@
 import type { AllocationMap } from './useAllocation';
 import { personName } from '@/lib/name';
+import { allocationSourceLabel } from '@/lib/labels';
 import {
   FLAG_FILL,
   MARGIN,
@@ -12,11 +13,6 @@ import {
   tableStyle,
   type SheetMeta,
 } from '@/features/pdf/sheet';
-
-const SOURCE: Record<string, string> = {
-  FROM_SELECTION: "From the group's selection",
-  COORDINATOR_OVERRIDE: 'Set by the coordinator',
-};
 
 type Entry = AllocationMap['allocations'][number];
 
@@ -67,7 +63,7 @@ export async function buildAllocationSheetPdf(
       ].join('\n'),
       a.idea.title,
       supervisionLine(a),
-      SOURCE[a.source] ?? a.source,
+      allocationSourceLabel(a.source),
     ]),
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },

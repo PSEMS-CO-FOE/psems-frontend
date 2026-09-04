@@ -1,5 +1,6 @@
 import type { Idea } from './useIdeas';
 import { personName } from '@/lib/name';
+import { ideaApprovalLabel, ideaAuthorShort } from '@/lib/labels';
 import {
   MARGIN,
   TINT_FILL,
@@ -9,24 +10,6 @@ import {
   tableStyle,
   type SheetMeta,
 } from '@/features/pdf/sheet';
-
-const AUTHOR: Record<string, string> = {
-  COORDINATOR: 'Coordinator',
-  SUPERVISOR: 'Supervisor',
-  LECTURER: 'Lecturer',
-  STUDENT: 'Student group',
-};
-
-const STATUS: Record<string, string> = {
-  PENDING: 'Awaiting approval',
-  APPROVED: 'Approved',
-  REJECTED: 'Rejected',
-  REVISION_REQUESTED: 'Revision requested',
-};
-
-// An idea on a course that does not gate them has no approval status at all.
-const readable = (map: Record<string, string>, key: string | null) =>
-  key === null ? '—' : (map[key] ?? key);
 
 function supervisorLine(idea: Idea): string {
   const rows = idea.supervisors ?? [];
@@ -67,11 +50,11 @@ export async function buildIdeasSheetPdf(
       // The full text, not a preview: a summary nobody can read the whole of
       // is the reason this document was asked for.
       `${idea.title}\n\n${idea.description}`,
-      `${personName(idea.author)}\n${readable(AUTHOR, idea.authorType)}${
+      `${personName(idea.author)}\n${ideaAuthorShort(idea.authorType)}${
         idea.group ? `\n${idea.group.name}` : ''
       }`,
       supervisorLine(idea),
-      readable(STATUS, idea.approvalStatus),
+      ideaApprovalLabel(idea.approvalStatus),
     ]),
     columnStyles: {
       0: { cellWidth: 9, halign: 'center' },

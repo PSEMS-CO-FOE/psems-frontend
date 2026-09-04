@@ -13,6 +13,7 @@ import { roleLabel, useJoinPanel, useSessionPanel, type PanelRole } from '@/feat
 import { useAuthStore } from '@/stores/authStore';
 import { getApiErrorMessage, getApiErrorStatus } from '@/lib/apiError';
 import { Badge, Button, Card, EmptyState, Notice } from '@/components/ui';
+import { sessionStatusLabel } from '@/lib/labels';
 
 // The presentation clock. It is kept on the server so every evaluator sees the
 // same time. Parts never move on by themselves: going past a target turns the
@@ -159,7 +160,7 @@ function PresentationTimer({ cpiId, session }: { cpiId: string; session: Evaluat
             ? 'Segments never advance on their own — press Next when the group finishes.'
             : 'This stage has no segments configured; the clock runs as one.'}
       </p>
-      {control.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(control.error)}</p>}
+      {control.isError && <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(control.error)}</Notice>}
     </div>
   );
 }
@@ -204,7 +205,7 @@ function JoinOpenPanel({
           {join.isPending ? '\u2026' : `Join as ${roleLabel(role)}`}
         </Button>
       </div>
-      {join.isError && <p className="mt-1 text-xs text-critical-700">{getApiErrorMessage(join.error)}</p>}
+      {join.isError && <Notice tone="critical" size="xs" className="mt-1">{getApiErrorMessage(join.error)}</Notice>}
     </div>
   );
 }
@@ -304,7 +305,7 @@ function SessionScorer({
           {session.isOverdue && (
             <Badge tone="critical">overdue</Badge>
           )}
-          <span className="rounded-control bg-canvas-sunken px-2 py-0.5 text-xs text-ink-muted">{session.status}</span>
+          <Badge tone="neutral">{sessionStatusLabel(session.status)}</Badge>
         </div>
       </div>
 
@@ -392,7 +393,7 @@ function SessionScorer({
         </p>
       )}
       {submit.isError && (
-        <p className="mt-2 text-xs text-critical-700">{getApiErrorMessage(submit.error)}</p>
+        <Notice tone="critical" size="xs" className="mt-2">{getApiErrorMessage(submit.error)}</Notice>
       )}
       {submit.isSuccess && <p className="mt-2 text-xs text-positive-700">Scores submitted.</p>}
 
