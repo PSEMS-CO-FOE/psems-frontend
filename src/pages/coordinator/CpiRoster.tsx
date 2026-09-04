@@ -1,12 +1,25 @@
 import { useState } from 'react';
 import {
+  useAddStudent,
+  useAddableStudents,
   useCourseRoster,
   useDecideJoinRequest,
   useJoinRequests,
   type RosterRow,
 } from '@/features/courses/useCourseAccess';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { Badge, Button, Card, Notice, SkeletonText, StatRow, StatTile } from '@/components/ui';
+import { personName, shortName } from '@/lib/name';
+import { useDebounced } from '@/lib/useDebounced';
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Notice,
+  SkeletonText,
+  StatRow,
+  StatTile,
+} from '@/components/ui';
 
 const WORKING_LABEL: Record<RosterRow['working'], string> = {
   IN_GROUP: 'In a group',
@@ -57,6 +70,91 @@ function RosterTable({ rows, targetGroupSize }: { rows: RosterRow[]; targetGroup
         </tbody>
       </table>
     </div>
+  );
+}
+
+/**
+ * Adding a student from another batch without waiting to be asked. The request
+ * flow below only ever started with the student, so a repeated student who did
+ * not know to ask could not be enrolled at all.
+ */
+function AddStudent({ cpiId }: { cpiId: string }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const [note, setNote] = useState('');
+  const search = useDebounced(q);
+  const { data: students, isLoading } = useAddableStudents(cpiId, search, open);
+  const add = useAddStudent(cpiId);
+
+  return (
+    <Card
+      title="Add a student from another batch"
+      description="For a repeated student who has not asked. They are added straight away and told."
+      actions={
+        <Button variant={open ? 'neutral' : 'secondary'} size="sm" onClick={() => setOpen((v) => !v)}>
+          {open ? 'Close' : 'Find a student'}
+        </Button>
+      }
+    >
+      {open && (
+        <div className="space-y-3">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Index number, registration number, name or email"
+            className="w-full rounded-control border border-line-strong px-3 py-2 text-sm"
+          />
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="note to the student (optional)"
+            className="w-full rounded-control border border-line-strong px-3 py-2 text-sm"
+          />
+
+          {add.isError && <Notice tone="critical" size="xs">{getApiErrorMessage(add.error)}</Notice>}
+          {isLoading && <SkeletonText />}
+
+          {students && students.length === 0 && (
+            <EmptyState
+              density="compact"
+              title="Nobody matches"
+              hint="Only students in this department, from a batch other than this course's own, can be added."
+            />
+          )}
+
+          <ul className="space-y-2">
+            {students?.map((student) => (
+              <li
+                key={student.id}
+                className="flex flex-wrap items-center gap-2 rounded-control border border-line px-3 py-2"
+              >
+                <span className="text-sm text-ink" title={personName(student.user)}>
+                  {shortName(personName(student.user))}
+                </span>
+                <span className="font-mono text-xs text-ink-muted">{student.studentId}</span>
+                <Badge tone="neutral">{student.batch}</Badge>
+                {student.existingRequest === 'PENDING' && <Badge tone="caution">already asked</Badge>}
+                {student.existingRequest === 'REJECTED' && <Badge tone="neutral">declined before</Badge>}
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() =>
+                    add.mutate(
+                      { studentId: student.id, note: note || undefined },
+                      { onSuccess: () => setNote('') },
+                    )
+                  }
+                  disabled={add.isPending}
+                >
+                  Add to course
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -171,6 +269,7 @@ export function CpiRoster({ cpiId }: { cpiId: string }) {
         )}
       </Card>
 
+      <AddStudent cpiId={cpiId} />
       <JoinRequests cpiId={cpiId} />
     </div>
   );
